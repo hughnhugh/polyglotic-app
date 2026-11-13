@@ -1,0 +1,230 @@
+{
+ "rule": "The level curve: the chance a learner knows a word at a level",
+ "code": "src/polyglotic_desktop/core/learning/levels.py",
+ "constants": {
+  "slope": 2.0,
+  "known_at": 0.6,
+  "next_band": 1.0
+ },
+ "cases": [
+  {
+   "scheme": "hsk-2025",
+   "picked_level": 0,
+   "midpoint": 0.5,
+   "levels": [
+    {
+     "level": 1,
+     "chance_known": 0.268941,
+     "estimates_known": false,
+     "within_reach": true
+    },
+    {
+     "level": 2,
+     "chance_known": 0.047426,
+     "estimates_known": false,
+     "within_reach": false
+    },
+    {
+     "level": 3,
+     "chance_known": 0.006693,
+     "estimates_known": false,
+     "within_reach": false
+    },
+    {
+     "level": 4,
+     "chance_known": 0.000911,
+     "estimates_known": false,
+     "within_reach": false
+    },
+    {
+     "level": 5,
+     "chance_known": 0.000123,
+     "estimates_known": false,
+     "within_reach": false
+    },
+    {
+     "level": 6,
+     "chance_known": 1.7e-05,
+     "estimates_known": false,
+     "within_reach": false
+    },
+    {
+     "level": 7,
+     "chance_known": 2e-06,
+     "estimates_known": false,
+     "within_reach": false
+    },
+    {
+     "level": null,
+     "chance_known": 0.0,
+     "estimates_known": false,
+     "within_reach": false
+    }
+   ]
+  },
+  {
+   "scheme": "hsk-2025",
+   "picked_level": 2,
+   "midpoint": 2.5,
+   "levels": [
+    {
+     "level": 1,
+     "chance_known": 0.952574,
+     "estimates_known": true,
+     "within_reach": true
+    },
+    {
+     "level": 2,
+     "chance_known": 0.731059,
+     "estimates_known": true,
+     "within_reach": true
+    },
+    {
+     "level": 3,
+     "chance_known": 0.268941,
+     "estimates_known": false,
+     "within_reach": true
+    },
+    {
+     "level": 4,
+     "chance_known": 0.047426,
+     "estimates_known": false,
+     "within_reach": false
+    },
+    {
+     "level": 5,
+     "chance_known": 0.006693,
+     "estimates_known": false,
+     "within_reach": false
+    },
+    {
+     "level": 6,
+     "chance_known": 0.000911,
+     "estimates_known": false,
+     "within_reach": false
+    },
+    {
+     "level": 7,
+     "chance_known": 0.000123,
+     "estimates_known": false,
+     "within_reach": false
+    },
+    {
+     "level": null,
+     "chance_known": 0.0,
+     "estimates_known": false,
+     "within_reach": false
+    }
+   ]
+  },
+  {
+   "scheme": "hsk-2025",
+   "picked_level": 4,
+   "midpoint": 4.5,
+   "levels": [
+    {
+     "level": 1,
+     "chance_known": 0.999089,
+     "estimates_known": true,
+     "within_reach": true
+    },
+    {
+     "level": 2,
+     "chance_known": 0.993307,
+     "estimates_known": true,
+     "within_reach": true
+    },
+    {
+     "level": 3,
+     "chance_known": 0.952574,
+     "estimates_known": true,
+     "within_reach": true
+    },
+    {
+     "level": 4,
+     "chance_known": 0.731059,
+     "estimates_known": true,
+     "within_reach": true
+    },
+    {
+     "level": 5,
+     "chance_known": 0.268941,
+     "estimates_known": false,
+     "within_reach": true
+    },
+    {
+     "level": 6,
+     "chance_known": 0.047426,
+     "estimates_known": false,
+     "within_reach": false
+    },
+    {
+     "level": 7,
+     "chance_known": 0.006693,
+     "estimates_known": false,
+     "within_reach": false
+    },
+    {
+     "level": null,
+     "chance_known": 0.0,
+     "estimates_known": false,
+     "within_reach": false
+    }
+   ]
+  },
+  {
+   "scheme": "en-frequency",
+   "midpoint": 3.5,
+   "levels": [
+    {
+     "level": 1,
+     "chance_known": 0.993307,
+     "estimates_known": true,
+     "within_reach": true
+    },
+    {
+     "level": 2,
+     "chance_known": 0.952574,
+     "estimates_known": true,
+     "within_reach": true
+    },
+    {
+     "level": 3,
+     "chance_known": 0.731059,
+     "estimates_known": true,
+     "within_reach": true
+    },
+    {
+     "level": 4,
+     "chance_known": 0.268941,
+     "estimates_known": false,
+     "within_reach": true
+    },
+    {
+     "level": 5,
+     "chance_known": 0.047426,
+     "estimates_known": false,
+     "within_reach": false
+    },
+    {
+     "level": 6,
+     "chance_known": 0.006693,
+     "estimates_known": false,
+     "within_reach": false
+    },
+    {
+     "level": 7,
+     "chance_known": 0.000911,
+     "estimates_known": false,
+     "within_reach": false
+    },
+    {
+     "level": null,
+     "chance_known": 0.0,
+     "estimates_known": false,
+     "within_reach": false
+    }
+   ]
+  }
+ ]
+}
