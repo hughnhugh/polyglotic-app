@@ -21,6 +21,9 @@ Each slider's ends were found by trying them (284's report says how):
 - **Gap between new captions** (`arrival_gap`): captions arriving
   together are let into a window at least this far apart, in order,
   nothing dropped (`views.pacing`); 0 s is today's.
+- **Gap between new lines** (`line_gap`): a new caption's lines are
+  shown one at a time, this far apart, oldest first - poured lines
+  and clause rows alike (`views.reveal`; 309); 0 s is today's.
 - **Text still being spoken** (`unfinished`): as now, like finished
   text, dimmer, italic, or in the theme's accent - a provisional line and
   a live caption alike.
@@ -35,6 +38,76 @@ Each slider's ends were found by trying them (284's report says how):
   proportion as today's (`older_translation`). 100 % is no step at all;
   `OLDER_RANGE`'s floor keeps an older line at 3:1 on Classic's panel over
   a light video.
+- **Older captions dim** (`older_steps`; polyglotic-hq 305, the user,
+  2026-11-13: "Lab option for gradual text colour change"): all at once to
+  Older captions' ink (1, today's), or step by step - each caption back a
+  step dimmer, reaching it `older_steps` captions back (`by_place`). By
+  place, not time: it changes only when a caption arrives, which paints
+  anyway, so nothing is drawn more while nothing comes. (Then it dims,
+  above, fades by time - and only with New for above 0 s.)
+- **Your own speech** (polyglotic-hq 305; the user, 2026-11-13: "Your own
+  speech should be formatted differently. (perhaps right aligned? I'm not
+  sure another lab setting / default some other identifier)"): on the
+  right (`own_right`), a tint behind it (`own_tint`), a bar at its side
+  (`own_bar`), and the "You" label as now, as a badge or not at all
+  (`own_label`). On the right by default (B, the user's own first idea:
+  the user, 2026-11-14, DECISIONS #133 "pick a reasonable default"; not in
+  a window captioning the mic alone, `caption_window.caption_style`); the
+  others off, or as now; they combine. A learner who never touched the Lab
+  gets the default; one who turned it off keeps that (`to_stored`).
+- **Captions fill the width** (`fill`, `join`; polyglotic-hq 309, the
+  user, 2026-11-14: "I want it to use up more of the screen. often clauses
+  will only be a few words and rarely make it to the complete width of the
+  window ... text will fill the complete caption window line by line
+  seperating by ellipsis"): a caption's clauses run on in lines as wide as
+  the window, instead of a row each (`views.pour`) - what was said in the
+  upper lines and its translation in the lines below (`Fill.STACKED`),
+  or line by line - a line of what was said, then the line of its
+  translation, cut at matching places (`Fill.PAIRED`).
+  Between clauses an ellipsis, one at each line's end too, or a space
+  (`Join`). No Arrows while it's on: a clause and its translation aren't
+  on facing rows. Off by default: today's clause rows.
+- **New layout** (`flow`, `run_on`, `aligned`; polyglotic-hq 340, decision
+  0132, the user, 2026-11-15: "our frame can handle the processed data and
+  efficiently customise the lines to accurately fill screen width ... the
+  caption window is dynamic"): the window's captions are laid out by the
+  one layout (`views.flow`) from each caption's model, whichever way
+  Captions fill the width is set - with Arrows and word links in all of
+  them and in the learning load. Line by line then always fills its line
+  pair (a clause that doesn't fit what's left is cut there, on both
+  sides), and has a choice of its own: captions run on (`run_on`) - a
+  caption from the same source carries on in the line pair the one before
+  ended in, instead of starting a line of its own. Parts lined up
+  (`aligned`) works however captions fill the width (polyglotic-hq 372;
+  Line by line's alone before): each part starts at the same place as its
+  counterpart, so a word's counterpart is under it (`views.flow` says how
+  in each). All off by default. Turning
+  either choice on sets what it needs (`CaptionLab.choose`, 365): the
+  user couldn't click them greyed out, with the reason in another row.
+  **Filled lines** (`filled`, `with_filled`; polyglotic-hq 372, the user,
+  2026-11-15, DECISIONS #175): New layout, Line by line and captions run
+  on together - one click on a caption window's strip, the same values as
+  these rows (one state), every window's like the rest of the Lab; off
+  again puts the three back as they were. **Parts lined up** has its own
+  click (`lined_up`, `with_lined_up`), beside it, in every way of filling.
+- **Parts placed** (`placing`; polyglotic-hq 458, decision 0215, the user,
+  2026-11-17: "placing characters in such a way to reducing distance
+  between all arrow length sums ... a 3rd alternate lab mode could be
+  clean even space everything"): in New layout, where a line's parts go
+  in the room the line has - packed (the default, today's), nearest the
+  words they are linked to, or a full line's spread evenly. Choosing one
+  turns New layout on.
+- **Learning load** (polyglotic-hq 324; the user, 2026-11-14: "an
+  alternate viewing mode [with] a configurable learning capacity/load"):
+  `load` turns the mode on - a set number of the next words past what the
+  learner knows, each in its stage's colour (`core.learning.load`), in
+  place of new-word dots and deck dashes; word links are drawn as ever
+  (340: they were off in it until the user asked, 2026-11-15). Off by
+  default. `load_rare`: the words outside the load that aren't known yet
+  as usual (the default: rare words are the ones a learner most needs to
+  read) or dimmed (the user's suggestion: "out of scope words in this mode
+  have a transparent white colour"). The load's own rules (its size, the
+  meetings a stage) are the learner's per language (`ui.settings`).
 
 Plain Python, no Qt. Holds no caption text.
 """
@@ -67,6 +140,11 @@ Classic's panel (72 %) over a light video (#f3f5f7). Below it, older
 captions stop being readable on a bright scene (284, computed per preset;
 today's 72 % keeps 4.5:1)."""
 OLDER_STEP = 0.05
+OLDER_STEPS_RANGE = (1, 6)
+"""Captions back an older caption reaches Older captions' ink: 1 is at
+once (today's); 6, a step of a sixth each caption back. A default window
+shows 3 captions (284's measure), a tall one 5 or 6: past 6 the steps are
+too small to see at Older captions' default (72 %: under 5 % each)."""
 ARRIVAL_GAP_RANGE = (0.0, 1.5)
 """Seconds at least between new captions in a window (`views.pacing`): 0
 lets them in as they come (today's). Tried on made-up streams (polyglotic-hq
@@ -78,6 +156,11 @@ in 100 and the gap stops being kept. A fast speaker's captions (1.3 s
 apart, 253's recorded conversation) keep it up to 1.0 s (2 in 100 let
 in by the wait), 38 in 100 at 1.3 s."""
 ARRIVAL_GAP_STEP = 0.1
+LINE_GAP_RANGE = (0.0, 0.5)
+"""Seconds between a new caption's lines (`views.reveal`): 0 shows them
+together (today's). The user's range, 2026-11-14 ("for example 0-500 ms a
+line")."""
+LINE_GAP_STEP = 0.05
 _TRANSLATION_SHARE = (1.0 - OLDER_TRANSLATION_ALPHA) / (1.0 - OLDER_ALPHA)
 """How much of what was said's step back the translation takes: the yellow
 starts darker, so it steps back less (today's 0.72 / 0.82)."""
@@ -144,6 +227,65 @@ class Loading(StrEnum):
     none yet, where the bar would be."""
 
 
+class OwnLabel(StrEnum):
+    """How the label over the user's own speech ("You") looks."""
+
+    AS_NOW = "as_now"
+    """Today's: small, in the mic's colour, like an app's name."""
+    BADGE = "badge"
+    """In a small filled badge of that colour."""
+    NONE = "none"
+    """Not shown: the other marks say whose it is."""
+
+
+class Fill(StrEnum):
+    """How a caption's text is laid in the window (polyglotic-hq 309)."""
+
+    CLAUSES = "clauses"
+    """Today's: a clause a row, its translation under it."""
+    STACKED = "stacked"
+    """Poured: what was said fills the upper lines, its translation the
+    lines below, each running on by itself."""
+    PAIRED = "paired"
+    """Poured line by line: a line of what was said, the line of its
+    translation under it, both cut at matching places (`views.pour`)."""
+
+
+class Join(StrEnum):
+    """What stands between two clauses run together on a line."""
+
+    ELLIPSIS = "ellipsis"
+    """An ellipsis where one clause ends and the next begins."""
+    LINE_ENDS = "line_ends"
+    """And one at the end of every line that runs on to the next."""
+    SPACE = "space"
+    """Nothing but a space."""
+
+
+class Placing(StrEnum):
+    """Where a line pair's parts go in the room the pair has (polyglotic-hq
+    458; the user, 2026-11-17: "placing characters in such a way to
+    reducing distance between all arrow length sums ... a 3rd alternate
+    lab mode could be clean even space everything"). New layout's
+    (`views.flow`): the lines, and what is on each, are the same in all
+    three."""
+
+    PACKED = "packed"
+    """Today's: each part straight after the one before."""
+    NEAREST = "nearest"
+    """Each part where its word links are shortest."""
+    EVENLY = "evenly"
+    """A full line's parts spread over the width, the gaps alike."""
+
+
+class LoadRare(StrEnum):
+    """How the words outside the learning load that aren't known yet look
+    while the mode is on."""
+
+    NORMAL = "normal"
+    DIMMED = "dimmed"
+
+
 class NewFade(StrEnum):
     """How a caption that's no longer new goes to an older caption's ink."""
 
@@ -159,12 +301,116 @@ class CaptionLab:
     new_fade: NewFade = NewFade.INSTANT
     older: float = OLDER_ALPHA
     arrival_gap: float = 0.0
+    line_gap: float = 0.0
     unfinished: Unfinished = Unfinished.AS_NOW
     link_px: float | None = None
     """None: Word links' Thin / Medium / Thick decides."""
     row_gap: float = 2.0
     caption_gap: float = 10.0
     loading: Loading = Loading.BAR
+    older_steps: int = 1
+    """Older captions dim all at once (1) or step by step, over this many
+    captions (305)."""
+    own_right: bool = True
+    own_tint: bool = False
+    own_bar: bool = False
+    own_label: OwnLabel = OwnLabel.AS_NOW
+    """Your own speech: on the right (the default, B: the user, 2026-11-14,
+    DECISIONS #133 "pick a reasonable default"), tinted, with a bar at its
+    side, and its "You" label's look (305)."""
+    fill: Fill = Fill.CLAUSES
+    join: Join = Join.ELLIPSIS
+    """Captions fill the width: a clause a row (today's), or poured - and
+    what stands between clauses then (309)."""
+    load: bool = False
+    load_rare: LoadRare = LoadRare.NORMAL
+    """The learning load's viewing mode, and how words outside it look
+    (324)."""
+    flow: bool = False
+    run_on: bool = False
+    aligned: bool = False
+    """The new layout (340): the one layout lays the captions out; with
+    Line by line, captions run on into each other, and parts are lined up
+    over their counterparts."""
+    placing: Placing = Placing.PACKED
+    """Where a line pair's parts go in its room, in New layout (458)."""
+
+    @property
+    def line_by_line(self) -> bool:
+        """New layout's Line by line: where `run_on` works
+        (`views.flow.flow_options`). Anywhere else it keeps its value and
+        does nothing."""
+        return self.flow and self.fill is Fill.PAIRED
+
+    @property
+    def lined_up(self) -> bool:
+        """Parts lined up, in New layout - however captions fill the width
+        (372: in Line by line only before). Without New layout `aligned`
+        keeps its value and does nothing."""
+        return self.flow and self.aligned
+
+    @property
+    def filled(self) -> bool:
+        """Filled lines (polyglotic-hq 372): New layout, Line by line and
+        captions run on, all three - what a caption window's one click
+        turns on."""
+        return self.line_by_line and self.run_on
+
+    def with_filled(self, on: bool, before: "CaptionLab | None" = None) -> "CaptionLab":
+        """The lab with filled lines on - New layout, Line by line, captions
+        run on - or off again: those three back to what they were in
+        `before` (the lab when the one click turned them on), or to the
+        app's own without the lab if that isn't known (turned on in the
+        Lab, or before a restart). Nothing else changes: the Lab's rows
+        are the same values (the user, 2026-11-15, DECISIONS #175: "a one
+        click setting ... from caption window")."""
+        if on:
+            return replace(self, flow=True, fill=Fill.PAIRED, run_on=True)
+        was = before if before is not None and not before.filled else CaptionLab()
+        # parts lined up need New layout: it stays while they are
+        flow = was.flow or self.lined_up
+        return replace(self, flow=flow, fill=was.fill, run_on=was.run_on)
+
+    def with_lined_up(
+        self, on: bool, before: "CaptionLab | None" = None
+    ) -> "CaptionLab":
+        """The lab with parts lined up on - and New layout, which they need -
+        or off again: New layout back to what it was in `before` (the lab
+        when the one click turned them on), kept while filled lines need
+        it, and as it is if that isn't known. However captions fill the
+        width stays as it is (372; the user, 2026-11-15, DECISIONS #175:
+        "an independent one click setting which applies to every mode")."""
+        if on:
+            return replace(self, flow=True, aligned=True)
+        flow = self.flow
+        if before is not None and not before.lined_up:
+            flow = before.flow or self.filled
+        return replace(self, flow=flow, aligned=False)
+
+    def choose(self, **changes: object) -> "CaptionLab":
+        """The lab with the learner's `changes` - and what a choice needs
+        to do anything (polyglotic-hq 365; the user, 2026-11-15, on
+        greyed-out switches: "I can't seem to select these settings"):
+        turning `run_on` on turns New layout on and Captions fill the width
+        to Line by line; `aligned`, New layout alone - it lines parts up
+        however captions fill the width (372); a placing of the parts other
+        than packed, New layout too (458); dimming the words outside
+        the load turns Learning load on; choosing what stands between
+        clauses while captions don't fill the width sets them to
+        Translation below (polyglotic-hq 368). Turning one off, or later
+        moving what it needs away, changes nothing else: it keeps its value
+        for when that comes back."""
+        if changes.get("run_on") is True:
+            changes = {"flow": True, "fill": Fill.PAIRED, **changes}
+        if changes.get("aligned") is True:
+            changes = {"flow": True, **changes}
+        if changes.get("placing") in (Placing.NEAREST, Placing.EVENLY):
+            changes = {"flow": True, **changes}
+        if "join" in changes and self.fill is Fill.CLAUSES:
+            changes = {"fill": Fill.STACKED, **changes}
+        if changes.get("load_rare") is LoadRare.DIMMED:
+            changes = {"load": True, **changes}
+        return replace(self, **changes)  # type: ignore[arg-type]
 
     def to_stored(self) -> dict[str, object]:
         """Only what differs from the default: an untouched lab stores `{}`,
@@ -193,10 +439,32 @@ class CaptionLab:
         older = _number(stored.get("older"), OLDER_RANGE)
         if older is not None:
             found["older"] = older
+        steps = stored.get("older_steps")
+        if (
+            isinstance(steps, int)
+            and not isinstance(steps, bool)
+            and OLDER_STEPS_RANGE[0] <= steps <= OLDER_STEPS_RANGE[1]
+        ):
+            found["older_steps"] = steps
         if stored.get("unfinished") in {u.value for u in Unfinished}:
             found["unfinished"] = Unfinished(str(stored["unfinished"]))
         if stored.get("loading") in {k.value for k in Loading}:
             found["loading"] = Loading(str(stored["loading"]))
+        if stored.get("load_rare") in {k.value for k in LoadRare}:
+            found["load_rare"] = LoadRare(str(stored["load_rare"]))
+        for name in (
+            "own_right",
+            "own_tint",
+            "own_bar",
+            "load",
+            "flow",
+            "run_on",
+            "aligned",
+        ):
+            if isinstance(stored.get(name), bool):
+                found[name] = stored[name]
+        if stored.get("own_label") in {k.value for k in OwnLabel}:
+            found["own_label"] = OwnLabel(str(stored["own_label"]))
         for name, within in (
             ("link_px", LINK_PX_RANGE),
             ("row_gap", ROW_GAP_RANGE),
@@ -205,9 +473,18 @@ class CaptionLab:
             value = _number(stored.get(name), within)
             if value is not None:
                 found[name] = value
+        if stored.get("fill") in {k.value for k in Fill}:
+            found["fill"] = Fill(str(stored["fill"]))
+        if stored.get("join") in {k.value for k in Join}:
+            found["join"] = Join(str(stored["join"]))
+        if stored.get("placing") in {k.value for k in Placing}:
+            found["placing"] = Placing(str(stored["placing"]))
         gap = _number(stored.get("arrival_gap"), ARRIVAL_GAP_RANGE)
         if gap is not None:
             found["arrival_gap"] = gap
+        gap = _number(stored.get("line_gap"), LINE_GAP_RANGE)
+        if gap is not None:
+            found["line_gap"] = gap
         return replace(cls(), **found)  # type: ignore[arg-type]
 
 
@@ -240,6 +517,16 @@ def newness(age: float | None, lab: CaptionLab) -> float:
         gone = (age - lab.new_for) / FADE_BACK_SEC
         return max(0.0, 1.0 - gone)
     return 0.0
+
+
+def by_place(place: int, lab: CaptionLab) -> float:
+    """How new a caption looks by its place, counting back from the newest
+    (0) - 1.0 drawn at full ink, 0.0 at an older caption's: a step less each
+    caption back, over `older_steps` captions (the Lab's Older captions dim
+    step by step, 305); 0.0 for all but the newest at once."""
+    if place <= 0:
+        return 1.0
+    return max(0.0, 1.0 - place / lab.older_steps)
 
 
 def clause_gap(row_gap: float) -> float:

@@ -46,7 +46,10 @@ from polyglotic_desktop.ports.learning import (
     StoredExposures,
     StoredLevel,
     StoredListening,
+    StoredLoadWord,
+    StoredLookups,
     StoredSavedWord,
+    StoredSentence,
     StoredStatus,
 )
 
@@ -83,6 +86,12 @@ class BackgroundLearningStore:
         """Told on the store's thread once the learner's learning data on
         this PC is deleted, with the files set aside from it - those that
         could be (polyglotic-hq 213)."""
+        self.on_not_deleted: Callable[[], None] | None = None
+        """Told on the store's thread, after `on_deleted`, when a deletion
+        left some of it on this PC: the store couldn't be emptied (busy,
+        out of room - not damage, which sets it aside to be deleted), or a
+        file set aside from it couldn't be deleted (in use). With several
+        languages, each store says so for itself (polyglotic-hq 306)."""
         self.out = False
         """Found damaged: nothing more is written this session."""
 
@@ -112,6 +121,9 @@ class BackgroundLearningStore:
     def days_to_hand_over(self) -> Sequence[date]:
         return self._read(self._store.days_to_hand_over, [])
 
+    def saved_sentences(self) -> Sequence[StoredSentence]:
+        return self._read(self._store.saved_sentences, [])
+
     def _read(self, read: Callable[[], T], nothing: T) -> T:
         """`read` on the store's thread, or `nothing` once it's out."""
 
@@ -133,6 +145,9 @@ class BackgroundLearningStore:
     def save_level(self, level: StoredLevel) -> None:
         self._write(self._store.save_level, level)
 
+    def clear_level(self) -> None:
+        self._write(self._store.clear_level)
+
     def save_status(self, status: StoredStatus) -> None:
         self._write(self._store.save_status, status)
 
@@ -148,6 +163,12 @@ class BackgroundLearningStore:
     def delete_word(self, entry_id: str) -> None:
         self._write(self._store.delete_word, entry_id)
 
+    def save_sentence(self, sentence: StoredSentence) -> None:
+        self._write(self._store.save_sentence, sentence)
+
+    def delete_sentence(self, sentence_id: str) -> None:
+        self._write(self._store.delete_sentence, sentence_id)
+
     def save_deck_word(self, word: StoredDeckWord) -> None:
         self._write(self._store.save_deck_word, word)
 
@@ -156,6 +177,15 @@ class BackgroundLearningStore:
 
     def save_anki_exports(self, exports: Iterable[StoredAnkiExport]) -> None:
         self._write(self._store.save_anki_exports, tuple(exports))
+
+    def save_load_words(self, words: Sequence[StoredLoadWord]) -> None:
+        self._write(self._store.save_load_words, tuple(words))
+
+    def delete_load_words(self, entry_ids: Sequence[str]) -> None:
+        self._write(self._store.delete_load_words, tuple(entry_ids))
+
+    def save_lookups(self, lookups: StoredLookups) -> None:
+        self._write(self._store.save_lookups, lookups)
 
     def forget_entry(self, entry_id: str) -> None:
         self._write(self._store.forget_entry, entry_id)
@@ -189,18 +219,48 @@ class BackgroundLearningStore:
         """Emptied, and the files set aside from it deleted (polyglotic-hq
         207) - those too once it's out: the file set aside this session
         holds the data the learner asked to delete, as does one set aside
-        because this very deletion found it damaged."""
-        self._logged(self._store.delete_learning_data)
+        because this very deletion found it damaged. What's left on this PC
+        afterwards - the store not emptied, a file set aside still there -
+        is told (`on_not_deleted`, polyglotic-hq 306)."""
+        emptied = self._emptied()
         if self.out:
             try:
                 self._store.delete_set_aside()
             except Exception:
                 log.exception("deleting the learning data set aside failed")
+        try:
+            left = not emptied or bool(self._store.set_aside_copies())
+        except Exception:
+            log.exception("looking for what the deletion left failed")
+            left = True
         if self.on_deleted is not None:
             try:
                 self.on_deleted()
             except Exception:
                 log.exception("telling of the deletion failed")
+        if left:
+            log.warning("the learning data on this PC wasn't all deleted")
+            if self.on_not_deleted is not None:
+                try:
+                    self.on_not_deleted()
+                except Exception:
+                    log.exception("telling what the deletion left failed")
+
+    def _emptied(self) -> bool:
+        """The store emptied (`delete_learning_data`): True, or found damaged
+        - set aside, to be deleted with the others; False when it failed
+        otherwise (busy, out of room), its data still in it."""
+        if self.out:
+            return True  # set aside already: its copy is deleted with the others
+        try:
+            self._store.delete_learning_data()
+        except Exception as error:
+            if is_damage(error):
+                self._found_damaged()
+                return True
+            log.exception("deleting the learning data failed")
+            return False
+        return True
 
     def set_aside_copies(self) -> int:
         """How many files are set aside from the store, beside it - for the

@@ -22,7 +22,8 @@ from polyglotic_desktop.ui_next.views.panels import LookView
 
 def test_the_strip_has_word_links_and_no_text_size() -> None:
     # "report" only shows for an alpha tester (polyglotic-hq 275)
-    assert STRIP == ("links", "lock", "report", "settings", "stop")
+    # filled lines and parts lined up beside word links (polyglotic-hq 372)
+    assert STRIP == ("links", "fill", "aligned", "lock", "report", "settings", "stop")
 
 
 def test_the_button_shows_and_asks_for_word_links(qapp: QApplication) -> None:
@@ -36,7 +37,7 @@ def test_the_button_shows_and_asks_for_word_links(qapp: QApplication) -> None:
         assert button.toolTip()  # what they are, in plain words
         assert not button.isChecked()  # off by default
         asked: list[bool] = []
-        window.links_wanted.connect(asked.append)
+        window.links_wanted.connect(lambda on, _: asked.append(on))
         button.click()
         assert asked == [True]
         window.set_look(replace(window.look, word_links=WordLinks.HOVER))
@@ -73,7 +74,7 @@ def test_with_what_was_said_hidden_the_button_says_why_it_does_nothing(
         button = window.buttons["links"]
         on = button.toolTip()
         asked: list[bool] = []
-        window.links_wanted.connect(asked.append)
+        window.links_wanted.connect(lambda on, _: asked.append(on))
         window.set_look(replace(window.look, show_original=False))
         assert not button.isEnabled()
         assert button.toolTip() == (
@@ -108,7 +109,7 @@ def test_every_window_s_button_reaches_the_look(qapp: QApplication) -> None:
     windows.set_captioned(THREE[:2])
     first, second = windows.windows.values()
     first.buttons["links"].click()
-    assert look.value.word_links is WordLinks.COLOURS
+    assert look.value.word_links is WordLinks.ARROWS
     assert first.buttons["links"].isChecked() and second.buttons["links"].isChecked()
     second.buttons["links"].click()
     assert look.value.word_links is WordLinks.OFF
@@ -119,7 +120,7 @@ def test_every_window_s_button_reaches_the_look(qapp: QApplication) -> None:
 def test_on_again_is_the_way_last_chosen_in_look() -> None:
     view = LookView(CaptionLook())
     view.set_links_shown(True)
-    assert view.value.word_links is WordLinks.COLOURS  # never chosen: Colours
+    assert view.value.word_links is WordLinks.ARROWS  # never chosen: with lines
     view.set_word_links(WordLinks.HOVER)  # chosen in Look
     view.set_links_shown(False)
     assert view.value.word_links is WordLinks.OFF

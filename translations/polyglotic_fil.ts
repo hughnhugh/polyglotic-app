@@ -40,6 +40,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/account_page.py"/>
+        <source>This Mac</source>
+        <translation type="unfinished">Mac na ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/account_page.py"/>
         <source>Plus</source>
         <translation type="unfinished">Plus</translation>
     </message>
@@ -62,6 +67,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/account_page.py"/>
         <source>The words you look up, save and mark are kept on our server as dictionary words and times: saved words and statuses follow you to another PC, and lookups show us how people learn. You can delete them there, in every language you learn - and on this PC too, if you choose.</source>
         <translation type="unfinished">Iniimbak sa aming server ang mga salitang hinahanap, sine-save at minamarkahan mo bilang mga salita sa diksiyonaryo at oras: sumusunod sa iyo sa ibang PC ang mga naka-save na salita at status, at ipinapakita sa amin ng mga hinahanap kung paano natututo ang tao. Puwede mo silang burahin doon, sa bawat wikang pinag-aaralan mo - at sa PC na ito rin, kung gusto mo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/account_page.py"/>
+        <source>The words you look up, save and mark are kept on our server as dictionary words and times: saved words and statuses follow you to another computer, and lookups show us how people learn. You can delete them there, in every language you learn - and on this Mac too, if you choose.</source>
+        <translation type="unfinished">Iniimbak sa aming server ang mga salitang hinahanap, sine-save at minamarkahan mo bilang mga salita sa diksiyonaryo at oras: sumusunod sa iyo sa ibang computer ang mga naka-save na salita at status, at ipinapakita sa amin ng mga hinahanap kung paano natututo ang tao. Puwede mo silang burahin doon, sa bawat wikang pinag-aaralan mo - at sa Mac na ito rin, kung gusto mo.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/account_page.py"/>
@@ -97,6 +107,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/account_page.py"/>
         <source>Signed in on this PC.</source>
         <translation type="unfinished">Naka-sign in sa PC na ito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/account_page.py"/>
+        <source>Signed in on this Mac.</source>
+        <translation type="unfinished">Naka-sign in sa Mac na ito.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/account_page.py"/>
@@ -136,6 +151,49 @@
     </message>
 </context>
 <context>
+    <name>CaptionSetUp</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_set_up.py"/>
+        <source>Detect works out the language each time someone speaks.</source>
+        <translation type="unfinished">Inaalam ng Alamin ang wika tuwing may nagsasalita.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_set_up.py"/>
+        <source>Translate those lines into a second language too, or leave them.</source>
+        <translation type="unfinished">Isalin din ang mga linyang iyon sa pangalawang wika, o hayaan lang.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_set_up.py"/>
+        <source>Set up your captions</source>
+        <translation type="unfinished">I-set up ang iyong mga caption</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_set_up.py"/>
+        <source>Shown as &quot;You&quot;. Your mic is sent to the server only while it&apos;s on.</source>
+        <translation type="unfinished">Ipinapakita bilang &quot;Ikaw&quot;. Ipinapadala lang sa server ang mic mo habang naka-on ito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_set_up.py"/>
+        <source>Use as my default</source>
+        <translation type="unfinished">Gamitin bilang default ko</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_set_up.py"/>
+        <source>New caption windows start like this, and this stops showing</source>
+        <translation type="unfinished">Ganito magsisimula ang mga bagong caption window, at hindi na ito lalabas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_set_up.py"/>
+        <source>Start captions</source>
+        <translation type="unfinished">Simulan ang mga caption</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_set_up.py"/>
+        <source>On: new windows start like this and this stops showing. The languages on a window&apos;s bar change them, or bring it back.</source>
+        <translation type="unfinished">Naka-on: ganito magsisimula ang mga bagong window at hindi na ito lalabas. Binabago ng mga wika sa bar ng window ang mga ito, o ibinabalik ito.</translation>
+    </message>
+</context>
+<context>
     <name>CaptionWindow</name>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -169,8 +227,28 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Pinyin above Chinese: turn it on in Settings, under Readings</source>
+        <translation type="unfinished">Pinyin sa ibabaw ng Chinese: i-on ito sa Settings, sa Basa</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Click any word to look it up</source>
         <translation type="unfinished">I-click ang kahit anong salita para hanapin ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Anything the PC plays is captioned here</source>
+        <translation type="unfinished">Kina-caption dito ang anumang pinapatugtog ng PC</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Anything the Mac plays is captioned here</source>
+        <translation type="unfinished">Kina-caption dito ang anumang pinapatugtog ng Mac</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>{app}&apos;s captions appear here</source>
+        <translation type="unfinished">Lalabas dito ang mga caption ng {app}</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -214,6 +292,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Stopped - quit from the menu bar and start again</source>
+        <translation type="unfinished">Huminto - lumabas mula sa menu bar at buksan ulit</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Plus has ended - captions stopped; see Home</source>
         <translation type="unfinished">Tapos na ang Plus - huminto ang caption; tingnan ang Home</translation>
     </message>
@@ -249,11 +332,6 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
-        <source>Polyglotic&apos;s server is down</source>
-        <translation type="unfinished">Down ang server ng Polyglotic</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Polyglotic&apos;s server is restarting</source>
         <translation type="unfinished">Nagre-restart ang server ng Polyglotic</translation>
     </message>
@@ -279,13 +357,28 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Check this Mac&apos;s date and time - see Home</source>
+        <translation type="unfinished">Suriin ang petsa at oras ng Mac - tingnan ang Home</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Open on too many of your PCs - see Home</source>
         <translation type="unfinished">Bukas sa sobrang daming PC mo - tingnan ang Home</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Open on too many of your computers - see Home</source>
+        <translation type="unfinished">Bukas sa sobrang daming computer mo - tingnan ang Home</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Too many sign-in tries</source>
         <translation type="unfinished">Sobrang daming subok mag-sign in</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Planned maintenance - captions come back by themselves</source>
+        <translation type="unfinished">Nakaplanong maintenance - kusang babalik ang mga caption</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -296,11 +389,6 @@
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Can&apos;t reach Polyglotic&apos;s server - trying again in {n} s</source>
         <translation type="unfinished">Hindi maabot ang server - susubok ulit sa {n} seg</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
-        <source>Polyglotic&apos;s server is down - trying again in {n} s</source>
-        <translation type="unfinished">Down ang server - susubok ulit sa {n} seg</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -326,6 +414,26 @@
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Locked - unlock on Home or from the tray</source>
         <translation type="unfinished">Naka-lock - i-unlock sa Home o mula sa tray</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Locked - unlock on Home or from the menu bar</source>
+        <translation type="unfinished">Naka-lock - i-unlock sa Home o mula sa menu bar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Lock - clicks pass through to what&apos;s underneath, Ctrl+Alt+L</source>
+        <translation type="unfinished">I-lock - tumatagos ang mga click sa nasa ilalim, Ctrl+Alt+L</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Lock - clicks pass through to what&apos;s underneath. To unlock, rest the mouse on the lock in the corner, or use Home or the tray</source>
+        <translation type="unfinished">I-lock - tumatagos ang mga click sa nasa ilalim. Para i-unlock, ipahinga ang mouse sa lock sa sulok, o gamitin ang Home o ang tray</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Lock - clicks pass through to what&apos;s underneath. To unlock, rest the mouse on the lock in the corner, or use Home or the menu bar</source>
+        <translation type="unfinished">I-lock - tumatagos ang mga click sa nasa ilalim. Para i-unlock, ipahinga ang mouse sa lock sa sulok, o gamitin ang Home o ang menu bar</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -359,13 +467,24 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
-        <source>{app}&apos;s captions appear here</source>
-        <translation type="unfinished">Lalabas dito ang mga caption ng {app}</translation>
+        <source>{spoken} → {translation}</source>
+        <extracomment>Short, on a caption window&apos;s bar: the language heard (or &quot;Detect&quot;) and the one its captions are translated into</extracomment>
+        <translation type="unfinished">{spoken} → {translation}</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
-        <source>Looks wrong?</source>
-        <translation type="unfinished">Mukhang mali?</translation>
+        <source>Detect</source>
+        <translation type="unfinished">Alamin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Original only</source>
+        <translation type="unfinished">Orihinal lang</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Your speech is shown here: your microphone is sent to the server only while this is on</source>
+        <translation type="unfinished">Dito ipinapakita ang sinasabi mo: ipinapadala lang sa server ang mic mo habang naka-on ito</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -389,6 +508,36 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Fill the width</source>
+        <translation type="unfinished">Punuin ang lapad</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Fill the width on or off, in every window: captions run on, line by line, in lines as wide as the window - each line of what was said over its translation</source>
+        <translation type="unfinished">Punuin ang lapad, bukas o sarado, sa bawat window: tuloy-tuloy ang mga caption, linya-linya, sa mga linyang kasinglapad ng window - bawat linya ng sinabi sa ibabaw ng salin nito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Line up the parts</source>
+        <translation type="unfinished">Itapat ang mga bahagi</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Line up the parts on or off, in every window: each part of what was said starts at the same place as its translation, so a word&apos;s translation is under it</source>
+        <translation type="unfinished">Itapat ang mga bahagi, bukas o sarado, sa bawat window: nagsisimula ang bawat bahagi ng sinabi sa parehong puwesto ng salin nito, kaya nasa ilalim ng salita ang salin nito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Colour linked words in what was said</source>
+        <translation type="unfinished">Kulayan ang mga salitang naka-ugnay sa sinabi</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Colour linked words in the translation</source>
+        <translation type="unfinished">Kulayan ang mga salitang naka-ugnay sa salin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Smaller text (Ctrl+wheel)</source>
         <translation type="unfinished">Mas maliit na teksto (Ctrl+wheel)</translation>
     </message>
@@ -399,13 +548,28 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
-        <source>Lock all windows</source>
-        <translation type="unfinished">I-lock lahat ng window</translation>
+        <source>Smaller translation</source>
+        <translation type="unfinished">Mas maliit na salin</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
-        <source>Lock - clicks pass through to what&apos;s underneath, Ctrl+Alt+L</source>
-        <translation type="unfinished">I-lock - tumatagos ang mga click sa nasa ilalim, Ctrl+Alt+L</translation>
+        <source>Bigger translation</source>
+        <translation type="unfinished">Mas malaking salin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Same as what was said</source>
+        <translation type="unfinished">Kapareho ng sinabi</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>The translation as big as what was said</source>
+        <translation type="unfinished">Ang salin ay kasinlaki ng sinabi</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Lock all windows</source>
+        <translation type="unfinished">I-lock lahat ng window</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -429,6 +593,26 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Start new windows like this</source>
+        <translation type="unfinished">Simulan nang ganito ang mga bagong window</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>New caption windows take this one&apos;s languages - what they speak too, not Detect</source>
+        <translation type="unfinished">Kukunin ng mga bagong window ng caption ang mga wika nito - pati ang sinasalita, hindi Alamin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Ask when a window opens</source>
+        <translation type="unfinished">Magtanong kapag nagbukas ang window</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>A caption window that opens asks what they speak and what to translate into, until you choose Use as my default there</source>
+        <translation type="unfinished">Nagtatanong ang nagbubukas na caption window kung anong wika ang sinasalita at saan isasalin, hanggang piliin mo roon ang Gamitin bilang default ko</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Show my speech here</source>
         <translation type="unfinished">Ipakita rito ang boses ko</translation>
     </message>
@@ -446,6 +630,16 @@
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Colours, font, word links, timing and the rest - for every window, in Settings</source>
         <translation type="unfinished">Mga kulay, font, ugnay ng salita, timing at iba pa - para sa bawat window, sa Settings</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Copy all captions</source>
+        <translation type="unfinished">Kopyahin ang lahat ng caption</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Every caption this window holds, with its time and translation</source>
+        <translation type="unfinished">Lahat ng caption na hawak ng window na ito, kasama ang oras at salin</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -469,6 +663,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>What this app speaks, and what it&apos;s translated into - change them here</source>
+        <translation type="unfinished">Anong wika ang sinasalita ng app na ito, at saan ito isinasalin - baguhin dito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Stop captioning {app}</source>
         <translation type="unfinished">Itigil ang pag-caption ng {app}</translation>
     </message>
@@ -476,11 +675,6 @@
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Word links need what was said: turn on “Show the original above the translation” in Settings</source>
         <translation type="unfinished">Kailangan ng ugnay ng salita ang orihinal: i-on ang &quot;Ipakita ang orihinal sa ibabaw ng salin&quot; sa Settings</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
-        <source>Original only</source>
-        <translation type="unfinished">Orihinal lang</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -496,6 +690,19 @@
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Back to live</source>
         <translation type="unfinished">Bumalik sa live</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Nothing to copy yet</source>
+        <translation type="unfinished">Wala pang makokopya</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Copied %Ln caption(s)</source>
+        <translation type="unfinished">
+            <numerusform>Nakopya ang %Ln caption</numerusform>
+            <numerusform>Nakopya ang %Ln caption</numerusform>
+        </translation>
     </message>
 </context>
 <context>
@@ -637,127 +844,6 @@
     </message>
 </context>
 <context>
-    <name>ComparisonCard</name>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Looks wrong?</source>
-        <translation type="unfinished">Mukhang mali?</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>What you saw</source>
-        <translation type="unfinished">Ang nakita mo</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Best model</source>
-        <translation type="unfinished">Pinakamahusay na model</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>The best model is right</source>
-        <translation type="unfinished">Tama ang pinakamahusay na model</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Both are fine</source>
-        <translation type="unfinished">Parehong ayos</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Both are wrong</source>
-        <translation type="unfinished">Parehong mali</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Answering is optional. Nothing from this line is kept: the server checks it and forgets it.</source>
-        <translation type="unfinished">Opsiyonal ang pagsagot. Walang iniimbak mula sa linyang ito: sinusuri ito ng server at kinakalimutan.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Send report sends this line&apos;s audio again to our best model; the server checks it and forgets it. Nothing is sent until you press Send report.</source>
-        <translation type="unfinished">Ipinapadala ulit ng &quot;Ipadala ang ulat&quot; ang audio ng linyang ito sa aming pinakamahusay na model; sinusuri ito ng server at kinakalimutan. Walang ipinapadala hangga&apos;t hindi mo pinipindot ang &quot;Ipadala ang ulat&quot;.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Cancel</source>
-        <translation type="unfinished">Kanselahin</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Send report</source>
-        <translation type="unfinished">Ipadala ang ulat</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Done</source>
-        <translation type="unfinished">Tapos</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Think this line is wrong? Our best model can listen to it again and show you its version.</source>
-        <translation type="unfinished">Sa tingin mo mali ang linyang ito? Kayang pakinggan ulit ito ng aming pinakamahusay na model at ipakita ang bersiyon nito.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Checking with our best model…</source>
-        <translation type="unfinished">Sinusuri gamit ang aming pinakamahusay na model…</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Checked with our best model: it heard no words here.</source>
-        <translation type="unfinished">Nasuri gamit ang aming pinakamahusay na model: wala itong narinig na salita rito.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Checked with our best model: it heard the same.</source>
-        <translation type="unfinished">Nasuri gamit ang aming pinakamahusay na model: pareho ang narinig nito.</translation>
-    </message>
-    <message numerus="yes">
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Checked with our best model · about %n s</source>
-        <translation type="unfinished">
-            <numerusform>Nasuri gamit ang aming pinakamahusay na model · mga %n seg</numerusform>
-            <numerusform>Nasuri gamit ang aming pinakamahusay na model · mga %n seg</numerusform>
-        </translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Checked with our best model</source>
-        <translation type="unfinished">Nasuri gamit ang aming pinakamahusay na model</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>The best model isn&apos;t available right now.</source>
-        <translation type="unfinished">Hindi available ngayon ang pinakamahusay na model.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>The best model is busy - try again in a minute.</source>
-        <translation type="unfinished">Abala ang pinakamahusay na model - subukan ulit pagkalipas ng isang minuto.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>This line&apos;s audio isn&apos;t held any more: the app keeps only the last 2 minutes of speech, in memory. Try a newer line.</source>
-        <translation type="unfinished">Wala na ang audio ng linyang ito: ang huling 2 minuto lang ng pagsasalita ang itinatabi ng app, sa memory. Subukan ang mas bagong linya.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Lines are checked while Polyglotic is listening.</source>
-        <translation type="unfinished">Sinusuri ang mga linya habang nakikinig ang Polyglotic.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>No answer from the best model - try again later.</source>
-        <translation type="unfinished">Walang sagot mula sa pinakamahusay na model - subukan ulit mamaya.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>This line couldn&apos;t be checked.</source>
-        <translation type="unfinished">Hindi masuri ang linyang ito.</translation>
-    </message>
-</context>
-<context>
     <name>ConsentDialog</name>
     <message>
         <location filename="../src/polyglotic_desktop/ui/consent.py"/>
@@ -811,6 +897,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/consent.py"/>
+        <source>Daily counts of how often you heard each dictionary word - no sentences, no times of day, nothing from your own mic. They help us improve levels and word suggestions. Your counts stay on this Mac either way.</source>
+        <translation type="unfinished">Araw-araw na bilang kung ilang beses mong narinig ang bawat salita sa diksiyonaryo - walang pangungusap, walang oras, walang galing sa mic mo. Tumutulong ito sa amin na pagbutihin ang mga antas at mungkahing salita. Nananatili sa Mac na ito ang mga bilang mo anuman ang piliin mo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/consent.py"/>
         <source>You&apos;re testing the alpha: usage statistics and crash reports are on while you test, so we can find and fix problems.</source>
         <translation type="unfinished">Tine-test mo ang alpha: naka-on ang mga istatistika ng paggamit at crash report habang nagte-test ka, para mahanap at maayos namin ang mga problema.</translation>
     </message>
@@ -854,6 +945,29 @@
         <source>To caption what you hear, Polyglotic sends the speech it detects to our server. Audio and captions are used only to caption it for you - never stored. To run the service we keep your account, the minutes you listen, connection details (app version, the country you connect from, the kind of app you listen to - never its name) and your learning data: the dictionary words you look up, save or mark, and when - never the sentence around them. Your saved words and word statuses follow you to another PC; your lookups show us how people learn and what the dictionaries miss. You can delete your learning data any time. These aren&apos;t optional: without them there&apos;s no service.</source>
         <translation type="unfinished">Para ma-caption ang naririnig mo, ipinapadala ng Polyglotic sa aming server ang pagsasalitang natutukoy nito. Ginagamit lang ang audio at mga caption para i-caption ito para sa iyo - hindi kailanman iniimbak. Para patakbuhin ang serbisyo, iniimbak namin ang account mo, ang mga minutong nakikinig ka, detalye ng koneksiyon (bersiyon ng app, ang bansang pinagkokonektahan mo, ang uri ng app na pinakikinggan mo - hindi ang pangalan nito) at ang data ng pag-aaral mo: ang mga salita sa diksiyonaryo na hinahanap, sine-save o minamarkahan mo, at kailan - hindi ang pangungusap sa paligid nito. Sumusunod sa iyo sa ibang PC ang mga naka-save na salita at status ng salita; ipinapakita sa amin ng mga hinahanap mo kung paano natututo ang tao at ano ang kulang sa mga diksiyonaryo. Puwede mong burahin ang data ng pag-aaral mo anumang oras. Hindi ito opsiyonal: kung wala ito, walang serbisyo.</translation>
     </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/consent.py"/>
+        <source>To caption what you hear, Polyglotic sends the speech it detects to our server. Audio and captions are used only to caption it for you - never stored. To run the service we keep your account, the minutes you listen, connection details (app version, the country you connect from, the kind of app you listen to - never its name) and your learning data: the dictionary words you look up, save or mark, and when - never the sentence around them. Your saved words and word statuses follow you to another computer; your lookups show us how people learn and what the dictionaries miss. You can delete your learning data any time. These aren&apos;t optional: without them there&apos;s no service.</source>
+        <translation type="unfinished">Para ma-caption ang naririnig mo, ipinapadala ng Polyglotic sa aming server ang pagsasalitang natutukoy nito. Ginagamit lang ang audio at mga caption para i-caption ito para sa iyo - hindi kailanman iniimbak. Para patakbuhin ang serbisyo, iniimbak namin ang account mo, ang mga minutong nakikinig ka, detalye ng koneksiyon (bersiyon ng app, ang bansang pinagkokonektahan mo, ang uri ng app na pinakikinggan mo - hindi ang pangalan nito) at ang data ng pag-aaral mo: ang mga salita sa diksiyonaryo na hinahanap, sine-save o minamarkahan mo, at kailan - hindi ang pangungusap sa paligid nito. Sumusunod sa iyo sa ibang computer ang mga naka-save na salita at status ng salita; ipinapakita sa amin ng mga hinahanap mo kung paano natututo ang tao at ano ang kulang sa mga diksiyonaryo. Puwede mong burahin ang data ng pag-aaral mo anumang oras. Hindi ito opsiyonal: kung wala ito, walang serbisyo.</translation>
+    </message>
+</context>
+<context>
+    <name>Copying</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/copying.py"/>
+        <source>Copy</source>
+        <translation type="unfinished">Kopyahin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/copying.py"/>
+        <source>Select all</source>
+        <translation type="unfinished">Piliin lahat</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/copying.py"/>
+        <source>Copied</source>
+        <translation type="unfinished">Nakopya</translation>
+    </message>
 </context>
 <context>
     <name>DeleteLearningDialog</name>
@@ -874,8 +988,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/delete_learning.py"/>
-        <source>Also delete it from this PC, for the language you&apos;re learning now - your word statuses, saved words and how often you heard each word</source>
-        <translation type="unfinished">Burahin din sa PC na ito, para sa wikang pinag-aaralan mo ngayon - ang mga status ng salita, naka-save na salita at gaano kadalas mong narinig ang bawat salita</translation>
+        <source>We&apos;ll delete the words you looked up, saved and marked, and any exposure counts you shared, in every language you learn. Your other computers keep their own copies until you delete them there too.</source>
+        <translation type="unfinished">Buburahin namin ang mga salitang hinanap, na-save at minarkahan mo, at ang mga bilang ng pagkakarinig na ibinahagi mo, sa bawat wikang pinag-aaralan mo. Itatabi ng iba mong computer ang sarili nilang kopya hanggang burahin mo rin doon.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/delete_learning.py"/>
+        <source>Also delete it from this PC, in every language you&apos;re learning - your word statuses, saved words and how often you heard each word</source>
+        <translation type="unfinished">Burahin din sa PC na ito, sa bawat wikang pinag-aaralan mo - ang mga status ng salita, naka-save na salita at gaano kadalas mong narinig ang bawat salita</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/delete_learning.py"/>
+        <source>Also delete it from this Mac, in every language you&apos;re learning - your word statuses, saved words and how often you heard each word</source>
+        <translation type="unfinished">Burahin din sa Mac na ito, sa bawat wikang pinag-aaralan mo - ang mga status ng salita, naka-save na salita at gaano kadalas mong narinig ang bawat salita</translation>
     </message>
     <message numerus="yes">
         <location filename="../src/polyglotic_desktop/ui/delete_learning.py"/>
@@ -883,6 +1007,14 @@
         <translation type="unfinished">
             <numerusform>Buburahin din nito ang %Ln kopya ng data ng pag-aaral mo na itinabi sa PC na ito nang matuklasang sira ito.</numerusform>
             <numerusform>Buburahin din nito ang %Ln kopya ng data ng pag-aaral mo na itinabi sa PC na ito nang matuklasang sira ang mga ito.</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui/delete_learning.py"/>
+        <source>This also deletes the %Ln copy(s) of your learning data set aside on this Mac when it was found damaged.</source>
+        <translation type="unfinished">
+            <numerusform>Buburahin din nito ang %Ln kopya ng data ng pag-aaral mo na itinabi sa Mac na ito nang matuklasang sira ito.</numerusform>
+            <numerusform>Buburahin din nito ang %Ln kopya ng data ng pag-aaral mo na itinabi sa Mac na ito nang matuklasang sira ang mga ito.</numerusform>
         </translation>
     </message>
     <message>
@@ -895,8 +1027,18 @@
     <name>DesktopApp</name>
     <message>
         <location filename="../src/polyglotic_desktop/main.py"/>
-        <source>This PC</source>
-        <translation type="unfinished">PC na ito</translation>
+        <source>Your Mac didn&apos;t allow Polyglotic to use the microphone, so your own speech isn&apos;t captioned. To caption it, allow Polyglotic in System Settings &gt; Privacy &amp; Security &gt; Microphone, then turn on Show my speech here.</source>
+        <translation type="unfinished">Hindi pinayagan ng Mac mo ang Polyglotic na gamitin ang mikropono, kaya walang caption ang sarili mong boses. Para ma-caption ito, payagan ang Polyglotic sa System Settings &gt; Privacy &amp; Security &gt; Microphone, saka i-on ang Ipakita rito ang boses ko.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/main.py"/>
+        <source>Everything the PC plays</source>
+        <translation type="unfinished">Lahat ng pinapatugtog ng PC</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/main.py"/>
+        <source>Everything the Mac plays</source>
+        <translation type="unfinished">Lahat ng pinapatugtog ng Mac</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/main.py"/>
@@ -907,6 +1049,16 @@
         <location filename="../src/polyglotic_desktop/main.py"/>
         <source>You</source>
         <translation type="unfinished">Ikaw</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/main.py"/>
+        <source>Some of your {language} learning data couldn&apos;t be deleted from this PC. Restart Polyglotic, then delete it again on Account.</source>
+        <translation type="unfinished">Hindi nabura sa PC na ito ang ilan sa iyong learning data sa {language}. I-restart ang Polyglotic, pagkatapos ay burahin ulit sa Account.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/main.py"/>
+        <source>Some of your {language} learning data couldn&apos;t be deleted from this Mac. Restart Polyglotic, then delete it again on Account.</source>
+        <translation type="unfinished">Hindi nabura sa Mac na ito ang ilan sa iyong learning data sa {language}. I-restart ang Polyglotic, pagkatapos ay burahin ulit sa Account.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/main.py"/>
@@ -923,6 +1075,11 @@
         <location filename="../src/polyglotic_desktop/main.py"/>
         <source>Windows on this PC couldn&apos;t caption one app alone, so Polyglotic captions everything the PC plays. You can try apps again on Home.</source>
         <translation type="unfinished">Hindi ma-caption ng Windows sa PC na ito ang iisang app lang, kaya kina-caption ng Polyglotic ang lahat ng pinapatugtog ng PC. Puwede mong subukan ulit ang mga app sa Home.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/main.py"/>
+        <source>This Mac couldn&apos;t caption one app alone, so Polyglotic captions everything the Mac plays. You can try apps again on Home.</source>
+        <translation type="unfinished">Hindi ma-caption ng Mac na ito ang iisang app lang, kaya kina-caption ng Polyglotic ang lahat ng pinapatugtog ng Mac. Puwede mong subukan ulit ang mga app sa Home.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
@@ -1006,13 +1163,13 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
-        <source>Resume</source>
-        <translation type="unfinished">Ituloy</translation>
+        <source>Stop captioning and close Polyglotic - closing the window keeps it in the menu bar</source>
+        <translation type="unfinished">Itigil ang pag-caption at isara ang Polyglotic - kapag isinara ang window, nananatili ito sa menu bar</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
-        <source>Check the newest line with our best model</source>
-        <translation type="unfinished">Suriin ang pinakabagong linya gamit ang aming pinakamahusay na model</translation>
+        <source>Resume</source>
+        <translation type="unfinished">Ituloy</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
@@ -1021,8 +1178,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
-        <source>Detect the language</source>
-        <translation type="unfinished">Alamin ang wika</translation>
+        <source>Detect automatically</source>
+        <translation type="unfinished">Awtomatikong alamin</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
@@ -1033,6 +1190,19 @@
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
         <source>Hold {key} and speak: your words are typed where your cursor is</source>
         <translation type="unfinished">Pindutin nang matagal ang {key} at magsalita: ita-type ang mga salita mo kung nasaan ang cursor</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/app.py"/>
+        <source>Captioning {apps} while hidden</source>
+        <translation type="unfinished">Nagka-caption ng {apps} habang nakatago</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui/app.py"/>
+        <source>Captions paused after %n minute(s) hidden - show the windows to carry on</source>
+        <translation type="unfinished">
+            <numerusform>Naka-pause ang mga caption pagkatapos ng %n minutong nakatago - ipakita ang mga window para magpatuloy</numerusform>
+            <numerusform>Naka-pause ang mga caption pagkatapos ng %n minutong nakatago - ipakita ang mga window para magpatuloy</numerusform>
+        </translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
@@ -1051,6 +1221,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
+        <source>It&apos;s in the menu bar. Resume or quit from there.</source>
+        <translation type="unfinished">Nasa menu bar ito. Ituloy o lumabas mula roon.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/app.py"/>
         <source>Polyglotic is still running</source>
         <translation type="unfinished">Tumatakbo pa rin ang Polyglotic</translation>
     </message>
@@ -1058,6 +1233,11 @@
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
         <source>It&apos;s in the tray. Quit from there.</source>
         <translation type="unfinished">Nasa system tray ito. Lumabas mula roon.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/app.py"/>
+        <source>It&apos;s in the menu bar. Quit from there.</source>
+        <translation type="unfinished">Nasa menu bar ito. Lumabas mula roon.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
@@ -1101,12 +1281,29 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
+        <source>Lots of speech at once - live updates slowed; captions continue</source>
+        <translation type="unfinished">Maraming nagsasalita nang sabay - bumagal ang live update; tuloy ang caption</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/app.py"/>
         <source>Listening moved to another device</source>
         <translation type="unfinished">Lumipat ang pakikinig sa ibang device</translation>
     </message>
 </context>
 <context>
     <name>DictationKey</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
+        <source>Right {key}</source>
+        <extracomment>a modifier key on the right of a Mac&apos;s keyboard: {key} is its symbol (⌘)</extracomment>
+        <translation type="unfinished">Kanang {key}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
+        <source>Left {key}</source>
+        <extracomment>a modifier key on the left of a Mac&apos;s keyboard: {key} is its symbol (⌘)</extracomment>
+        <translation type="unfinished">Kaliwang {key}</translation>
+    </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
         <source>Ctrl</source>
@@ -1270,6 +1467,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
+        <source>That key types. Hold it with ⌘ or ⌃, or choose another.</source>
+        <translation type="unfinished">Nagta-type ang key na iyan. Pindutin ito kasabay ng ⌘ o ⌃, o pumili ng iba.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
         <source>Esc cancels dictation: choose another key.</source>
         <translation type="unfinished">Kinakansela ng Esc ang dictation: pumili ng ibang key.</translation>
     </message>
@@ -1280,8 +1482,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
+        <source>macOS keeps that one for itself: choose another.</source>
+        <translation type="unfinished">Itinatabi ng macOS ang isang iyan para sa sarili nito: pumili ng iba.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
         <source>Every program uses that one (copy, paste…): add Alt or Shift to it.</source>
         <translation type="unfinished">Ginagamit iyan ng bawat program (copy, paste…): dagdagan ng Alt o Shift.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
+        <source>Every app uses that one (copy, paste…): add ⌥ or ⇧ to it.</source>
+        <translation type="unfinished">Ginagamit iyan ng bawat app (copy, paste…): dagdagan ng ⌥ o ⇧.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
@@ -1290,8 +1502,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
+        <source>On their own, only Right ⌘ or ⌃⌘ work: hold ⌘, ⌥ or ⇧ with a key.</source>
+        <translation type="unfinished">Kapag mag-isa, Kanang ⌘ o ⌃⌘ lang ang gumagana: pindutin ang ⌘, ⌥ o ⇧ kasabay ng isang key.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
         <source>Letting go of Alt opens a program&apos;s menu, and your words would go there: hold Ctrl with it too.</source>
         <translation type="unfinished">Kapag binitawan ang Alt, nagbubukas ang menu ng program at doon mapupunta ang mga salita mo: pindutin din ang Ctrl.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
+        <source>⌥ with a key types a character of its own: hold ⌘ with it too.</source>
+        <translation type="unfinished">Ang ⌥ kasabay ng isang key ay nagta-type ng sariling character: pindutin din ang ⌘.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
@@ -1360,6 +1582,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/dictation_sign.py"/>
         <source>Couldn&apos;t type it here</source>
         <translation type="unfinished">Hindi ma-type dito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/dictation_sign.py"/>
+        <source>Not allowed to type - see Settings &gt; Dictation</source>
+        <translation type="unfinished">Hindi pinapayagang mag-type - tingnan ang Settings &gt; Dictation</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/dictation_sign.py"/>
@@ -1433,6 +1660,11 @@
         <location filename="../src/polyglotic_desktop/ui/feedback.py"/>
         <source>There&apos;s no log on this PC yet.</source>
         <translation type="unfinished">Wala pang log sa PC na ito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/feedback.py"/>
+        <source>There&apos;s no log on this Mac yet.</source>
+        <translation type="unfinished">Wala pang log sa Mac na ito.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/feedback.py"/>
@@ -1567,6 +1799,16 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>What&apos;s new</source>
+        <translation type="unfinished">Ano&apos;ng bago</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>The release notes are in English.</source>
+        <translation type="unfinished">Nasa Ingles ang release notes.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Still stuck?</source>
         <translation type="unfinished">Hindi pa rin ayos?</translation>
     </message>
@@ -1582,8 +1824,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Version {version}</source>
+        <translation type="unfinished">Bersyon {version}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Changes aren&apos;t kept on this PC until you restart Polyglotic; your saved words then come back from your account. The old file is kept as {path}, in case we ask for it in a report.</source>
         <translation type="unfinished">Hindi itinatabi sa PC na ito ang mga pagbabago hanggang i-restart mo ang Polyglotic; babalik ang mga naka-save na salita mula sa account mo. Itinabi ang lumang file bilang {path}, kung sakaling hingin namin ito sa ulat.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Changes aren&apos;t kept on this Mac until you restart Polyglotic; your saved words then come back from your account. The old file is kept as {path}, in case we ask for it in a report.</source>
+        <translation type="unfinished">Hindi itinatabi sa Mac na ito ang mga pagbabago hanggang i-restart mo ang Polyglotic; babalik ang mga naka-save na salita mula sa account mo. Itinabi ang lumang file bilang {path}, kung sakaling hingin namin ito sa ulat.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1594,6 +1846,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Your learning data on this PC was damaged and has been set aside</source>
         <translation type="unfinished">Sira ang data ng pag-aaral mo sa PC na ito kaya itinabi ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Your learning data on this Mac was damaged and has been set aside</source>
+        <translation type="unfinished">Sira ang data ng pag-aaral mo sa Mac na ito kaya itinabi ito</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1662,6 +1919,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Sign in on Account with your invite code - the one this Mac used before works again - or the code in your Plus email.</source>
+        <translation type="unfinished">Mag-sign in sa Account gamit ang invite code mo - gagana ulit ang ginamit dati ng Mac na ito - o ang code sa Plus email mo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Plus has ended</source>
         <translation type="unfinished">Tapos na ang Plus</translation>
     </message>
@@ -1679,6 +1941,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>It downloads the update and restarts by itself. If it doesn&apos;t, quit from the tray and start it again.</source>
         <translation type="unfinished">Dina-download nito ang update at kusang nagre-restart. Kung hindi, lumabas mula sa tray at buksan ulit.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>It downloads the update and restarts by itself. If it doesn&apos;t, quit from the menu bar and start it again.</source>
+        <translation type="unfinished">Dina-download nito ang update at kusang nagre-restart. Kung hindi, lumabas mula sa menu bar at buksan ulit.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1702,6 +1969,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Quit from the menu bar and start Polyglotic again. If it keeps happening, report a problem.</source>
+        <translation type="unfinished">Lumabas mula sa menu bar at buksan ulit ang Polyglotic. Kung paulit-ulit, mag-ulat ng problema.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Nothing is added to caption</source>
         <translation type="unfinished">Walang naidagdag na ika-caption</translation>
     </message>
@@ -1709,6 +1981,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>On Home, add an app (up to 3), or choose Everything the PC plays.</source>
         <translation type="unfinished">Sa Home, magdagdag ng app (hanggang 3), o piliin ang Lahat ng pinapatugtog ng PC.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>On Home, add an app (up to 3), or choose Everything the Mac plays.</source>
+        <translation type="unfinished">Sa Home, magdagdag ng app (hanggang 3), o piliin ang Lahat ng pinapatugtog ng Mac.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1732,13 +2009,28 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Is it playing sound? Is its output going to this Mac&apos;s speakers or headset, and not muted?</source>
+        <translation type="unfinished">Nagpapatugtog ba ito ng tunog? Pumupunta ba ang output sa speaker o headset ng Mac na ito, at hindi naka-mute?</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>The PC is quiet: nothing it plays has made sound in 30 seconds</source>
         <translation type="unfinished">Tahimik ang PC: walang tumunog sa pinapatugtog nito sa loob ng 30 segundo</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>The Mac is quiet: nothing it plays has made sound in 30 seconds</source>
+        <translation type="unfinished">Tahimik ang Mac: walang tumunog sa pinapatugtog nito sa loob ng 30 segundo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Play something. If you hear it on a headset that isn&apos;t the PC&apos;s default device, make that the default, or add the app instead.</source>
         <translation type="unfinished">Magpatugtog ng kahit ano. Kung naririnig mo ito sa headset na hindi default na device ng PC, gawin itong default, o idagdag na lang ang app.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Play something. If you hear it on a headset that isn&apos;t the Mac&apos;s default device, make that the default, or add the app instead.</source>
+        <translation type="unfinished">Magpatugtog ng kahit ano. Kung naririnig mo ito sa headset na hindi default na device ng Mac, gawin itong default, o idagdag na lang ang app.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1749,6 +2041,33 @@
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Is it muted, or is another microphone chosen in the PC&apos;s sound settings?</source>
         <translation type="unfinished">Naka-mute ba ito, o ibang mic ang napili sa sound settings ng PC?</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Is it muted, or is another microphone chosen in the Mac&apos;s sound settings?</source>
+        <translation type="unfinished">Naka-mute ba ito, o ibang mic ang napili sa sound settings ng Mac?</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Polyglotic isn&apos;t allowed to hear what the Mac plays</source>
+        <translation type="unfinished">Walang pahintulot ang Polyglotic na marinig ang pinapatugtog ng Mac</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>In System Settings, open Privacy &amp; Security, then Screen &amp; System Audio Recording, and turn on Polyglotic under System Audio Recording Only. Then quit Polyglotic and open it again.</source>
+        <extracomment>macOS System Settings&apos; own names (macOS 15 and later): keep them as the Mac shows them in the language</extracomment>
+        <translation type="unfinished">Sa System Settings, buksan ang Privacy &amp; Security, pagkatapos ang Screen &amp; System Audio Recording, at i-on ang Polyglotic sa ilalim ng System Audio Recording Only. Pagkatapos, isara ang Polyglotic at buksan itong muli.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Polyglotic isn&apos;t allowed to use the microphone</source>
+        <translation type="unfinished">Walang pahintulot ang Polyglotic na gamitin ang mikropono</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>In System Settings, open Privacy &amp; Security, then Microphone, and turn on Polyglotic. Then quit Polyglotic and open it again.</source>
+        <extracomment>macOS System Settings&apos; own names: keep them as the Mac shows them</extracomment>
+        <translation type="unfinished">Sa System Settings, buksan ang Privacy &amp; Security, pagkatapos ang Microphone, at i-on ang Polyglotic. Pagkatapos, isara ang Polyglotic at buksan itong muli.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1772,6 +2091,21 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Choose Resume on Home or in the menu bar&apos;s menu, or press Ctrl+Alt+P.</source>
+        <translation type="unfinished">Piliin ang Ituloy sa Home o sa menu ng menu bar, o pindutin ang Ctrl+Alt+P.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Choose Resume on Home or in the tray menu.</source>
+        <translation type="unfinished">Piliin ang Ituloy sa Home o sa menu ng tray.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Choose Resume on Home or in the menu bar&apos;s menu.</source>
+        <translation type="unfinished">Piliin ang Ituloy sa Home o sa menu ng menu bar.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>The caption windows are hidden</source>
         <translation type="unfinished">Nakatago ang mga window ng caption</translation>
     </message>
@@ -1782,6 +2116,21 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Press Ctrl+Alt+H, or use Hide all on Home or the menu bar&apos;s menu. An app&apos;s transcript shows whether captions are arriving.</source>
+        <translation type="unfinished">Pindutin ang Ctrl+Alt+H, o gamitin ang Itago lahat sa Home o sa menu ng menu bar. Makikita sa transcript ng app kung may dumarating na caption.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Use Hide all on Home or the tray menu. An app&apos;s transcript shows whether captions are arriving.</source>
+        <translation type="unfinished">Gamitin ang Itago lahat sa Home o sa menu ng tray. Makikita sa transcript ng app kung may dumarating na caption.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Use Hide all on Home or the menu bar&apos;s menu. An app&apos;s transcript shows whether captions are arriving.</source>
+        <translation type="unfinished">Gamitin ang Itago lahat sa Home o sa menu ng menu bar. Makikita sa transcript ng app kung may dumarating na caption.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Captions are failing on the server</source>
         <translation type="unfinished">Pumapalya ang caption sa server</translation>
     </message>
@@ -1789,6 +2138,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>It keeps trying by itself - nothing on this PC needs changing. If it goes on for more than a few minutes, report a problem.</source>
         <translation type="unfinished">Kusa itong patuloy na sumusubok - walang kailangang baguhin sa PC na ito. Kung tumagal nang higit sa ilang minuto, mag-ulat ng problema.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>It keeps trying by itself - nothing on this Mac needs changing. If it goes on for more than a few minutes, report a problem.</source>
+        <translation type="unfinished">Kusa itong patuloy na sumusubok - walang kailangang baguhin sa Mac na ito. Kung tumagal nang higit sa ilang minuto, mag-ulat ng problema.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1807,8 +2161,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Caption apps you add (macOS 14.2 or later)</source>
+        <translation type="unfinished">I-caption ang mga app na idinagdag mo (macOS 14.2 o mas bago)</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>On Home, add up to 3 apps with sound open; each gets a caption window of its own, labelled with its name. An app you added that isn&apos;t open is captioned when it opens. Windows 10 can&apos;t tell apps apart, so there everything the PC plays is captioned.</source>
         <translation type="unfinished">Sa Home, magdagdag ng hanggang 3 app na may bukas na tunog; may sariling window ng caption ang bawat isa, may pangalan nito. Kina-caption ang idinagdag na app na hindi pa bukas kapag nabuksan ito. Hindi mapaghiwalay ng Windows 10 ang mga app, kaya doon kina-caption ang lahat ng pinapatugtog ng PC.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>On Home, add up to 3 apps with sound open; each gets a caption window of its own, labelled with its name. An app you added that isn&apos;t open is captioned when it opens. Before macOS 14.2 a Mac can&apos;t tell apps apart, so there everything the Mac plays is captioned.</source>
+        <translation type="unfinished">Sa Home, magdagdag ng hanggang 3 app na may bukas na tunog; may sariling window ng caption ang bawat isa, may pangalan nito. Kina-caption ang idinagdag na app na hindi pa bukas kapag nabuksan ito. Bago ang macOS 14.2, hindi mapaghiwalay ng Mac ang mga app, kaya doon kina-caption ang lahat ng pinapatugtog ng Mac.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1822,13 +2186,28 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>With one app added on Home, turn on Also caption everything else the Mac plays: everything except that app gets a caption window of its own, labelled Everything else - a call in one window, the game or video in the other, nothing in both. It&apos;s there with one app at a time.</source>
+        <translation type="unfinished">Kapag may isang app sa Home, i-on ang I-caption din ang lahat ng iba pang pinapatugtog ng Mac: may sariling window ng caption ang lahat maliban sa app na iyon, na may pangalang Lahat ng iba pa - ang tawag sa isang window, ang laro o video sa isa pa, walang doble. Gumagana ito sa isang app nang sabay.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Caption everything the PC plays</source>
         <translation type="unfinished">I-caption ang lahat ng pinapatugtog ng PC</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Caption everything the Mac plays</source>
+        <translation type="unfinished">I-caption ang lahat ng pinapatugtog ng Mac</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>On Home, choose Everything the PC plays: all it plays through its default speakers or headset, labelled This PC. If your headset isn&apos;t the default device, make it the default.</source>
         <translation type="unfinished">Sa Home, piliin ang Lahat ng pinapatugtog ng PC: lahat ng tumutunog sa default na speaker o headset nito, may pangalang PC na ito. Kung hindi default na device ang headset mo, gawin itong default.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>On Home, choose Everything the Mac plays: all it plays through its default speakers or headset, labelled This Mac. If your headset isn&apos;t the default device, make it the default.</source>
+        <translation type="unfinished">Sa Home, piliin ang Lahat ng pinapatugtog ng Mac: lahat ng tumutunog sa default na speaker o headset nito, may pangalang Mac na ito. Kung hindi default na device ang headset mo, gawin itong default.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1842,6 +2221,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Turn on Show my speech here in a caption window&apos;s settings, or Caption my own speech in the menu bar&apos;s menu for every window. It&apos;s off until you do, and your microphone&apos;s audio goes to the server only while a window shows it.</source>
+        <translation type="unfinished">I-on ang Ipakita rito ang boses ko sa settings ng window ng caption, o ang I-caption ang sarili kong boses sa menu ng menu bar para sa bawat window. Naka-off ito hangga&apos;t hindi mo ino-on, at pumupunta lang sa server ang audio ng mic mo habang may window na nagpapakita nito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Move, lock and resize the caption windows</source>
         <translation type="unfinished">Ilipat, i-lock at i-resize ang mga window ng caption</translation>
     </message>
@@ -1849,6 +2233,16 @@
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Drag a caption window to move it, or drag its edges to resize it. Lock all (Ctrl+Alt+L) lets clicks pass through; Hide all is Ctrl+Alt+H; Pause captions is Ctrl+Alt+P. Lost one? Reset positions on Home puts every window back.</source>
         <translation type="unfinished">Hilahin ang window ng caption para ilipat ito, o ang mga gilid nito para baguhin ang laki. Pinatatagos ng I-lock lahat (Ctrl+Alt+L) ang mga click; Ctrl+Alt+H ang Itago lahat; Ctrl+Alt+P ang I-pause ang mga caption. May nawala? Ibinabalik ng I-reset ang posisyon sa Home ang bawat window.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Drag a caption window to move it, or drag its edges to resize it. Lock all, on Home or in the tray menu, lets clicks pass through. Lost one? Reset positions on Home puts every window back.</source>
+        <translation type="unfinished">Hilahin ang window ng caption para ilipat ito, o ang mga gilid nito para baguhin ang laki. Pinatatagos ng I-lock lahat, sa Home o sa menu ng tray, ang mga click. May nawala? Ibinabalik ng I-reset ang posisyon sa Home ang bawat window.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Drag a caption window to move it, or drag its edges to resize it. Lock all, on Home or in the menu bar&apos;s menu, lets clicks pass through. Lost one? Reset positions on Home puts every window back.</source>
+        <translation type="unfinished">Hilahin ang window ng caption para ilipat ito, o ang mga gilid nito para baguhin ang laki. Pinatatagos ng I-lock lahat, sa Home o sa menu ng menu bar, ang mga click. May nawala? Ibinabalik ng I-reset ang posisyon sa Home ang bawat window.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1862,13 +2256,28 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>A caption window never takes the game&apos;s keyboard or mouse: it is never the active window. Put it where it doesn&apos;t cover what you need to see, then Lock all on Home or in the tray menu so clicks go through to the game. A game in exclusive full screen covers every other window: choose its borderless or windowed full screen instead.</source>
+        <translation type="unfinished">Hindi kailanman kinukuha ng window ng caption ang keyboard o mouse ng laro: hindi ito kailanman ang aktibong window. Ilagay ito kung saan hindi nito natatakpan ang kailangan mong makita, saka I-lock lahat sa Home o sa menu ng tray para sa laro mapunta ang mga click. Tinatakpan ng larong naka-exclusive full screen ang lahat ng ibang window: piliin na lang ang borderless o windowed full screen nito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>A caption window never takes the game&apos;s keyboard or mouse: it is never the active window. Put it where it doesn&apos;t cover what you need to see, then Lock all on Home or in the menu bar&apos;s menu so clicks go through to the game. A game in exclusive full screen covers every other window: choose its borderless or windowed full screen instead.</source>
+        <translation type="unfinished">Hindi kailanman kinukuha ng window ng caption ang keyboard o mouse ng laro: hindi ito kailanman ang aktibong window. Ilagay ito kung saan hindi nito natatakpan ang kailangan mong makita, saka I-lock lahat sa Home o sa menu ng menu bar para sa laro mapunta ang mga click. Tinatakpan ng larong naka-exclusive full screen ang lahat ng ibang window: piliin na lang ang borderless o windowed full screen nito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Dictate into any program (preview)</source>
         <translation type="unfinished">Mag-dictate sa kahit anong program (preview)</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
-        <source>Turn on Dictation in Settings &gt; App, or in the tray menu. Hold {key} and speak; let go, and your words are typed where your cursor is. Esc cancels before they&apos;re typed. To use another key or combination, click the key in Settings &gt; App and press the one you want.</source>
-        <translation type="unfinished">I-on ang Dictation sa Settings &gt; App, o sa menu ng tray. Pindutin ang {key} at magsalita; bitawan, at ita-type ang mga salita mo kung nasaan ang cursor. Kinakansela ng Esc bago ma-type. Para gumamit ng ibang key o kombinasyon, i-click ang key sa Settings &gt; App at pindutin ang gusto mo.</translation>
+        <source>Turn on Dictation in Settings &gt; Dictation, or in the tray menu. Hold {key} and speak; let go, and your words are typed where your cursor is. Esc cancels before they&apos;re typed. To use another key or combination, click the key in Settings &gt; Dictation and press the one you want.</source>
+        <translation type="unfinished">I-on ang Dictation sa Settings &gt; Dictation, o sa menu ng tray. Pindutin ang {key} at magsalita; bitawan, at ita-type ang mga salita mo kung nasaan ang cursor. Kinakansela ng Esc bago ma-type. Para gumamit ng ibang key o kombinasyon, i-click ang key sa Settings &gt; Dictation at pindutin ang gusto mo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Turn on Dictation in Settings &gt; Dictation, or in the menu bar&apos;s menu. Hold {key} and speak; let go, and your words are typed where your cursor is. Esc cancels before they&apos;re typed. To use another key or combination, click the key in Settings &gt; Dictation and press the one you want.</source>
+        <translation type="unfinished">I-on ang Dictation sa Settings &gt; Dictation, o sa menu ng menu bar. Pindutin ang {key} at magsalita; bitawan, at ita-type ang mga salita mo kung nasaan ang cursor. Kinakansela ng Esc bago ma-type. Para gumamit ng ibang key o kombinasyon, i-click ang key sa Settings &gt; Dictation at pindutin ang gusto mo.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1877,8 +2286,13 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
-        <source>Only speech leaves this PC: our server turns it into captions and translations, and never stores the audio, the captions or the translations. This PC holds the last 2 minutes of each app&apos;s finished speech in memory, so &quot;Looks wrong?&quot; can send that line&apos;s audio again to be checked - only when you ask. Your transcript never leaves this PC, and it&apos;s gone when you quit Polyglotic unless you save it. We keep your account, your minutes, a record of each session (never what was said or the app&apos;s name) and the dictionary words you look up, save or mark - never the sentence around them. Usage statistics and word counts are shared only if you turn them on (Account &gt; Choose what to share), and you can delete your learning data on Account. The privacy notice, below, says it all.</source>
-        <translation type="unfinished">Pagsasalita lang ang lumalabas sa PC na ito: ginagawa itong caption at salin ng aming server, at hindi kailanman iniimbak ang audio, mga caption o mga salin. Itinatabi ng PC na ito sa memory ang huling 2 minuto ng tapos na pagsasalita ng bawat app, para maipadala ulit ng &quot;Mukhang mali?&quot; ang audio ng linyang iyon para masuri - kapag hiniling mo lang. Hindi kailanman lumalabas sa PC na ito ang transcript mo, at nawawala ito kapag isinara mo ang Polyglotic maliban kung i-save mo. Iniimbak namin ang account mo, ang mga minuto mo, isang tala ng bawat session (hindi kailanman ang sinabi o ang pangalan ng app) at ang mga salita sa diksiyonaryo na hinahanap, sine-save o minamarkahan mo - hindi kailanman ang pangungusap sa paligid nito. Ibinabahagi lang ang mga istatistika ng paggamit at bilang ng salita kung i-on mo sila (Account &gt; Piliin ang ibabahagi), at puwede mong burahin ang data ng pag-aaral mo sa Account. Sinasabi ng abiso sa privacy sa ibaba ang lahat.</translation>
+        <source>Only speech leaves this PC: our server turns it into captions and translations, and never stores the audio, the captions or the translations. This PC holds the last 2 minutes of each app&apos;s finished speech in memory, and sends it again only when you ask. Your transcript never leaves this PC, and it&apos;s gone when you quit Polyglotic unless you save it. We keep your account, your minutes, a record of each session (never what was said or the app&apos;s name) and the dictionary words you look up, save or mark - never the sentence around them. Usage statistics and word counts are shared only if you turn them on (Account &gt; Choose what to share), and you can delete your learning data on Account. The privacy notice, below, says it all.</source>
+        <translation type="unfinished">Pagsasalita lang ang lumalabas sa PC na ito: ginagawa itong caption at salin ng aming server, at hindi kailanman iniimbak ang audio, mga caption o mga salin. Itinatabi ng PC na ito sa memory ang huling 2 minuto ng tapos na pagsasalita ng bawat app, at ipinapadala lang ito ulit kapag hiniling mo. Hindi kailanman lumalabas sa PC na ito ang transcript mo, at nawawala ito kapag isinara mo ang Polyglotic maliban kung i-save mo. Iniimbak namin ang account mo, ang mga minuto mo, isang tala ng bawat session (hindi kailanman ang sinabi o ang pangalan ng app) at ang mga salita sa diksiyonaryo na hinahanap, sine-save o minamarkahan mo - hindi kailanman ang pangungusap sa paligid nito. Ibinabahagi lang ang mga istatistika ng paggamit at bilang ng salita kung i-on mo sila (Account &gt; Piliin ang ibabahagi), at puwede mong burahin ang data ng pag-aaral mo sa Account. Sinasabi ng abiso sa privacy sa ibaba ang lahat.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Only speech leaves this Mac: our server turns it into captions and translations, and never stores the audio, the captions or the translations. This Mac holds the last 2 minutes of each app&apos;s finished speech in memory, and sends it again only when you ask. Your transcript never leaves this Mac, and it&apos;s gone when you quit Polyglotic unless you save it. We keep your account, your minutes, a record of each session (never what was said or the app&apos;s name) and the dictionary words you look up, save or mark - never the sentence around them. Usage statistics and word counts are shared only if you turn them on (Account &gt; Choose what to share), and you can delete your learning data on Account. The privacy notice, below, says it all.</source>
+        <translation type="unfinished">Pagsasalita lang ang lumalabas sa Mac na ito: ginagawa itong caption at salin ng aming server, at hindi kailanman iniimbak ang audio, mga caption o mga salin. Itinatabi ng Mac na ito sa memory ang huling 2 minuto ng tapos na pagsasalita ng bawat app, at ipinapadala lang ito ulit kapag hiniling mo. Hindi kailanman lumalabas sa Mac na ito ang transcript mo, at nawawala ito kapag isinara mo ang Polyglotic maliban kung i-save mo. Iniimbak namin ang account mo, ang mga minuto mo, isang tala ng bawat session (hindi kailanman ang sinabi o ang pangalan ng app) at ang mga salita sa diksiyonaryo na hinahanap, sine-save o minamarkahan mo - hindi kailanman ang pangungusap sa paligid nito. Ibinabahagi lang ang mga istatistika ng paggamit at bilang ng salita kung i-on mo sila (Account &gt; Piliin ang ibabahagi), at puwede mong burahin ang data ng pag-aaral mo sa Account. Sinasabi ng abiso sa privacy sa ibaba ang lahat.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1887,8 +2301,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
-        <source>Captions and translations are made by machine and can be wrong, most of all with names, slang, music behind a voice and several people talking at once. Add slang, memes and names you hear often - rizz, yyds, a streamer&apos;s name - in Names and slang, under Settings &gt; Captions &gt; Speech, so they&apos;re spelled your way.</source>
-        <translation type="unfinished">Gawa ng makina ang mga caption at salin at puwedeng magkamali, lalo na sa mga pangalan, slang, musika sa likod ng boses at ilang taong sabay na nagsasalita. Idagdag ang slang, meme at pangalang madalas mong marinig - rizz, yyds, pangalan ng isang streamer - sa Mga pangalan at slang, sa Settings &gt; Mga caption &gt; Pagsasalita, para maisulat sila sa paraan mo.</translation>
+        <source>Captions and translations are made by machine and can be wrong, most of all with names, slang, music behind a voice and several people talking at once. Add slang, memes and names you hear often - rizz, yyds, a streamer&apos;s name - in Names and slang, under Settings &gt; Speech, so they&apos;re spelled your way.</source>
+        <translation type="unfinished">Gawa ng makina ang mga caption at salin at puwedeng magkamali, lalo na sa mga pangalan, slang, musika sa likod ng boses at ilang taong sabay na nagsasalita. Idagdag ang slang, meme at pangalang madalas mong marinig - rizz, yyds, pangalan ng isang streamer - sa Mga pangalan at slang, sa Settings &gt; Pagsasalita, para maisulat sila sa paraan mo.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1897,8 +2311,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
-        <source>Steady, the default: each sentence appears once, finished and translated, about half a second after it ends; a small bar moves under the captions while it&apos;s on its way, and if the speaker talks on, a dim line shows the words so far. Quick preview: a dim first line after about 2 seconds, then the finished caption and its translation when the sentence ends. Live updates: words appear as they&apos;re said and rewrite themselves until the sentence ends. Choose one in Settings &gt; Captions &gt; Timing, or in a caption window&apos;s settings. In every one, nobody talks longer than the Longest wait for text (3 seconds, unless you change it) before you see text.</source>
-        <translation type="unfinished">Matatag, ang default: lumalabas ang bawat pangungusap nang isang beses, tapos at nakasalin, mga kalahating segundo matapos itong matapos; may maliit na bar na gumagalaw sa ilalim ng mga caption habang paparating ito, at kung tuloy ang nagsasalita, may malabong linya na nagpapakita ng mga salita hanggang ngayon. Silip: malabong unang linya pagkalipas ng mga 2 segundo, saka ang tapos na caption at salin nito kapag tapos ang pangungusap. Live: lumalabas ang mga salita habang sinasabi at isinusulat ulit hanggang matapos ang pangungusap. Pumili sa Settings &gt; Mga caption &gt; Timing, o sa settings ng window ng caption. Sa lahat, walang nagsasalita nang mas matagal kaysa Pinakamatagal na hintay sa teksto (3 segundo, maliban kung babaguhin mo) bago ka makakita ng teksto.</translation>
+        <source>Steady, the default: each sentence appears once, finished and translated, about half a second after it ends; a small bar moves under the captions while it&apos;s on its way, and if the speaker talks on, a dim line shows the words so far. Quick preview: a dim first line after about 2 seconds, then the finished caption and its translation when the sentence ends. Live updates: words appear as they&apos;re said and rewrite themselves until the sentence ends. Choose one in Settings &gt; Timing, or in a caption window&apos;s settings. In every one, nobody talks longer than the Longest wait for text (3 seconds, unless you change it) before you see text.</source>
+        <translation type="unfinished">Matatag, ang default: lumalabas ang bawat pangungusap nang isang beses, tapos at nakasalin, mga kalahating segundo matapos itong matapos; may maliit na bar na gumagalaw sa ilalim ng mga caption habang paparating ito, at kung tuloy ang nagsasalita, may malabong linya na nagpapakita ng mga salita hanggang ngayon. Silip: malabong unang linya pagkalipas ng mga 2 segundo, saka ang tapos na caption at salin nito kapag tapos ang pangungusap. Live: lumalabas ang mga salita habang sinasabi at isinusulat ulit hanggang matapos ang pangungusap. Pumili sa Settings &gt; Timing, o sa settings ng window ng caption. Sa lahat, walang nagsasalita nang mas matagal kaysa Pinakamatagal na hintay sa teksto (3 segundo, maliban kung babaguhin mo) bago ka makakita ng teksto.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1922,6 +2336,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Words you look up and save are on Words. They are kept on this Mac and, with your account, on our server, so they follow you to another computer.</source>
+        <translation type="unfinished">Nasa Mga Salita ang mga salitang hinahanap at sine-save mo. Itinatabi sila sa Mac na ito at, kasama ang account mo, sa aming server, kaya sumusunod sila sa iyo sa ibang computer.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Put your words into Anki</source>
         <translation type="unfinished">Ilagay ang mga salita mo sa Anki</translation>
     </message>
@@ -1940,8 +2359,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Your learning data on this Mac was damaged, so it&apos;s been set aside as {name}. Your saved words are coming back from your account.</source>
+        <translation type="unfinished">Sira ang data ng pag-aaral mo sa Mac na ito, kaya itinabi ito bilang {name}. Bumabalik ang mga naka-save na salita mo mula sa account mo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Your learning data on this PC was damaged, so changes aren&apos;t kept on this PC until you restart Polyglotic. Your saved words then come back from your account.</source>
         <translation type="unfinished">Sira ang data ng pag-aaral mo sa PC na ito, kaya hindi itinatabi rito ang mga pagbabago hanggang i-restart mo ang Polyglotic. Babalik ang mga naka-save na salita mula sa account mo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Your learning data on this Mac was damaged, so changes aren&apos;t kept on this Mac until you restart Polyglotic. Your saved words then come back from your account.</source>
+        <translation type="unfinished">Sira ang data ng pag-aaral mo sa Mac na ito, kaya hindi itinatabi rito ang mga pagbabago hanggang i-restart mo ang Polyglotic. Babalik ang mga naka-save na salita mula sa account mo.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2031,11 +2460,6 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
-        <source>Polyglotic&apos;s server is down</source>
-        <translation type="unfinished">Down ang server ng Polyglotic</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Polyglotic&apos;s server is restarting</source>
         <translation type="unfinished">Nagre-restart ang server ng Polyglotic</translation>
     </message>
@@ -2061,8 +2485,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Check this Mac&apos;s date and time</source>
+        <translation type="unfinished">Suriin ang petsa at oras ng Mac na ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Polyglotic is open on too many of your PCs</source>
         <translation type="unfinished">Bukas ang Polyglotic sa sobrang daming PC mo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Polyglotic is open on too many of your computers</source>
+        <translation type="unfinished">Bukas ang Polyglotic sa sobrang daming computer mo</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2077,13 +2511,48 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>This PC&apos;s date or time looks wrong: it says {date}, {time}. Captions work; to set it, turn on Set time automatically in Windows&apos; Settings, Time &amp; language, Date &amp; time, then choose Sync now.</source>
+        <extracomment>{date}, {time}: what this PC&apos;s clock says, in its regional format</extracomment>
+        <translation type="unfinished">Mukhang mali ang petsa o oras ng PC na ito: {date}, {time} ang nakalagay. Gumagana ang mga caption; para ayusin ito, i-on ang Set time automatically sa Settings ng Windows, Time &amp; language, Date &amp; time, at piliin ang Sync now.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>This Mac&apos;s date or time looks wrong: it says {date}, {time}. Captions work; to set it, turn on Set time and date automatically in System Settings, General, Date &amp; Time.</source>
+        <extracomment>{date}, {time}: what this Mac&apos;s clock says, in its regional format</extracomment>
+        <translation type="unfinished">Mukhang mali ang petsa o oras ng Mac na ito: {date}, {time} ang nakalagay. Gumagana ang mga caption; para ayusin ito, i-on ang Set time and date automatically sa System Settings, General, Date &amp; Time.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>you need a code from us: an invite, or the one in your Plus email</source>
         <translation type="unfinished">kailangan mo ng code mula sa amin: invite, o ang nasa Plus email mo</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>resume here or from the tray</source>
+        <translation type="unfinished">ituloy dito o mula sa tray</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>resume here or from the menu bar</source>
+        <translation type="unfinished">ituloy dito o mula sa menu bar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>resume with Ctrl+Alt+P, or from the tray</source>
         <translation type="unfinished">ituloy gamit ang Ctrl+Alt+P, o mula sa tray</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>resume with Ctrl+Alt+P, or from the menu bar</source>
+        <translation type="unfinished">ituloy gamit ang Ctrl+Alt+P, o mula sa menu bar</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>every caption window hidden over %n minute(s) - show them to carry on</source>
+        <translation type="unfinished">
+            <numerusform>nakatago nang higit %n minuto ang lahat ng window ng caption - ipakita ang mga ito para magpatuloy</numerusform>
+            <numerusform>nakatago nang higit %n minuto ang lahat ng window ng caption - ipakita ang mga ito para magpatuloy</numerusform>
+        </translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2099,6 +2568,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>quit from the tray and start Polyglotic again - if it keeps stopping, Help can check what&apos;s wrong</source>
         <translation type="unfinished">lumabas mula sa tray at buksan ulit ang Polyglotic - kung patuloy na humihinto, masusuri ng Tulong kung ano ang mali</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>quit from the menu bar and start Polyglotic again - if it keeps stopping, Help can check what&apos;s wrong</source>
+        <translation type="unfinished">lumabas mula sa menu bar at buksan ulit ang Polyglotic - kung patuloy na humihinto, masusuri ng Tulong kung ano ang mali</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2137,6 +2611,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>the update is downloaded - quit from the menu bar and start Polyglotic again to install it</source>
+        <translation type="unfinished">na-download na ang update - lumabas mula sa menu bar at buksan ulit ang Polyglotic para i-install ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>no update is ready yet - Polyglotic looks again every few minutes, or ask us for the newest installer</source>
         <translation type="unfinished">wala pang handang update - tumitingin ulit ang Polyglotic kada ilang minuto, o hingin sa amin ang pinakabagong installer</translation>
     </message>
@@ -2155,6 +2634,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>this PC seems to be offline. Check its internet connection; if it&apos;s working, the problem is ours</source>
         <translation type="unfinished">mukhang offline ang PC na ito. Suriin ang internet connection nito; kung gumagana, nasa amin ang problema</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>this Mac seems to be offline. Check its internet connection; if it&apos;s working, the problem is ours</source>
+        <translation type="unfinished">mukhang offline ang Mac na ito. Suriin ang internet connection nito; kung gumagana, nasa amin ang problema</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2183,8 +2667,21 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
-        <source>a secure connection needs them right. Set them in Windows&apos; Settings, Time &amp; language; if they&apos;re right, the problem is ours</source>
-        <translation type="unfinished">kailangang tama ang mga ito para sa secure na koneksiyon. I-set ang mga ito sa Settings ng Windows, Time &amp; language; kung tama, nasa amin ang problema</translation>
+        <source>this PC says it&apos;s {date}, which can&apos;t be right. Turn on Set time automatically in Windows&apos; Settings, Time &amp; language, Date &amp; time, then choose Sync now</source>
+        <extracomment>{date}: the date this PC&apos;s clock says, in its regional format</extracomment>
+        <translation type="unfinished">sinasabi ng PC na ito na {date} ngayon, na hindi puwedeng tama. I-on ang Set time automatically sa Settings ng Windows, Time &amp; language, Date &amp; time, at piliin ang Sync now</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>this Mac says it&apos;s {date}, which can&apos;t be right. Turn on Set time and date automatically in System Settings, General, Date &amp; Time</source>
+        <extracomment>{date}: the date this Mac&apos;s clock says, in its regional format</extracomment>
+        <translation type="unfinished">sinasabi ng Mac na ito na {date} ngayon, na hindi puwedeng tama. I-on ang Set time and date automatically sa System Settings, General, Date &amp; Time</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>something on this network is in the way with an out-of-date certificate - most often an antivirus&apos;s HTTPS scanning, or a VPN. Turn it off for Polyglotic, or try another network</source>
+        <extracomment>a certificate out of date, and this PC&apos;s clock looks right (313)</extracomment>
+        <translation type="unfinished">may humaharang sa network na ito gamit ang expired na certificate - kadalasan ang HTTPS scanning ng antivirus, o isang VPN. I-off ito para sa Polyglotic, o sumubok ng ibang network</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2195,6 +2692,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>too many failed sign-ins came from this network, so the server waits before it lets this PC in</source>
         <translation type="unfinished">sobrang daming bigong sign-in mula sa network na ito, kaya naghihintay ang server bago papasukin ang PC na ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>too many failed sign-ins came from this network, so the server waits before it lets this Mac in</source>
+        <translation type="unfinished">sobrang daming bigong sign-in mula sa network na ito, kaya naghihintay ang server bago papasukin ang Mac na ito</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2213,13 +2715,31 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
-        <source>everything the PC plays</source>
-        <translation type="unfinished">lahat ng pinapatugtog ng PC</translation>
+        <source>every app&apos;s sound</source>
+        <translation type="unfinished">tunog ng bawat app</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>everything else the PC plays</source>
         <translation type="unfinished">lahat ng iba pang pinapatugtog ng PC</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>everything else the Mac plays</source>
+        <translation type="unfinished">lahat ng iba pang pinapatugtog ng Mac</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>captioning while hidden</source>
+        <translation type="unfinished">nagka-caption habang nakatago</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>paused after %n minute(s) hidden - show it to carry on</source>
+        <translation type="unfinished">
+            <numerusform>naka-pause pagkatapos ng %n minutong nakatago - ipakita ito para magpatuloy</numerusform>
+            <numerusform>naka-pause pagkatapos ng %n minutong nakatago - ipakita ito para magpatuloy</numerusform>
+        </translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2268,13 +2788,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Show its caption window</source>
+        <translation type="unfinished">Ipakita ang window ng caption nito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Hidden - Ctrl+Alt+H</source>
         <translation type="unfinished">Nakatago - Ctrl+Alt+H</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
-        <source>Show its caption window</source>
-        <translation type="unfinished">Ipakita ang window ng caption nito</translation>
+        <source>Hidden - turn off Hide all to show it</source>
+        <translation type="unfinished">Nakatago - i-off ang Itago lahat para ipakita ito</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2333,8 +2858,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Nothing is captioned until you add an app, or choose Everything the Mac plays.</source>
+        <translation type="unfinished">Walang kina-caption hangga&apos;t hindi ka nagdadagdag ng app, o pumipili ng Lahat ng pinapatugtog ng Mac.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Also caption everything else the PC plays (in its own window)</source>
         <translation type="unfinished">I-caption din ang lahat ng iba pang pinapatugtog ng PC (sa sarili nitong window)</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Also caption everything else the Mac plays (in its own window)</source>
+        <translation type="unfinished">I-caption din ang lahat ng iba pang pinapatugtog ng Mac (sa sarili nitong window)</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2393,6 +2928,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Everything the Mac plays</source>
+        <translation type="unfinished">Lahat ng pinapatugtog ng Mac</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Try apps again</source>
         <translation type="unfinished">Subukan ulit ang mga app</translation>
     </message>
@@ -2403,11 +2943,6 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
-        <source>This PC</source>
-        <translation type="unfinished">PC na ito</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>1 app + everything else</source>
         <translation type="unfinished">1 app + lahat ng iba pa</translation>
     </message>
@@ -2415,6 +2950,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>{n} of {limit}</source>
         <translation type="unfinished">{n} sa {limit}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Caption one app instead</source>
+        <translation type="unfinished">Isang app na lang ang i-caption</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2433,13 +2973,43 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Everything the PC plays is captioned - a call&apos;s voices too. To caption one app instead, choose it below.</source>
+        <translation type="unfinished">Kina-caption ang lahat ng pinapatugtog ng PC - pati ang mga boses sa isang tawag. Para isang app lang ang i-caption, piliin ito sa ibaba.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Everything the Mac plays is captioned - a call&apos;s voices too. To caption one app instead, choose it below.</source>
+        <translation type="unfinished">Kina-caption ang lahat ng pinapatugtog ng Mac - pati ang mga boses sa isang tawag. Para isang app lang ang i-caption, piliin ito sa ibaba.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Everything the PC plays is captioned - a call&apos;s voices too.</source>
+        <translation type="unfinished">Kina-caption ang lahat ng pinapatugtog ng PC - pati ang mga boses sa isang tawag.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Everything the Mac plays is captioned - a call&apos;s voices too.</source>
+        <translation type="unfinished">Kina-caption ang lahat ng pinapatugtog ng Mac - pati ang mga boses sa isang tawag.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>instead of apps: Windows on this PC couldn&apos;t caption one app alone</source>
         <translation type="unfinished">sa halip na mga app: hindi ma-caption ng Windows sa PC na ito ang iisang app lang</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>instead of apps: this Mac couldn&apos;t caption one app alone</source>
+        <translation type="unfinished">sa halip na mga app: hindi ma-caption ng Mac na ito ang iisang app lang</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>instead of apps (the only choice on this version of Windows)</source>
         <translation type="unfinished">sa halip na mga app (tanging pagpipilian sa bersiyong ito ng Windows)</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>instead of apps (the only choice on this version of macOS)</source>
+        <translation type="unfinished">sa halip na mga app (tanging pagpipilian sa bersiyong ito ng macOS)</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2450,6 +3020,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Everything the PC plays except {app}, in a window of its own</source>
         <translation type="unfinished">Lahat ng pinapatugtog ng PC maliban sa {app}, sa sarili nitong window</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Everything the Mac plays except {app}, in a window of its own</source>
+        <translation type="unfinished">Lahat ng pinapatugtog ng Mac maliban sa {app}, sa sarili nitong window</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2493,13 +3068,23 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Download anyway</source>
+        <translation type="unfinished">I-download pa rin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Later</source>
         <translation type="unfinished">Mamaya</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
-        <source>Or later: it installs the next time Polyglotic starts.</source>
-        <translation type="unfinished">O mamaya: maii-install ito sa susunod na pagbukas ng Polyglotic.</translation>
+        <source>All the changes</source>
+        <translation type="unfinished">Lahat ng pagbabago</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Close</source>
+        <translation type="unfinished">Isara</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2523,18 +3108,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
-        <source>Ctrl+Alt+L</source>
-        <translation type="unfinished">Ctrl+Alt+L</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Hide all</source>
         <translation type="unfinished">Itago lahat</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
-        <source>Ctrl+Alt+H</source>
-        <translation type="unfinished">Ctrl+Alt+H</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2545,6 +3120,16 @@
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Reset positions</source>
         <translation type="unfinished">I-reset ang posisyon</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Ctrl+Alt+L</source>
+        <translation type="unfinished">Ctrl+Alt+L</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Ctrl+Alt+H</source>
+        <translation type="unfinished">Ctrl+Alt+H</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2570,6 +3155,46 @@
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Version {version} is ready. Restart to install it.</source>
         <translation type="unfinished">Handa na ang bersyon {version}. I-restart para i-install ito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Or later: it installs the next time Polyglotic starts.</source>
+        <translation type="unfinished">O mamaya: maii-install ito sa susunod na pagbukas ng Polyglotic.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Version {version} is available: {size} MB to download.</source>
+        <translation type="unfinished">May bersyon {version} na: {size} MB ang ida-download.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Version {version} is available.</source>
+        <translation type="unfinished">May bersyon {version} na.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Your connection is metered, so it isn&apos;t downloaded by itself. It is once you&apos;re on a connection that isn&apos;t.</source>
+        <translation type="unfinished">Metered ang koneksyon mo, kaya hindi ito kusang nada-download. Mada-download ito kapag nasa koneksyong hindi metered ka na.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Downloading. This can take a few minutes.</source>
+        <translation type="unfinished">Nagda-download. Maaaring tumagal ito nang ilang minuto.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>What&apos;s new in Polyglotic {version}</source>
+        <translation type="unfinished">Ano&apos;ng bago sa Polyglotic {version}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Also new since your last update: {versions}.</source>
+        <translation type="unfinished">Bago rin mula sa huli mong update: {versions}.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>The release notes are in English.</source>
+        <translation type="unfinished">Nasa Ingles ang release notes.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2603,13 +3228,28 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Open Polyglotic when you log in?</source>
+        <translation type="unfinished">Buksan ang Polyglotic pag nag-log in ka?</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Start with Windows</source>
         <translation type="unfinished">Simulan kasabay ng Windows</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Open at login</source>
+        <translation type="unfinished">Buksan sa pag-log in</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>It waits in the tray, so captions are a click away when you play or watch. Windows&apos; Startup apps can turn it off.</source>
         <translation type="unfinished">Naghihintay ito sa system tray, kaya isang click lang ang caption kapag naglalaro o nanonood ka. Mapapatay ito sa Startup apps ng Windows.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>It opens when you log in, so captions are a click away when you play or watch. Login Items in System Settings can turn it off.</source>
+        <translation type="unfinished">Bubukas ito pag nag-log in ka, kaya isang click lang ang caption kapag naglalaro o nanonood ka. Mapapatay ito sa Login Items ng System Settings.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2628,11 +3268,6 @@
         <location filename="../src/polyglotic_desktop/ui_next/joined_window.py"/>
         <source>Lock all windows</source>
         <translation type="unfinished">I-lock lahat ng window</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/joined_window.py"/>
-        <source>Lock - clicks pass through to what&apos;s underneath, Ctrl+Alt+L</source>
-        <translation type="unfinished">I-lock - tumatagos ang mga click sa nasa ilalim, Ctrl+Alt+L</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/joined_window.py"/>
@@ -2731,6 +3366,16 @@
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
         <source>How bright the captions before the newest stay. 100%: as bright as the newest. The translation dims a little less.</source>
         <translation type="unfinished">Gaano kaliwanag ang mga caption bago ang pinakabago. 100%: kasingliwanag ng pinakabago. Medyo mas kaunti ang paglabo ng salin.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Older captions dim</source>
+        <translation type="unfinished">Lumalabo ang mas lumang caption</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>All at once to Older captions&apos; brightness, or step by step: each caption back a little dimmer, over this many captions.</source>
+        <translation type="unfinished">Sabay-sabay sa liwanag ng mas lumang caption, o paunti-unti: bawat caption pabalik ay medyo mas malabo, sa ganito karaming caption.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
@@ -2834,6 +3479,16 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Gap between new lines</source>
+        <translation type="unfinished">Pagitan ng mga bagong linya</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>A new caption&apos;s lines show one at a time, this far apart, instead of all together. 0 s: together, as now. None waits longer than the longest wait for text.</source>
+        <translation type="unfinished">Ang mga linya ng bagong caption ay lumalabas nang isa-isa, ganito ang pagitan, sa halip na sabay-sabay. 0 s: sabay-sabay, gaya ng dati. Walang naghihintay nang mas matagal kaysa sa pinakamahabang paghihintay sa text.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
         <source>Reset the lab</source>
         <translation type="unfinished">I-reset ang lab</translation>
     </message>
@@ -2844,8 +3499,211 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Your speech on the right</source>
+        <translation type="unfinished">Ang boses mo sa kanan</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>What you say lines up on the right, as in a chat.</source>
+        <translation type="unfinished">Nakahanay sa kanan ang sinasabi mo, gaya sa chat.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>A tint behind your speech</source>
+        <translation type="unfinished">May kulay sa likod ng boses mo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>A soft panel of your label&apos;s colour behind what you say.</source>
+        <translation type="unfinished">Isang malambot na panel na kulay ng label mo sa likod ng sinasabi mo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>A bar beside your speech</source>
+        <translation type="unfinished">May bar sa tabi ng boses mo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>A line of your label&apos;s colour at the side of what you say.</source>
+        <translation type="unfinished">Isang guhit na kulay ng label mo sa gilid ng sinasabi mo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Badge</source>
+        <translation type="unfinished">Badge</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>None</source>
+        <translation type="unfinished">Wala</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Your speech&apos;s label</source>
+        <translation type="unfinished">Label ng boses mo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>&quot;You&quot; over what you say: as now, in a badge, or not shown.</source>
+        <translation type="unfinished">&quot;Ikaw&quot; sa itaas ng sinasabi mo: gaya ngayon, nasa badge, o hindi ipinapakita.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Off</source>
+        <translation type="unfinished">Naka-off</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Translation below</source>
+        <translation type="unfinished">Salin sa ibaba</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Line by line</source>
+        <translation type="unfinished">Linya-linya</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Line by line: a line of what was said, then the line of its translation, both cut where their words match. A long clause that can&apos;t be cut so wraps as it does now.</source>
+        <translation type="unfinished">Linya-linya: isang linya ng sinabi, tapos ang linya ng salin nito, parehong pinutol kung saan nagtutugma ang mga salita. Ang mahabang sugnay na hindi mapuputol nang ganito ay babalot gaya ng dati.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Captions fill the width</source>
+        <translation type="unfinished">Pinupuno ng caption ang lapad</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Off: each clause on a row of its own, as now. Translation below: a caption&apos;s clauses run on in lines as wide as the window, and its translation fills the lines under them. No Arrows while captions fill the width.</source>
+        <translation type="unfinished">Naka-off: bawat sugnay sa sarili nitong hilera, gaya ngayon. Salin sa ibaba: tuloy-tuloy ang mga sugnay ng isang caption sa mga linyang kasinlapad ng window, at pinupuno ng salin nito ang mga linya sa ilalim. Walang Arrow habang pinupuno ng caption ang lapad.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>At line ends too</source>
+        <translation type="unfinished">Sa dulo ng linya rin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Space</source>
+        <translation type="unfinished">Espasyo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Between clauses</source>
+        <translation type="unfinished">Sa pagitan ng mga sugnay</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>When captions fill the width: an ellipsis where one clause ends and the next begins, one at the end of every line that runs on as well, or only a space. Choosing one while Captions fill the width is Off sets it to Translation below.</source>
+        <translation type="unfinished">Kapag pinupuno ng caption ang lapad: ellipsis kung saan natatapos ang isang sugnay at nagsisimula ang kasunod, isa rin sa dulo ng bawat linyang nagpapatuloy, o espasyo lang. Kapag pumili ng isa habang naka-off ang Pinupuno ng caption ang lapad, nagiging Salin sa ibaba ito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>New layout</source>
+        <translation type="unfinished">Bagong layout</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Captions are laid out a new way, however they fill the width: Arrows and word links work in all of them and in Learning load, and Line by line always fills its lines.</source>
+        <translation type="unfinished">Inilalatag ang mga caption sa bagong paraan, paano man nila punuin ang lapad: gumagana ang Arrow at ugnay ng salita sa lahat ng ito at sa Karga sa pag-aaral, at laging pinupuno ng Linya-linya ang mga linya nito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Captions run on</source>
+        <translation type="unfinished">Tuloy-tuloy ang mga caption</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>A caption carries on in the line the one before ended in, instead of starting a line of its own. Turning it on also turns on New layout and Line by line.</source>
+        <translation type="unfinished">Nagpapatuloy ang caption sa linyang pinagtapusan ng nauna, sa halip na magsimula ng sarili nitong linya. Kapag in-on ito, naka-on din ang Bagong layout at Linya-linya.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Parts lined up</source>
+        <translation type="unfinished">Magkatapat ang mga bahagi</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Each part of what was said starts at the same place as its translation, so a word&apos;s translation is under it - however captions fill the width. Turning it on also turns on New layout.</source>
+        <translation type="unfinished">Nagsisimula ang bawat bahagi ng sinabi sa parehong puwesto ng salin nito, kaya nasa ilalim ng salita ang salin nito - paano man punuin ng caption ang lapad. Kapag in-on ito, naka-on din ang Bagong layout.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Packed</source>
+        <translation type="unfinished">Dikit-dikit</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Nearest their links</source>
+        <translation type="unfinished">Malapit sa mga ugnay</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Evenly</source>
+        <translation type="unfinished">Pantay-pantay</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Parts placed</source>
+        <translation type="unfinished">Puwesto ng mga bahagi</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Where the parts of a line go in the room the line has. Packed: each straight after the one before, as now. Nearest their links: each part moves over its translation&apos;s words, so the word links are as short as they can be. Evenly: a full line&apos;s parts are spread over the width. Choosing one also turns on New layout.</source>
+        <translation type="unfinished">Kung saan ilalagay ang mga bahagi ng isang linya sa espasyong mayroon ang linya. Dikit-dikit: bawat isa ay kasunod agad ng nauna, gaya ngayon. Malapit sa mga ugnay: lumilipat ang bawat bahagi sa tapat ng mga salita ng salin nito, kaya pinakamaikli ang mga ugnay ng salita. Pantay-pantay: ikinakalat sa buong lapad ang mga bahagi ng punong linya. Kapag pumili ng isa, naka-on din ang Bagong layout.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Learning load</source>
+        <translation type="unfinished">Karga sa pag-aaral</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>A set number of the next words past what you know, each coloured by how often you have heard it since: red, orange, yellow, green, then ready to check. In place of the marks under new words. Its words and settings are on Learning.</source>
+        <translation type="unfinished">Takdang bilang ng mga susunod na salita pagkatapos ng alam mo na, bawat isa ay kinukulayan ayon sa dalas mong narinig ito mula noon: pula, kahel, dilaw, berde, saka handa nang suriin. Kapalit ito ng mga marka sa ilalim ng mga bagong salita. Nasa Pag-aaral ang mga salita at setting nito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>{open} - its words, the check and its settings.</source>
+        <translation type="unfinished">{open} - ang mga salita nito, ang check at ang settings nito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Open it on Learning</source>
+        <translation type="unfinished">Buksan ito sa Pag-aaral</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Dimmed</source>
+        <translation type="unfinished">Pinalabo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Words outside the load</source>
+        <translation type="unfinished">Mga salitang wala sa karga</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Rarer words you don&apos;t know yet, in Learning load: as now, or dimmed so the load&apos;s words stand out. Dimmed turns Learning load on.</source>
+        <translation type="unfinished">Mga mas bihirang salitang hindi mo pa alam, sa Karga sa pag-aaral: gaya ngayon, o pinalabo para mamukod ang mga salita ng karga. Ino-on ng Pinalabo ang Karga sa pag-aaral.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
         <source>Only the newest</source>
         <translation type="unfinished">Ang pinakabago lang</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>All at once</source>
+        <translation type="unfinished">Sabay-sabay</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Over %n caption(s)</source>
+        <translation type="unfinished">
+            <numerusform>Sa %n caption</numerusform>
+            <numerusform>Sa %n na caption</numerusform>
+        </translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
@@ -2856,6 +3714,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
         <source>As they come</source>
         <translation type="unfinished">Habang dumarating</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Together</source>
+        <translation type="unfinished">Sabay-sabay</translation>
     </message>
 </context>
 <context>
@@ -3007,6 +3870,51 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>Detect automatically</source>
+        <extracomment>A choice for a source&apos;s spoken language: the speech model finds the language itself, each time someone speaks</extracomment>
+        <translation type="unfinished">Awtomatikong alamin</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>Detect · %Ln language(s)</source>
+        <extracomment>Short, on a button: the spoken language is found automatically, among this many languages</extracomment>
+        <translation type="unfinished">
+            <numerusform>Alamin · %Ln wika</numerusform>
+            <numerusform>Alamin · %Ln wika</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>Any of the %Ln language(s) below</source>
+        <translation type="unfinished">
+            <numerusform>Alinman sa %Ln wika sa ibaba</numerusform>
+            <numerusform>Alinman sa %Ln wika sa ibaba</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>Always hear as</source>
+        <extracomment>A heading over a list of languages: pick one and the app hears this app&apos;s speech as that language every time, rather than detecting it</extracomment>
+        <translation type="unfinished">Laging pakinggan bilang</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>Always {language}</source>
+        <extracomment>Short, on a button: this app&apos;s speech is always heard as {language} (named by the learner, not detected)</extracomment>
+        <translation type="unfinished">Laging {language}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>Find a language</source>
+        <translation type="unfinished">Maghanap ng wika</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>No language by that name</source>
+        <translation type="unfinished">Walang wikang may ganyang pangalan</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
         <source>Swedish</source>
         <translation type="unfinished">Swedish</translation>
     </message>
@@ -3055,9 +3963,19 @@
         <source>Cantonese (Hong Kong characters)</source>
         <translation type="unfinished">Cantonese (mga karakter ng Hong Kong)</translation>
     </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>This sounds like {language}. Always hear it as {language}?</source>
+        <translation type="unfinished">Mukhang {language} ito. Laging pakinggan bilang {language}?</translation>
+    </message>
 </context>
 <context>
     <name>Learning</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/main.py"/>
+        <source>Reset</source>
+        <translation type="unfinished">I-reset</translation>
+    </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
         <source>Full dictionary</source>
@@ -3085,13 +4003,43 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
-        <source>From open data, meanings not checked by a person. Lookups in {language} captions work, marked basic; your level, word introductions and saved words come later.</source>
-        <translation type="unfinished">Mula sa open data, hindi sinuri ng tao ang mga kahulugan. Gumagana ang paghahanap sa mga caption sa {language}, may markang basic; susunod ang antas mo, pagpapakilala ng salita at naka-save na salita.</translation>
+        <source>From open data, meanings not checked by a person. Lookups, your level, word introductions, the words you hear and save, and an Anki deck.</source>
+        <translation type="unfinished">Mula sa open data, hindi sinuri ng tao ang mga kahulugan. Paghahanap, ang antas mo, pagpapakilala ng salita, ang mga salitang naririnig at sine-save mo, at isang Anki deck.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
-        <source>Coming: a basic dictionary from open data, downloaded when it&apos;s ready. Until then captions and translation work, without lookups.</source>
-        <translation type="unfinished">Darating: isang basic na diksiyonaryo mula sa open data, ida-download kapag handa na. Hanggang doon, gumagana ang caption at salin, walang paghahanap.</translation>
+        <source>Captions and translation work without one, and a word you look up says what it is in that line&apos;s translation.</source>
+        <translation type="unfinished">Gumagana ang mga caption at salin kahit wala nito, at sinasabi ng salitang hinanap mo kung ano ito sa salin ng linyang iyon.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>There&apos;s no {language} dictionary to download yet. Captions and translation work, and a word you look up says what it is in that line&apos;s translation.</source>
+        <translation type="unfinished">Wala pang diksiyonaryong {language} na mada-download. Gumagana ang mga caption at salin, at sinasabi ng salitang hinanap mo kung ano ito sa salin ng linyang iyon.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Checking the list of dictionaries.</source>
+        <translation type="unfinished">Sinusuri ang listahan ng mga diksiyonaryo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>A basic dictionary from open data (meanings not checked by a person), if one is ready: lookups in {language} captions once it&apos;s on this PC. Captions and translation work either way.</source>
+        <translation type="unfinished">Basic na diksiyonaryo mula sa open data (hindi pa sinuri ng tao ang mga kahulugan), kung may handa na: puwede nang maghanap ng salita sa mga caption na {language} kapag nasa PC na ito. Gumagana ang mga caption at salin alinman ang mangyari.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>A basic dictionary from open data (meanings not checked by a person), if one is ready: lookups in {language} captions once it&apos;s on this Mac. Captions and translation work either way.</source>
+        <translation type="unfinished">Basic na diksiyonaryo mula sa open data (hindi pa sinuri ng tao ang mga kahulugan), kung may handa na: puwede nang maghanap ng salita sa mga caption na {language} kapag nasa Mac na ito. Gumagana ang mga caption at salin alinman ang mangyari.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>A basic dictionary from open data (meanings not checked by a person), if one is ready: its card offers it once you add {language}. Captions and translation work either way.</source>
+        <translation type="unfinished">Basic na diksiyonaryo mula sa open data (hindi pa sinuri ng tao ang mga kahulugan), kung may handa na: iaalok ito ng card nito kapag idinagdag mo ang {language}. Gumagana ang mga caption at salin alinman ang mangyari.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>A basic dictionary from open data, meanings not checked by a person: lookups in {language} captions once it&apos;s downloaded. Until then captions and translation work, without lookups.</source>
+        <translation type="unfinished">Basic na diksiyonaryo mula sa open data, hindi pa sinuri ng tao ang mga kahulugan: puwede nang maghanap ng salita sa mga caption na {language} kapag na-download na. Hanggang doon, gumagana ang mga caption at salin, pero walang paghahanap ng salita.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
@@ -3115,6 +4063,24 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Reset {language}&apos;s known words?</source>
+        <translation type="unfinished">I-reset ang mga alam na salita sa {language}?</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>About %Ln word(s) you marked known in bulk will count as new again, and your level goes back to: {level}. Words you marked yourself stay as you set them.</source>
+        <translation type="unfinished">
+            <numerusform>Mga %Ln salitang minarkahan mong alam nang maramihan ang magiging bago ulit, at babalik ang antas mo sa: {level}. Mananatili ang mga salitang ikaw mismo ang nagmarka.</numerusform>
+            <numerusform>Mga %Ln salitang minarkahan mong alam nang maramihan ang magiging bago ulit, at babalik ang antas mo sa: {level}. Mananatili ang mga salitang ikaw mismo ang nagmarka.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Its commonest words are recorded ({size}).</source>
+        <translation type="unfinished">Naka-record ang mga pinakakaraniwang salita ({size}).</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
         <source>Your level</source>
         <translation type="unfinished">Ang antas mo</translation>
     </message>
@@ -3135,28 +4101,48 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
-        <source>In use from the next time Polyglotic starts. One full dictionary is in use at a time for now; each language keeps its words.</source>
-        <translation type="unfinished">Gagamitin mula sa susunod na pagbukas ng Polyglotic. Sa ngayon, isang buong diksiyonaryo lang ang gamit nang sabay; bawat wika ay may sariling mga salita.</translation>
+        <source>Every word</source>
+        <translation type="unfinished">Bawat salita</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
-        <source>In use until Polyglotic starts again; its words are kept.</source>
-        <translation type="unfinished">Gagamitin hanggang magbukas ulit ang Polyglotic; itinatabi ang mga salita nito.</translation>
+        <source>Past what you know</source>
+        <translation type="unfinished">Lampas sa alam mo</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
-        <source>One full dictionary is in use at a time for now. Each language keeps its words.</source>
-        <translation type="unfinished">Sa ngayon, isang buong diksiyonaryo lang ang gamit nang sabay. Bawat wika ay may sariling mga salita.</translation>
+        <source>Off</source>
+        <translation type="unfinished">Naka-off</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
-        <source>Keep using {language}</source>
-        <translation type="unfinished">Ituloy ang {language}</translation>
+        <source>Word links</source>
+        <translation type="unfinished">Ugnay ng salita</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
-        <source>Use {language} instead</source>
-        <translation type="unfinished">Gamitin ang {language} sa halip</translation>
+        <source>Which words are joined to their translation while word links are on.</source>
+        <translation type="unfinished">Aling mga salita ang iniuugnay sa salin nila habang naka-on ang ugnay ng salita.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>No dictionary ranks {language} words yet, so only key words are linked.</source>
+        <translation type="unfinished">{language}: wala pang diksyunaryong nag-aayos ng mga salita ayon sa dalas, kaya mga pangunahing salita lang ang inuugnay.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Start links at</source>
+        <translation type="unfinished">Simulan ang ugnay sa</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>What you know</source>
+        <translation type="unfinished">Ang alam mo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Make {language} your main language</source>
+        <translation type="unfinished">Gawing pangunahing wika ang {language}</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
@@ -3172,6 +4158,104 @@
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
         <source>Its words are kept - delete them on Account</source>
         <translation type="unfinished">Itinatabi ang mga salita nito - burahin sa Account</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>How many of the most common words</source>
+        <translation type="unfinished">Ilan sa mga pinakakaraniwang salita</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>The first {count}</source>
+        <translation type="unfinished">Ang unang {count}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Another number…</source>
+        <translation type="unfinished">Ibang numero…</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Mark known</source>
+        <translation type="unfinished">Markahang alam</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Mark the most common words known</source>
+        <translation type="unfinished">Markahang alam ang mga pinakakaraniwang salita</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Every word up to the number you choose counts as known - your level moves there. Words you marked yourself stay as you set them.</source>
+        <translation type="unfinished">Bawat salita hanggang sa numerong pipiliin mo ay bibilangin na alam mo - doon lilipat ang antas mo. Mananatili ang mga salitang ikaw mismo ang nagmarka.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Undo</source>
+        <translation type="unfinished">I-undo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Back to: {level}</source>
+        <translation type="unfinished">Bumalik sa: {level}</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>About %Ln more word(s) count as known now.</source>
+        <translation type="unfinished">
+            <numerusform>Mga %Ln salita pa ang alam na ngayon.</numerusform>
+            <numerusform>Mga %Ln salita pa ang alam na ngayon.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Reset…</source>
+        <translation type="unfinished">I-reset…</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Marked in bulk. Reset takes your level back to: {level}.</source>
+        <translation type="unfinished">Minarkahan nang maramihan. Ibabalik ng I-reset ang antas mo sa: {level}.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Learning window</source>
+        <translation type="unfinished">Saklaw ng pag-aaral</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Words in the window</source>
+        <translation type="unfinished">Mga salita sa saklaw</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Words in the learning window</source>
+        <translation type="unfinished">Mga salita sa saklaw ng pag-aaral</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>{least} to {most}</source>
+        <translation type="unfinished">{least} hanggang {most}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Every word past what you know can be pointed out, however rare. Hover or click any word to look it up.</source>
+        <translation type="unfinished">Maaaring ituro ang bawat salita pagkatapos ng alam mo na, gaano man kabihira. I-hover o i-click ang anumang salita para hanapin ito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>The next words past what you know are the ones pointed out. Rarer words are left alone: hover or click one to look it up.</source>
+        <translation type="unfinished">Itinuturo ang mga susunod na salita pagkatapos ng alam mo na. Hindi ginagalaw ang mas bihira: i-hover o i-click ang isa para hanapin ito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Unlimited</source>
+        <translation type="unfinished">Walang limitasyon</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Custom</source>
+        <translation type="unfinished">Pasadya</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
@@ -3220,11 +4304,6 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
-        <source>Off</source>
-        <translation type="unfinished">Naka-off</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
         <source>A few per caption</source>
         <translation type="unfinished">Ilan bawat caption</translation>
     </message>
@@ -3265,6 +4344,26 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Dictionaries on this PC</source>
+        <translation type="unfinished">Mga diksiyonaryo sa PC na ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Dictionaries on this Mac</source>
+        <translation type="unfinished">Mga diksiyonaryo sa Mac na ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Downloaded for the languages you learn. Removing one frees its space; lookups in its language stop until it&apos;s downloaded again.</source>
+        <translation type="unfinished">Na-download para sa mga wikang pinag-aaralan mo. Ang pag-alis ng isa ay nagbibigay ng espasyo; titigil ang paghahanap sa wika nito hanggang ma-download ulit.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>None yet: when you learn a language, its card offers its dictionary.</source>
+        <translation type="unfinished">Wala pa: kapag nag-aral ka ng isang wika, iaalok ng card nito ang diksiyonaryo nito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
         <source>Your learning data</source>
         <translation type="unfinished">Ang data ng pag-aaral mo</translation>
     </message>
@@ -3275,8 +4374,221 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>The words you look up, save and mark are kept on this Mac, and on our server as dictionary words and times. You can delete them, in every language you learn - the same as on Account.</source>
+        <translation type="unfinished">Itinatabi sa Mac na ito ang mga salitang hinahanap, sine-save at minamarkahan mo, at sa aming server bilang mga salita sa diksiyonaryo at oras. Puwede mo silang burahin, sa bawat wikang pinag-aaralan mo - gaya sa Account.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>{language}: version {version}, {size}</source>
+        <translation type="unfinished">{language}: bersyon {version}, {size}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Remove</source>
+        <translation type="unfinished">Alisin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
         <source>{language} - {tier}</source>
         <translation type="unfinished">{language} - {tier}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>{size} MB</source>
+        <translation type="unfinished">{size} MB</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>less than a minute left</source>
+        <translation type="unfinished">wala nang isang minuto</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>about %n minute(s) left</source>
+        <translation type="unfinished">
+            <numerusform>mga %n minuto pa</numerusform>
+            <numerusform>mga %n minuto pa</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>It won&apos;t try again by itself.</source>
+        <translation type="unfinished">Hindi na ito susubok ulit nang kusa.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Trying again in {seconds} s (try {tries} of {total}).</source>
+        <translation type="unfinished">Susubok ulit sa loob ng {seconds} s (subok {tries} sa {total}).</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>No connection.</source>
+        <translation type="unfinished">Walang koneksyon.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>The download stalled: no data for {seconds} s.</source>
+        <translation type="unfinished">Huminto ang pag-download: walang data sa loob ng {seconds} s.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Our server answered with an error ({status}).</source>
+        <translation type="unfinished">Sumagot ng error ang aming server ({status}).</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Paused: Windows says this connection is metered. {size} left to download.</source>
+        <translation type="unfinished">Naka-pause: sabi ng Windows, metered ang koneksyong ito. {size} pa ang ida-download.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Not enough room on this PC: it needs {size} free.</source>
+        <translation type="unfinished">Kulang ang espasyo sa PC na ito: kailangan ng {size} na bakante.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Not enough room on this Mac: it needs {size} free.</source>
+        <translation type="unfinished">Kulang ang espasyo sa Mac na ito: kailangan ng {size} na bakante.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Refused: the list of dictionaries failed our signature check, so nothing was downloaded.</source>
+        <translation type="unfinished">Tinanggihan: hindi pumasa ang listahan ng mga diksiyonaryo sa aming pagsusuri ng pirma, kaya walang na-download.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Refused: the file didn&apos;t match our list, so it was deleted.</source>
+        <translation type="unfinished">Tinanggihan: hindi tugma ang file sa aming listahan, kaya binura ito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Refused: the file isn&apos;t the {language} dictionary, so it was deleted.</source>
+        <translation type="unfinished">Tinanggihan: hindi ang diksiyonaryong {language} ang file, kaya binura ito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Its dictionary needs a newer Polyglotic. Update the app to get it.</source>
+        <translation type="unfinished">Kailangan ng diksiyonaryong ito ang mas bagong Polyglotic. I-update ang app para makuha ito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Its dictionary isn&apos;t ready to download yet.</source>
+        <translation type="unfinished">Hindi pa puwedeng i-download ang diksiyonaryong ito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Waiting for another dictionary to finish.</source>
+        <translation type="unfinished">Hinihintay matapos ang ibang diksiyonaryo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Downloading: {done} of {total} MB</source>
+        <translation type="unfinished">Nagda-download: {done} sa {total} MB</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Checking the file.</source>
+        <translation type="unfinished">Sinusuri ang file.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Opening the dictionary.</source>
+        <translation type="unfinished">Binubuksan ang diksiyonaryo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Download</source>
+        <translation type="unfinished">I-download</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Cancel</source>
+        <translation type="unfinished">Kanselahin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Retry</source>
+        <translation type="unfinished">Subukan ulit</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Download anyway</source>
+        <translation type="unfinished">I-download pa rin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Get it now</source>
+        <translation type="unfinished">Kunin ngayon</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>On this PC: version {version}, {size}.</source>
+        <translation type="unfinished">Sa PC na ito: bersyon {version}, {size}.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>On this Mac: version {version}, {size}.</source>
+        <translation type="unfinished">Sa Mac na ito: bersyon {version}, {size}.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>A newer version ({size}) waits for a connection that isn&apos;t metered.</source>
+        <translation type="unfinished">May mas bagong bersyon ({size}) na naghihintay ng koneksyong hindi metered.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Its dictionary: {size} to download, then {recorded} of recorded words.</source>
+        <translation type="unfinished">Diksiyonaryo nito: {size} ang ida-download, pagkatapos {recorded} ng mga naka-record na salita.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Its dictionary: {size} to download.</source>
+        <translation type="unfinished">Diksiyonaryo nito: {size} ang ida-download.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>The list of dictionaries couldn&apos;t be checked.</source>
+        <translation type="unfinished">Hindi masuri ang listahan ng mga diksiyonaryo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Download progress</source>
+        <translation type="unfinished">Progreso ng pag-download</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>The {language} dictionary is ready: look up words in {language} captions.</source>
+        <translation type="unfinished">Handa na ang diksiyonaryong {language}: maghanap ng salita sa mga caption na {language}.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>The {language} dictionary couldn&apos;t be downloaded: see Learning.</source>
+        <translation type="unfinished">Hindi ma-download ang diksiyonaryong {language}: tingnan ang Pag-aaral.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Remove the {language} dictionary too?</source>
+        <translation type="unfinished">Alisin din ang diksiyonaryong {language}?</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>It frees {size} on this PC. It downloads again if you learn {language} later.</source>
+        <translation type="unfinished">Magbibigay ito ng {size} na espasyo sa PC na ito. Ida-download ulit ito kung pag-aaralan mo ang {language} sa susunod.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>It frees {size} on this Mac. It downloads again if you learn {language} later.</source>
+        <translation type="unfinished">Magbibigay ito ng {size} na espasyo sa Mac na ito. Ida-download ulit ito kung pag-aaralan mo ang {language} sa susunod.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Remove it</source>
+        <translation type="unfinished">Alisin ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Keep it</source>
+        <translation type="unfinished">Itago ito</translation>
     </message>
 </context>
 <context>
@@ -3293,56 +4605,244 @@
     </message>
 </context>
 <context>
+    <name>LearningLoad</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Red</source>
+        <translation type="unfinished">Pula</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Orange</source>
+        <translation type="unfinished">Kahel</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Yellow</source>
+        <translation type="unfinished">Dilaw</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Green</source>
+        <translation type="unfinished">Berde</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Ready to check</source>
+        <translation type="unfinished">Handa nang suriin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>{colour}: waiting for room in the next colour</source>
+        <translation type="unfinished">{colour}: naghihintay ng puwesto sa susunod na kulay</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>{colour}: heard {heard} of {needed}</source>
+        <translation type="unfinished">{colour}: narinig nang {heard} sa {needed}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>I know this</source>
+        <translation type="unfinished">Alam ko ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Not yet</source>
+        <translation type="unfinished">Hindi pa</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Add to my load</source>
+        <translation type="unfinished">Idagdag sa aking karga</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Learning load</source>
+        <translation type="unfinished">Karga sa pag-aaral</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>An experiment, turned on in {lab}, where you can turn it off.</source>
+        <translation type="unfinished">Isang eksperimento, naka-on sa {lab}, kung saan mo ito maaaring i-off.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Settings &gt; Lab</source>
+        <translation type="unfinished">Settings &gt; Lab</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>In the load</source>
+        <translation type="unfinished">Nasa karga</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Next to enter</source>
+        <translation type="unfinished">Susunod na papasok</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Graduated</source>
+        <translation type="unfinished">Nagtapos</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>I know these</source>
+        <translation type="unfinished">Alam ko ang mga ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Not now</source>
+        <translation type="unfinished">Hindi ngayon</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Show more</source>
+        <translation type="unfinished">Ipakita pa</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Add the next words now</source>
+        <translation type="unfinished">Idagdag na ngayon ang mga susunod na salita</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>They come in ahead of graduations, and the load grows by them.</source>
+        <translation type="unfinished">Pumapasok sila bago pa may magtapos, at lumalaki ang karga ayon sa bilang nila.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Words in the load</source>
+        <translation type="unfinished">Mga salita sa karga</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Raise it and the next words come in at once. Lower it and the words heard least leave first; they keep their counts and come back when there is room.</source>
+        <translation type="unfinished">Taasan ito at papasok agad ang mga susunod na salita. Babaan ito at unang aalis ang mga salitang pinakamadalang marinig; nananatili ang bilang nila at babalik sila kapag may puwesto.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Times heard to change colour</source>
+        <translation type="unfinished">Ilang beses marinig para magpalit ng kulay</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Red, orange, yellow, green: a word moves on each time it has been heard this often, then is ready to check.</source>
+        <translation type="unfinished">Pula, kahel, dilaw, berde: umuusad ang salita tuwing narinig ito nang ganito karaming beses, saka handa nang suriin.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>What counts as hearing a word</source>
+        <translation type="unfinished">Ano ang binibilang na pagkarinig sa salita</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Every time it is said</source>
+        <translation type="unfinished">Tuwing sinasabi ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Once a caption</source>
+        <translation type="unfinished">Isang beses bawat caption</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Once a session</source>
+        <translation type="unfinished">Isang beses bawat session</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Once a day</source>
+        <translation type="unfinished">Isang beses bawat araw</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Only what your PC plays counts, in finished captions - not what you say.</source>
+        <translation type="unfinished">Ang pinapatugtog lang ng PC mo ang binibilang, sa mga tapos nang caption - hindi ang sinasabi mo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Only what your Mac plays counts, in finished captions - not what you say.</source>
+        <translation type="unfinished">Ang pinapatugtog lang ng Mac mo ang binibilang, sa mga tapos nang caption - hindi ang sinasabi mo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Most words in one colour</source>
+        <translation type="unfinished">Pinakamaraming salita sa isang kulay</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>No limit</source>
+        <translation type="unfinished">Walang limitasyon</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>For orange, yellow and green. When a colour is full, a word waits in the one before it, the most heard first.</source>
+        <translation type="unfinished">Para sa kahel, dilaw at berde. Kapag puno ang isang kulay, naghihintay ang salita sa kulay bago nito; nauuna ang pinakamadalas marinig.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>In your load: {words} of {size}. Ready to check: {ready}. Graduated in the last 7 days: {week}.</source>
+        <translation type="unfinished">Sa karga mo: {words} sa {size}. Handa nang suriin: {ready}. Nagtapos sa huling 7 araw: {week}.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>This language&apos;s dictionary has no word frequencies yet, so it has no learning load.</source>
+        <translation type="unfinished">Wala pang dalas ng salita ang diksyunaryo ng wikang ito, kaya wala itong karga sa pag-aaral.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>None yet. A word is ready to check once it has passed green; then one click here says whether you know it.</source>
+        <translation type="unfinished">Wala pa. Handa nang suriin ang salita kapag nalampasan na nito ang berde; saka isang click dito ang magsasabi kung alam mo ito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>No words here now.</source>
+        <translation type="unfinished">Walang salita rito ngayon.</translation>
+    </message>
+</context>
+<context>
     <name>LevelPicker</name>
     <message>
         <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>Your level</source>
-        <translation type="unfinished">Ang antas mo</translation>
+        <source>Words you know</source>
+        <translation type="unfinished">Mga salitang alam mo</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>What&apos;s your level?</source>
-        <translation type="unfinished">Ano ang antas mo?</translation>
+        <source>About how many {language} words do you know?</source>
+        <translation type="unfinished">{language}: mga ilang salita ang alam mo?</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>Words at or below your level count as known, so captions mark only the words you&apos;re likely to be learning. You can change it any time, and correct any word with one click.</source>
-        <translation type="unfinished">Itinuturing na alam na ang mga salita sa antas mo o mas mababa, kaya ang mga salitang malamang na pinag-aaralan mo lang ang minamarkahan ng mga caption. Puwede mo itong baguhin anumang oras, at itama ang kahit anong salita sa isang click.</translation>
+        <source>The most common words up to here count as known, the next ones are pointed out, and rarer ones are left alone. Nothing is tested: change it any time, and a click on any word corrects it.</source>
+        <translation type="unfinished">Itinuturing na alam ang pinakakaraniwang mga salita hanggang dito, itinuturo ang mga kasunod, at hindi ginagalaw ang mas bihira. Walang test: mababago mo ito kahit kailan, at naitatama ng click ang kahit anong salita.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>HSK 3.0 - the 2025 exam syllabus (what the exam tests)</source>
-        <translation type="unfinished">HSK 3.0 - ang syllabus ng exam sa 2025 (ang sinusubok ng exam)</translation>
+        <source>Not sure - start at about {count}</source>
+        <translation type="unfinished">Hindi sigurado - magsimula sa mga {count}</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>HSK 3.0 - the 2021 standard</source>
-        <translation type="unfinished">HSK 3.0 - ang pamantayan noong 2021</translation>
+        <source>I&apos;m just starting</source>
+        <translation type="unfinished">Nagsisimula pa lang ako</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>The most common English words</source>
-        <translation type="unfinished">Ang pinakakaraniwang mga salitang English</translation>
+        <source>About {count} - HSK {level}</source>
+        <translation type="unfinished">Mga {count} - HSK {level}</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>Just starting - mark every word as new</source>
-        <translation type="unfinished">Kasisimula ko lang - markahan ang bawat salita na bago</translation>
+        <source>{count} or more</source>
+        <translation type="unfinished">{count} o higit pa</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>I know most of the {count} most common words</source>
-        <translation type="unfinished">Alam ko ang karamihan sa {count} pinakakaraniwang salita</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>HSK {level} - about {count} words</source>
-        <translation type="unfinished">HSK {level} - mga {count} salita</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>HSK {level}</source>
-        <translation type="unfinished">HSK {level}</translation>
+        <source>About {count}</source>
+        <translation type="unfinished">Mga {count}</translation>
     </message>
 </context>
 <context>
@@ -3362,6 +4862,18 @@
             <numerusform>+%Ln pang bigkas</numerusform>
             <numerusform>+%Ln pang bigkas</numerusform>
         </translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>Here: {words}</source>
+        <extracomment>what the word looked up is in the translation of its caption line, e.g. &quot;Here: ngân hàng&quot;: what it means here</extracomment>
+        <translation type="unfinished">Dito: {words}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>From the {language} dictionary</source>
+        <extracomment>the card&apos;s word was found in another language&apos;s dictionary than its caption line&apos;s, e.g. &quot;From the English dictionary&quot;</extracomment>
+        <translation type="unfinished">Mula sa diksyunaryo: {language}</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
@@ -3420,8 +4932,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
-        <source>The {language} dictionary is used once you learn {language}, from the next start. Captions and translation still work.</source>
-        <translation type="unfinished">Gagamitin ang diksiyonaryo ng {language} kapag pinag-aralan mo ang {language}, mula sa susunod na pagbukas. Gumagana pa rin ang caption at salin.</translation>
+        <source>The {language} dictionary is used once you learn {language}. Captions and translation still work.</source>
+        <translation type="unfinished">Gagamitin ang diksiyonaryo ng {language} kapag pinag-aralan mo ang {language}. Gumagana pa rin ang caption at salin.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
@@ -3432,6 +4944,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
         <source>No Chinese for it in the dictionary</source>
         <translation type="unfinished">Walang Chinese para rito sa diksiyonaryo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>{language} is on your Learning page now, with its dictionary to download there ({size} MB).</source>
+        <translation type="unfinished">Nasa iyong Pag-aaral na pahina na ang {language}, kasama ang diksiyonaryo nito na ida-download doon ({size} MB).</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
@@ -3462,6 +4979,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
         <source>No {language} voice on this PC yet. Windows adds one for free: Settings &gt; Time &amp; language &gt; Speech &gt; Add voices, then {language}.</source>
         <translation type="unfinished">Wala pang boses na {language} sa PC na ito. Libreng nagdadagdag nito ang Windows: Settings &gt; Time &amp; language &gt; Speech &gt; Add voices, saka {language}.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>No {language} voice on this Mac yet. macOS adds one for free: System Settings &gt; Accessibility &gt; Spoken Content &gt; System voice &gt; Manage Voices, then {language}.</source>
+        <translation type="unfinished">Wala pang boses na {language} sa Mac na ito. Libreng nagdadagdag ang macOS: System Settings &gt; Accessibility &gt; Spoken Content &gt; System voice &gt; Manage Voices, pagkatapos {language}.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
@@ -3520,6 +5042,16 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>Copied</source>
+        <translation type="unfinished">Nakopya</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>Copy</source>
+        <translation type="unfinished">Kopyahin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
         <source>New category</source>
         <translation type="unfinished">Bagong kategorya</translation>
     </message>
@@ -3547,6 +5079,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
         <source>No {language} voice on this PC</source>
         <translation type="unfinished">Walang boses na {language} sa PC na ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>No {language} voice on this Mac</source>
+        <translation type="unfinished">Walang boses na {language} sa Mac na ito</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
@@ -3613,6 +5150,16 @@
         <source>Opens Windows&apos; Settings, where voices are added</source>
         <translation type="unfinished">Binubuksan ang Settings ng Windows, kung saan nagdadagdag ng boses</translation>
     </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>Opens System Settings, where voices are added</source>
+        <translation type="unfinished">Binubuksan ang System Settings, kung saan nagdadagdag ng boses</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>Copy the word, its reading and meaning (Ctrl+C)</source>
+        <translation type="unfinished">Kopyahin ang salita, ang bigkas at kahulugan nito (Ctrl+C)</translation>
+    </message>
 </context>
 <context>
     <name>MainWindow</name>
@@ -3653,6 +5200,103 @@
     </message>
 </context>
 <context>
+    <name>Maintenance</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/maintenance.py"/>
+        <source>{day} {time}</source>
+        <extracomment>a weekday&apos;s name and a time on it: &quot;Sunday 00:30&quot;</extracomment>
+        <translation type="unfinished">{day} {time}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/maintenance.py"/>
+        <source>Planned maintenance</source>
+        <translation type="unfinished">Nakaplanong maintenance</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/maintenance.py"/>
+        <source>Planned maintenance until {time}</source>
+        <extracomment>Home&apos;s title and the tray&apos;s while Polyglotic&apos;s server is in it</extracomment>
+        <translation type="unfinished">Nakaplanong maintenance hanggang {time}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/maintenance.py"/>
+        <source>not your internet - captions come back by themselves when it&apos;s over</source>
+        <extracomment>Home&apos;s line under &quot;Planned maintenance until 15:30&quot;</extracomment>
+        <translation type="unfinished">hindi ang internet mo - kusang babalik ang mga caption kapag tapos na ang maintenance</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/maintenance.py"/>
+        <source>Planned maintenance until {time}: captions pause until then, and come back by themselves.</source>
+        <translation type="unfinished">Nakaplanong maintenance hanggang {time}: naka-pause ang mga caption hanggang noon, saka kusang babalik.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/maintenance.py"/>
+        <source>Planned maintenance today, {start}-{end}: captions pause then, and come back by themselves.</source>
+        <translation type="unfinished">Nakaplanong maintenance ngayong araw, {start}-{end}: magpa-pause ang mga caption sa oras na iyon, saka kusang babalik.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/maintenance.py"/>
+        <source>Planned maintenance tomorrow, {start}-{end}: captions pause then, and come back by themselves.</source>
+        <translation type="unfinished">Nakaplanong maintenance bukas, {start}-{end}: magpa-pause ang mga caption sa oras na iyon, saka kusang babalik.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/maintenance.py"/>
+        <source>Captions pause at {start} for planned maintenance, until {end}</source>
+        <translation type="unfinished">Magpa-pause ang mga caption nang {start} para sa nakaplanong maintenance, hanggang {end}</translation>
+    </message>
+</context>
+<context>
+    <name>MoveToApplications</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/move_to_applications.py"/>
+        <source>Move Polyglotic to Applications?</source>
+        <translation type="unfinished">Ilipat ang Polyglotic sa Applications?</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/move_to_applications.py"/>
+        <source>Polyglotic was opened outside your Applications folder, from Downloads perhaps, so your Mac runs it from a temporary copy. From there it can&apos;t update itself.</source>
+        <translation type="unfinished">Binuksan ang Polyglotic sa labas ng iyong Applications folder, marahil mula sa Downloads, kaya pinapatakbo ito ng iyong Mac mula sa pansamantalang kopya. Mula roon, hindi ito makakapag-update nang kusa.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/move_to_applications.py"/>
+        <source>To do it yourself: quit Polyglotic, drag it into Applications in Finder, and open it there.</source>
+        <translation type="unfinished">Para gawin ito nang ikaw mismo: isara ang Polyglotic, i-drag ito sa Applications sa Finder, at buksan ito roon.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/move_to_applications.py"/>
+        <source>Move to Applications</source>
+        <translation type="unfinished">Ilipat sa Applications</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/move_to_applications.py"/>
+        <source>Not now</source>
+        <translation type="unfinished">Hindi ngayon</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/move_to_applications.py"/>
+        <source>Polyglotic couldn&apos;t move itself to Applications.</source>
+        <translation type="unfinished">Hindi nailipat ng Polyglotic ang sarili nito sa Applications.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/move_to_applications.py"/>
+        <source>Move it, and Polyglotic opens again from Applications.</source>
+        <translation type="unfinished">Ilipat ito, at muling magbubukas ang Polyglotic mula sa Applications.</translation>
+    </message>
+</context>
+<context>
+    <name>OneCopy</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/one_copy.py"/>
+        <source>Polyglotic is already open, but it isn&apos;t responding. Wait a moment, then open it again. If it still doesn&apos;t come up, end Polyglotic in Task Manager, then open it again.</source>
+        <translation type="unfinished">Bukas na ang Polyglotic, pero hindi ito tumutugon. Maghintay sandali, saka buksan itong muli. Kung hindi pa rin ito lumalabas, tapusin ang Polyglotic sa Task Manager, saka buksan itong muli.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/one_copy.py"/>
+        <source>Polyglotic is already open, but it isn&apos;t responding. Wait a moment, then open it again. If it still doesn&apos;t come up, force quit Polyglotic (⌥⌘Esc), then open it again.</source>
+        <translation type="unfinished">Bukas na ang Polyglotic, pero hindi ito tumutugon. Maghintay sandali, saka buksan itong muli. Kung hindi pa rin ito lumalabas, i-force quit ang Polyglotic (⌥⌘Esc), saka buksan itong muli.</translation>
+    </message>
+</context>
+<context>
     <name>Pages</name>
     <message>
         <location filename="../src/polyglotic_desktop/ui/widgets.py"/>
@@ -3666,6 +5310,21 @@
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>{seconds}s</source>
         <translation type="unfinished">{seconds} seg</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Never</source>
+        <translation type="unfinished">Hindi kailanman</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>{hours} h</source>
+        <translation type="unfinished">{hours} oras</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>{minutes} min</source>
+        <translation type="unfinished">{minutes} min</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -3689,38 +5348,38 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Detect</source>
-        <translation type="unfinished">Auto</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>English</source>
-        <translation type="unfinished">English</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Mandarin</source>
-        <translation type="unfinished">Mandarin</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Cantonese</source>
-        <translation type="unfinished">Cantonese</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>Spoken language</source>
         <translation type="unfinished">Wikang sinasalita</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Detect handles mixed conversations. Choosing one language stops short or mumbled speech being heard as another - but anything said in a different language is then shown untranslated.</source>
-        <translation type="unfinished">Kaya ng Auto ang halo-halong usapan. Kapag pumili ng isang wika, hindi mapagkakamalang ibang wika ang maikli o pabulong na salita - pero ipapakitang walang salin ang sinabi sa ibang wika.</translation>
+        <source>Detect finds the language each time someone speaks, and handles mixed talk. Name it and every caption is heard as that language: steadier for an app that speaks one, but a line in another may come out wrong.</source>
+        <translation type="unfinished">Awtomatikong inaalam ang wika tuwing may nagsasalita, at kaya ang halu-halong usapan. Kapag pumili ka ng isa, bawat caption ay pakikinggan sa wikang iyon: mas matatag para sa app na iisang wika ang gamit, pero puwedeng mali ang lumabas sa linyang nasa ibang wika.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Second language</source>
-        <translation type="unfinished">Ikalawang wika</translation>
+        <source>Simplified ({sample})</source>
+        <translation type="unfinished">Simplified ({sample})</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Traditional ({sample})</source>
+        <translation type="unfinished">Tradisyonal ({sample})</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Show Mandarin in</source>
+        <translation type="unfinished">Ipakita ang Mandarin sa</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>The characters Mandarin&apos;s captions are written in, Detect included. Lookups, the transcript, copy and Anki use the same; translations into Chinese keep the language you picked.</source>
+        <translation type="unfinished">Ang mga character na ginagamit sa caption ng Mandarin, kasama kapag awtomatikong inaalam ang wika. Ganito rin sa lookup, transcript, kopya at Anki; ang mga salin sa Chinese ay nananatili sa wikang pinili mo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>When they already speak the window&apos;s language</source>
+        <translation type="unfinished">Kapag wika na ng window ang sinasalita nila</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -3789,8 +5448,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Lines already in {language} are translated into</source>
-        <translation type="unfinished">Ang mga linyang nasa {language} na ay isinasalin sa</translation>
+        <source>Caption windows translating into {language} - when someone already speaks {language}, also translate into</source>
+        <translation type="unfinished">Mga window ng caption na nagsasalin sa {language} - kapag {language} na ang sinasalita, isalin din sa</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -3799,8 +5458,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Lines already in {language} are translated into:</source>
-        <translation type="unfinished">Ang mga linyang nasa {language} na ay isinasalin sa:</translation>
+        <source>Caption windows translating into {language} - when someone already speaks {language}, also translate into:</source>
+        <translation type="unfinished">Mga window ng caption na nagsasalin sa {language} - kapag {language} na ang sinasalita, isalin din sa:</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -3877,6 +5536,16 @@
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>Shorter: text sooner while someone talks on, more half sentences - the same in every timing.</source>
         <translation type="unfinished">Mas maikli: mas maagang teksto habang tuloy ang nagsasalita, mas maraming putol na pangungusap - pareho sa bawat timing.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Text can still change for</source>
+        <translation type="unfinished">Puwede pang magbago ang teksto sa loob ng</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>How long words on screen may still be corrected as more is heard. Shorter: fewer words change while you read, and more mistakes stay as first heard - most of all when Live updates come faster than every second.</source>
+        <translation type="unfinished">Gaano katagal pang puwedeng itama ang mga salita sa screen habang mas marami ang naririnig. Mas maikli: mas kaunting salita ang nagbabago habang nagbabasa ka, at mas maraming mali ang naiiwan gaya ng unang narinig - lalo na kapag mas madalas sa isang beses bawat segundo ang update ng Live.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -3972,6 +5641,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>Any font on this PC. Chinese and Japanese fall back to a font that has them if yours doesn&apos;t.</source>
         <translation type="unfinished">Kahit anong font sa PC na ito. Lumilipat ang Chinese at Japanese sa font na mayroon sila kung wala sa iyo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Any font on this Mac. Chinese and Japanese fall back to a font that has them if yours doesn&apos;t.</source>
+        <translation type="unfinished">Kahit anong font sa Mac na ito. Lumilipat ang Chinese at Japanese sa font na mayroon sila kung wala sa iyo.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -4100,6 +5774,26 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Colour linked words in what was said</source>
+        <translation type="unfinished">Kulayan ang mga salitang naka-ugnay sa sinabi</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Each word a link joins takes its colour, as its underline has.</source>
+        <translation type="unfinished">Ang bawat salitang pinag-uugnay ng isang ugnay ay kukuha ng kulay nito, gaya ng linya nito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Colour linked words in the translation</source>
+        <translation type="unfinished">Kulayan ang mga salitang naka-ugnay sa salin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Each word a link joins takes its colour. With both on, and pinyin in its word link&apos;s colour, a word, its pinyin and its translation all match.</source>
+        <translation type="unfinished">Ang bawat salitang pinag-uugnay ng isang ugnay ay kukuha ng kulay nito. Kapag parehong naka-on at ang pinyin ay nasa kulay ng ugnay ng salita, magkakatugma ang salita, ang pinyin nito at ang salin nito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>Which words are pointed out as new is on {learning}.</source>
         <translation type="unfinished">Nasa {learning} kung aling mga salita ang itinuturong bago.</translation>
     </message>
@@ -4107,6 +5801,122 @@
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>Learning</source>
         <translation type="unfinished">Pag-aaral</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Readings</source>
+        <extracomment>Settings &gt; Readings: the card of reading lines over captions - pinyin above Chinese, Jyutping above Cantonese</extracomment>
+        <translation type="unfinished">Basa</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Pinyin above Chinese</source>
+        <translation type="unfinished">Pinyin sa ibabaw ng Chinese</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>A small syllable over each Chinese character, in what was said and in translations into Chinese. It isn&apos;t part of the text: copying and looking up words work as before.</source>
+        <translation type="unfinished">Isang maliit na pantig sa ibabaw ng bawat Chinese na character, sa sinabi at sa mga salin sa Chinese. Hindi ito bahagi ng teksto: gumagana pa rin ang pagkopya at paghahanap ng salita gaya ng dati.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Pinyin</source>
+        <translation type="unfinished">Pinyin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Zhuyin</source>
+        <translation type="unfinished">Zhuyin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Readings above Chinese</source>
+        <translation type="unfinished">Basa sa ibabaw ng Chinese</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Zhuyin (bopomofo, ㄅㄆㄇㄈ) is how readers in Taiwan learn the sounds: the same readings as pinyin, in its symbols and tone marks.</source>
+        <translation type="unfinished">Ang zhuyin (bopomofo, ㄅㄆㄇㄈ) ang paraan ng mga mambabasa sa Taiwan para matutunan ang mga tunog: kaparehong basa ng pinyin, sa sarili nitong mga simbolo at marka ng tono.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Jyutping above Cantonese</source>
+        <translation type="unfinished">Jyutping sa ibabaw ng Cantonese</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>A small syllable over each Cantonese character, its tone as a raised number (hai⁶), from the Cantonese dictionary - once you learn Cantonese and its dictionary is here.</source>
+        <translation type="unfinished">Isang maliit na pantig sa ibabaw ng bawat Cantonese na character, ang tono bilang nakataas na numero (hai⁶), mula sa diksyunaryo ng Cantonese - kapag nag-aaral ka na ng Cantonese at narito na ang diksyunaryo nito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Every word</source>
+        <translation type="unfinished">Bawat salita</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Past what you know</source>
+        <translation type="unfinished">Lampas sa alam mo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Readings over</source>
+        <translation type="unfinished">Basa sa ibabaw ng</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Past what you know: only over the words past your known line on Learning, the ones word links point out. Less to read as you learn.</source>
+        <translation type="unfinished">Lampas sa alam mo: sa ibabaw lang ng mga salitang lampas sa linya ng alam mo sa Pag-aaral, ang mga itinuturo ng word links. Mas kaunti ang babasahin habang natututo ka.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Small</source>
+        <translation type="unfinished">Maliit</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Reading size</source>
+        <translation type="unfinished">Laki ng basa</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Beside the characters&apos; own size. Medium reads better in a small window.</source>
+        <translation type="unfinished">Kumpara sa laki ng mga character. Mas madaling basahin ang Katamtaman sa maliit na window.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Same as its line</source>
+        <translation type="unfinished">Kapareho ng linya nito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Its word link&apos;s colour</source>
+        <translation type="unfinished">Kulay ng ugnay ng salita nito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Custom</source>
+        <translation type="unfinished">Custom</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Reading colour</source>
+        <translation type="unfinished">Kulay ng basa</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Its word link&apos;s colour: a reading takes the colour of its word&apos;s link, where one joins it. Word links can colour the linked words too.</source>
+        <translation type="unfinished">Kulay ng ugnay ng salita nito: kukunin ng basa ang kulay ng ugnay ng salita nito, kung mayroon. Kaya rin ng Ugnay ng salita na kulayan ang mga salitang naka-ugnay.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Custom reading colour</source>
+        <translation type="unfinished">Custom na kulay ng basa</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>The one colour readings are drawn in, over any line.</source>
+        <translation type="unfinished">Ang iisang kulay ng basa, sa ibabaw ng anumang linya.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -4135,8 +5945,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Never</source>
-        <translation type="unfinished">Hindi kailanman</translation>
+        <source>Slide in: a new caption rises into place from below - not while the Mac&apos;s animation effects are off. Appear: nothing moves.</source>
+        <translation type="unfinished">Pumasok nang padulas: umaakyat sa puwesto mula sa ibaba ang bagong caption - hindi kapag naka-off ang animation effects ng Mac. Lumitaw: walang gumagalaw.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -4147,6 +5957,31 @@
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>Captions disappear after this long with nobody talking. Never: they stay until the next line.</source>
         <translation type="unfinished">Nawawala ang mga caption kapag ganito katagal na walang nagsasalita. Hindi kailanman: nananatili sila hanggang susunod na linya.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Stop listening when hidden</source>
+        <translation type="unfinished">Huminto sa pakikinig kapag nakatago</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>A hidden caption window stops listening after this long, so nothing more of its app is sent. Showing it starts it again.</source>
+        <translation type="unfinished">Ang nakatagong window ng caption ay hihinto sa pakikinig pagkalipas ng ganitong tagal, kaya wala nang ipapadala mula sa app nito. Kapag ipinakita ito, magsisimula ulit.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Show a hidden caption window when speech starts</source>
+        <translation type="unfinished">Ipakita ang nakatagong window ng caption kapag may nagsimulang magsalita</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Off: it stays hidden, and the tray says it&apos;s still captioning.</source>
+        <translation type="unfinished">Naka-off: mananatili itong nakatago, at sasabihin ng system tray na nagka-caption pa rin ito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Off: it stays hidden, and the menu bar&apos;s icon says it&apos;s still captioning.</source>
+        <translation type="unfinished">Naka-off: mananatili itong nakatago, at sasabihin ng icon sa menu bar na nagka-caption pa rin ito.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -4303,6 +6138,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/problem_report.py"/>
+        <source>About this Mac: the app, the system and the audio devices</source>
+        <translation type="unfinished">Tungkol sa Mac na ito: ang app, ang system at ang mga audio device</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/problem_report.py"/>
         <source>Captions from the last few minutes, as shown</source>
         <translation type="unfinished">Mga caption ng huling ilang minuto, gaya ng ipinakita</translation>
     </message>
@@ -4336,6 +6176,108 @@
         <source>your mic</source>
         <extracomment>the user&apos;s own mic, as a source in &quot;Audio from {source}&quot;</extracomment>
         <translation type="unfinished">ang mic mo</translation>
+    </message>
+</context>
+<context>
+    <name>SavedSentences</name>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>{found} of %Ln saved sentence(s)</source>
+        <translation type="unfinished">
+            <numerusform>{found} sa %Ln naka-save na pangungusap</numerusform>
+            <numerusform>{found} sa %Ln naka-save na pangungusap</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>%Ln saved sentence(s)</source>
+        <translation type="unfinished">
+            <numerusform>%Ln naka-save na pangungusap</numerusform>
+            <numerusform>%Ln naka-save na pangungusap</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Move to…</source>
+        <translation type="unfinished">Ilipat sa…</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Remove</source>
+        <translation type="unfinished">Alisin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Saved sentences</source>
+        <translation type="unfinished">Mga naka-save na pangungusap</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>What you selected in captions and saved, with its translation. Search in either language: a sentence with most of your words is found.</source>
+        <translation type="unfinished">Ang pinili at sinave mo sa captions, kasama ang salin nito. Maghanap sa alinmang wika: makikita ang pangungusap na may karamihan ng iyong mga salita.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Search - words in either language</source>
+        <translation type="unfinished">Maghanap - mga salita sa alinmang wika</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Search your sentences</source>
+        <translation type="unfinished">Maghanap sa iyong mga pangungusap</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Clear the search</source>
+        <translation type="unfinished">I-clear ang paghahanap</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Show sentences in this category</source>
+        <translation type="unfinished">Ipakita ang mga pangungusap sa kategoryang ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Show sentences with this saved word</source>
+        <translation type="unfinished">Ipakita ang mga pangungusap na may naka-save na salitang ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Show more</source>
+        <translation type="unfinished">Ipakita pa</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>None yet - drag across more than a word in a caption window, then pick a category to save it.</source>
+        <translation type="unfinished">Wala pa - i-drag sa higit sa isang salita sa caption window, saka pumili ng kategorya.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>All categories</source>
+        <translation type="unfinished">Lahat ng kategorya</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Any saved word</source>
+        <translation type="unfinished">Anumang naka-save na salita</translation>
+    </message>
+</context>
+<context>
+    <name>SentenceCard</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sentence_card.py"/>
+        <source>Save sentence to</source>
+        <translation type="unfinished">I-save ang pangungusap sa</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sentence_card.py"/>
+        <source>Saved to {category}</source>
+        <translation type="unfinished">Na-save sa {category}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sentence_card.py"/>
+        <source>Couldn&apos;t save it</source>
+        <translation type="unfinished">Hindi ma-save</translation>
     </message>
 </context>
 <context>
@@ -4392,6 +6334,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Like this Mac</source>
+        <translation type="unfinished">Gaya ng Mac na ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>Light</source>
         <translation type="unfinished">Maliwanag</translation>
     </message>
@@ -4409,21 +6356,6 @@
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>A few parts change at the next start.</source>
         <translation type="unfinished">May ilang bahaging magbabago sa susunod na pagbukas.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
-        <source>Language</source>
-        <translation type="unfinished">Wika</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
-        <source>The app&apos;s language</source>
-        <translation type="unfinished">Wika ng app</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
-        <source>Menus, buttons and help - not your captions. It changes the next time Polyglotic starts.</source>
-        <translation type="unfinished">Mga menu, button at tulong - hindi ang mga caption mo. Magbabago ito sa susunod na pagbukas ng Polyglotic.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
@@ -4502,6 +6434,47 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Transcripts</source>
+        <translation type="unfinished">Mga transcript</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>How far back a transcript window scrolls and searches. Copy all and Save always have the whole session.</source>
+        <translation type="unfinished">Gaano kalayo pabalik nag-i-scroll at naghahanap ang transcript window. Laging nasa Kopyahin lahat at I-save ang buong session.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Newest {count} lines</source>
+        <extracomment>{count} is always 1,000</extracomment>
+        <translation type="unfinished">Pinakabagong {count} linya</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Last 3 hours</source>
+        <translation type="unfinished">Huling 3 oras</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Whole session</source>
+        <translation type="unfinished">Buong session</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>How far back transcripts go</source>
+        <translation type="unfinished">Gaano kalayo pabalik ang mga transcript</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Ask to save before quitting</source>
+        <translation type="unfinished">Magtanong kung i-save bago lumabas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>With Last 3 hours or Whole session: Quit asks about a transcript of more than 300 lines that isn&apos;t saved.</source>
+        <translation type="unfinished">Sa Huling 3 oras o Buong session: magtatanong ang Lumabas tungkol sa transcript na lampas 300 linya na hindi pa naka-save.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>Dictation (preview)</source>
         <translation type="unfinished">Dictation (preview)</translation>
     </message>
@@ -4537,18 +6510,28 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Click, then press the key or combination you want to hold: Right ⌘, F9, ⌃⌘E… A key on its own, or with ⌃, ⌥ or ⌘, is Polyglotic&apos;s while dictation is on; Right ⌘ alone still works in other apps.</source>
+        <translation type="unfinished">I-click, saka pindutin ang key o kombinasyong gusto mong pindutin nang matagal: Kanang ⌘, F9, ⌃⌘E… Ang key nang mag-isa, o kasama ang ⌃, ⌥ o ⌘, ay sa Polyglotic habang naka-on ang dictation; gumagana pa rin ang Kanang ⌘ nang mag-isa sa ibang program.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>Dictation&apos;s language</source>
         <translation type="unfinished">Wika ng dictation</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
-        <source>Detect the language</source>
-        <translation type="unfinished">Alamin ang wika</translation>
+        <source>Language</source>
+        <translation type="unfinished">Wika</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>Detect types whatever language you speak, each time you hold the key. Set one - English, Mandarin… - and it&apos;s always heard as that: a short phrase is never taken for another. The tray&apos;s menu switches it too.</source>
-        <translation type="unfinished">Tina-type ng Auto ang kahit anong wikang sinasabi mo, tuwing pinipindot mo ang key. Magtakda ng isa - English, Mandarin… - at laging ganoon ito maririnig: hindi kailanman mapagkakamalang ibang wika ang maikling parirala. Napapalitan din ito sa menu ng tray.</translation>
+        <translation type="unfinished">Tina-type ng “Awtomatikong alamin” ang kahit anong wikang sinasabi mo, tuwing pinipindot mo ang key. Magtakda ng isa - English, Mandarin… - at laging ganoon ito maririnig: hindi kailanman mapagkakamalang ibang wika ang maikling parirala. Napapalitan din ito sa menu ng tray.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Detect types whatever language you speak, each time you hold the key. Set one - English, Mandarin… - and it&apos;s always heard as that: a short phrase is never taken for another. The menu bar&apos;s menu switches it too.</source>
+        <translation type="unfinished">Tina-type ng “Awtomatikong alamin” ang kahit anong wikang sinasabi mo, tuwing pinipindot mo ang key. Magtakda ng isa - English, Mandarin… - at laging ganoon ito maririnig: hindi kailanman mapagkakamalang ibang wika ang maikling parirala. Napapalitan din ito sa menu ng menu bar.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
@@ -4559,6 +6542,17 @@
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>English comes out as colour, centre and organise.</source>
         <translation type="unfinished">Lumalabas ang English bilang colour, centre at organise.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Polyglotic isn&apos;t allowed to type into other apps, so nothing you say is typed. In System Settings, open Privacy &amp; Security, then Accessibility, and turn on Polyglotic.</source>
+        <extracomment>macOS System Settings&apos; own names: keep them as the Mac shows them</extracomment>
+        <translation type="unfinished">Hindi pinapayagan ang Polyglotic na mag-type sa ibang app, kaya walang nata-type sa mga sinasabi mo. Sa System Settings, buksan ang Privacy &amp; Security, pagkatapos ang Accessibility, at i-on ang Polyglotic.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Open System Settings</source>
+        <translation type="unfinished">Buksan ang System Settings</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
@@ -4577,18 +6571,39 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
-        <source>Captions</source>
-        <translation type="unfinished">Mga caption</translation>
+        <source>Look</source>
+        <translation type="unfinished">Itsura</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
-        <source>Learning</source>
-        <translation type="unfinished">Pag-aaral</translation>
+        <source>Word links</source>
+        <translation type="unfinished">Ugnay ng salita</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Readings</source>
+        <extracomment>Settings&apos; section of reading lines over captions - pinyin above Chinese, Jyutping above Cantonese</extracomment>
+        <translation type="unfinished">Basa</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Timing</source>
+        <translation type="unfinished">Timing</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Speech</source>
+        <translation type="unfinished">Pagsasalita</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>App</source>
         <translation type="unfinished">App</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Lab</source>
+        <translation type="unfinished">Lab</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
@@ -4599,6 +6614,16 @@
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>App language</source>
         <translation type="unfinished">Wika ng app</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>The app&apos;s language</source>
+        <translation type="unfinished">Wika ng app</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Menus, buttons and help - not your captions. It changes the next time Polyglotic starts.</source>
+        <translation type="unfinished">Mga menu, button at tulong - hindi ang mga caption mo. Magbabago ito sa susunod na pagbukas ng Polyglotic.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
@@ -4619,16 +6644,6 @@
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>Tell us what reads wrong</source>
         <translation type="unfinished">Sabihin kung ano ang mali ang dating</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
-        <source>The languages you&apos;re learning, your level and which words are pointed out as new have a page of their own.</source>
-        <translation type="unfinished">May sariling page ang mga wikang pinag-aaralan mo, ang antas mo at kung aling mga salita ang itinuturong bago.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
-        <source>Open Learning</source>
-        <translation type="unfinished">Buksan ang Pag-aaral</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
@@ -4672,12 +6687,38 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Version {version} is available. Your connection is metered, so it waits: Home offers to download it anyway.</source>
+        <translation type="unfinished">May bersyon {version} na. Metered ang koneksyon mo, kaya naghihintay ito: sa Home, puwede mo pa rin itong i-download.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>This copy wasn&apos;t installed by the installer, so it can&apos;t update itself.</source>
         <translation type="unfinished">Hindi na-install ng installer ang kopyang ito, kaya hindi nito kayang mag-update nang kusa.</translation>
     </message>
 </context>
 <context>
     <name>SettingsPopover</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
+        <source>When they already speak {language}</source>
+        <extracomment>A caption window&apos;s row: what to do with lines already spoken in {language}, the language this window translates into</extracomment>
+        <translation type="unfinished">Kapag {language} na ang sinasalita nila</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
+        <source>{language} is this window&apos;s language, so those lines get no translation. Translate them into a second language too, or leave them as they are.</source>
+        <translation type="unfinished">{language} ang wika ng window na ito, kaya walang salin ang mga linyang iyon. Isalin din sila sa pangalawang wika, o hayaan lang.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
+        <source>Leave as they are</source>
+        <translation type="unfinished">Hayaan lang</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
+        <source>Also translate into {language}</source>
+        <translation type="unfinished">Isalin din sa {language}</translation>
+    </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
         <source>{app} - playing</source>
@@ -4710,18 +6751,13 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
-        <source>Spoken language</source>
-        <translation type="unfinished">Wikang sinasalita</translation>
+        <source>They speak</source>
+        <translation type="unfinished">Sinasalita nila</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
-        <source>What this app&apos;s speech is in. Detect handles mixed talk; naming one language stops short words being heard as another.</source>
-        <translation type="unfinished">Anong wika ang sinasalita sa app na ito. Kaya ng Auto ang halo-halong usapan; ang pagtukoy ng isang wika ay pumipigil na mapagkamalang ibang wika ang maiikling salita.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
-        <source>Detect</source>
-        <translation type="unfinished">Auto</translation>
+        <source>What this app&apos;s speech is in. Detect finds the language each time someone speaks, and handles mixed talk. Name it and every caption is heard as that language: short or mumbled speech is never taken for another.</source>
+        <translation type="unfinished">Ang wikang sinasalita sa app na ito. Awtomatikong inaalam ang wika tuwing may nagsasalita, at kaya ang halu-halong usapan. Kapag pumili ka ng isa, bawat caption ay pakikinggan sa wikang iyon: hindi kailanman mapagkakamalang ibang wika ang maikli o malabong pananalita.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
@@ -4735,13 +6771,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
-        <source>A line spoken in this window&apos;s language gets no translation. Show it in another language instead, or leave it.</source>
-        <translation type="unfinished">Hindi isinasalin ang linyang sinabi sa wika ng window na ito. Ipakita ito sa ibang wika, o hayaan.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
-        <source>Lines already in this window&apos;s language</source>
-        <translation type="unfinished">Mga linyang nasa wika na ng window na ito</translation>
+        <source>When they already speak this window&apos;s language</source>
+        <translation type="unfinished">Kapag wika na ng window na ito ang sinasalita nila</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
@@ -4795,6 +6826,21 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
+        <source>Translation size</source>
+        <translation type="unfinished">Laki ng salin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
+        <source>Smaller translation</source>
+        <translation type="unfinished">Mas maliit na salin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
+        <source>Bigger translation</source>
+        <translation type="unfinished">Mas malaking salin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
         <source>Original only</source>
         <translation type="unfinished">Orihinal lang</translation>
     </message>
@@ -4802,16 +6848,6 @@
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
         <source>{percent}%</source>
         <translation type="unfinished">{percent}%</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
-        <source>Lines already in {language}</source>
-        <translation type="unfinished">Mga linyang nasa {language} na</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
-        <source>Leave as they are</source>
-        <translation type="unfinished">Hayaan lang</translation>
     </message>
 </context>
 <context>
@@ -4838,6 +6874,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
+        <source>This Mac has signed in before: the invite code you used then works again here.</source>
+        <translation type="unfinished">Nakapag-sign in na dati ang Mac na ito: gagana ulit dito ang invite code na ginamit noon.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
         <source>Signing in…</source>
         <translation type="unfinished">Nagsa-sign in…</translation>
     </message>
@@ -4858,6 +6899,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
+        <source>This code doesn&apos;t work: it may be mistyped, used on another computer or no longer valid. Check it, or write to us and we&apos;ll sort it out.</source>
+        <translation type="unfinished">Hindi gumagana ang code na ito: baka mali ang pagkaka-type, nagamit na sa ibang computer o hindi na valid. Suriin ito, o sumulat sa amin at aayusin namin.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
         <source>This code&apos;s subscription was cancelled before the code was used, so it gives no Plus. To get Plus, subscribe again on our site - or write to us if you didn&apos;t cancel it.</source>
         <translation type="unfinished">Kinansela ang subscription ng code na ito bago ito nagamit, kaya hindi ito nagbibigay ng Plus. Para magka-Plus, mag-subscribe ulit sa aming site - o sumulat sa amin kung hindi mo ito kinansela.</translation>
     </message>
@@ -4870,6 +6916,11 @@
         <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
         <source>This PC&apos;s sign-in has run out. Sign out on Account, then sign in with this code.</source>
         <translation type="unfinished">Nag-expire na ang sign-in ng PC na ito. Mag-sign out sa Account, saka mag-sign in gamit ang code na ito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
+        <source>This Mac&apos;s sign-in has run out. Sign out on Account, then sign in with this code.</source>
+        <translation type="unfinished">Nag-expire na ang sign-in ng Mac na ito. Mag-sign out sa Account, saka mag-sign in gamit ang code na ito.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
@@ -4886,8 +6937,20 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
-        <source>Check this PC&apos;s date and time: a secure connection needs them right. Set them in Windows&apos; Settings, Time &amp; language.</source>
-        <translation type="unfinished">Suriin ang petsa at oras ng PC na ito: kailangang tama ang mga ito para sa secure na koneksiyon. I-set ang mga ito sa Settings ng Windows, Time &amp; language.</translation>
+        <source>This PC says it&apos;s {date}, which can&apos;t be right, and a secure connection needs the right date. Turn on Set time automatically in Windows&apos; Settings, Time &amp; language, Date &amp; time, then choose Sync now.</source>
+        <extracomment>{date}: the date this PC&apos;s clock says, in its regional format</extracomment>
+        <translation type="unfinished">Sinasabi ng PC na ito na {date} ngayon, na hindi puwedeng tama, at kailangan ng tamang petsa para sa secure na koneksiyon. I-on ang Set time automatically sa Settings ng Windows, Time &amp; language, Date &amp; time, at piliin ang Sync now.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
+        <source>This Mac says it&apos;s {date}, which can&apos;t be right, and a secure connection needs the right date. Turn on Set time and date automatically in System Settings, General, Date &amp; Time.</source>
+        <extracomment>{date}: the date this Mac&apos;s clock says, in its regional format</extracomment>
+        <translation type="unfinished">Sinasabi ng Mac na ito na {date} ngayon, na hindi puwedeng tama, at kailangan ng tamang petsa para sa secure na koneksiyon. I-on ang Set time and date automatically sa System Settings, General, Date &amp; Time.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
+        <source>Something on this network is in the way with an out-of-date certificate - most often an antivirus&apos;s HTTPS scanning, or a VPN. Turn it off for Polyglotic, or try another network.</source>
+        <translation type="unfinished">May humaharang sa network na ito gamit ang expired na certificate - kadalasan ang HTTPS scanning ng antivirus, o isang VPN. I-off ito para sa Polyglotic, o sumubok ng ibang network.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
@@ -4921,13 +6984,142 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
+        <source>Sign out of Polyglotic on this Mac?</source>
+        <translation type="unfinished">Mag-sign out sa Polyglotic sa Mac na ito?</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
         <source>Captions stop until you sign in again - with the same invite code: it works again on this PC. Your saved words and learning data stay, on this PC and on our server.</source>
         <translation type="unfinished">Titigil ang mga caption hanggang mag-sign in ka ulit - gamit ang parehong invite code: gagana ulit ito sa PC na ito. Mananatili ang mga naka-save na salita at data ng pag-aaral, sa PC na ito at sa aming server.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
+        <source>Captions stop until you sign in again - with the same invite code: it works again on this Mac. Your saved words and learning data stay, on this Mac and on our server.</source>
+        <translation type="unfinished">Titigil ang mga caption hanggang mag-sign in ka ulit - gamit ang parehong invite code: gagana ulit ito sa Mac na ito. Mananatili ang mga naka-save na salita at data ng pag-aaral, sa Mac na ito at sa aming server.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
         <source>Changes this PC hasn&apos;t sent to our server yet are dropped, so none of them reach whoever signs in next.</source>
         <translation type="unfinished">Itatapon ang mga pagbabagong hindi pa naipapadala ng PC na ito sa aming server, para walang makarating sa susunod na magsa-sign in.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
+        <source>Changes this Mac hasn&apos;t sent to our server yet are dropped, so none of them reach whoever signs in next.</source>
+        <translation type="unfinished">Itatapon ang mga pagbabagong hindi pa naipapadala ng Mac na ito sa aming server, para walang makarating sa susunod na magsa-sign in.</translation>
+    </message>
+</context>
+<context>
+    <name>SoundCard</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>This PC&apos;s default</source>
+        <translation type="unfinished">Default ng PC na ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>This Mac&apos;s default</source>
+        <translation type="unfinished">Default ng Mac na ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>This PC&apos;s default ({device})</source>
+        <translation type="unfinished">Default ng PC na ito ({device})</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>This Mac&apos;s default ({device})</source>
+        <translation type="unfinished">Default ng Mac na ito ({device})</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Microphone level</source>
+        <translation type="unfinished">Lakas ng mikropono</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Sound</source>
+        <translation type="unfinished">Tunog</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>What you hear</source>
+        <translation type="unfinished">Ang naririnig mo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Speakers</source>
+        <translation type="unfinished">Mga speaker</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>For Everything the PC plays. Apps you add are heard on any speakers.</source>
+        <translation type="unfinished">Para sa Lahat ng pinapatugtog ng PC. Naririnig ang mga app na idinagdag mo saanmang speaker.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>For Everything the Mac plays. Apps you add are heard on any speakers.</source>
+        <translation type="unfinished">Para sa Lahat ng pinapatugtog ng Mac. Naririnig ang mga app na idinagdag mo saanmang speaker.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>What you say</source>
+        <translation type="unfinished">Ang sinasabi mo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Caption what I say</source>
+        <translation type="unfinished">I-caption ang sinasabi ko</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>In every window. Your microphone is sent to the server only while this is on.</source>
+        <translation type="unfinished">Sa bawat window. Ipinapadala lang sa server ang mikropono mo habang naka-on ito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Microphone</source>
+        <translation type="unfinished">Mikropono</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Your microphone&apos;s level now</source>
+        <translation type="unfinished">Lakas ng mikropono mo ngayon</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Shown while what you say is captioned</source>
+        <translation type="unfinished">Ipinapakita habang naka-caption ang sinasabi mo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Not plugged in - this PC&apos;s default is used</source>
+        <translation type="unfinished">Hindi nakakabit - default ng PC na ito ang ginagamit</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Not plugged in - this Mac&apos;s default is used</source>
+        <translation type="unfinished">Hindi nakakabit - default ng Mac na ito ang ginagamit</translation>
+    </message>
+</context>
+<context>
+    <name>SpokenList</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/spoken_list.py"/>
+        <source>Spoken language</source>
+        <translation type="unfinished">Wikang sinasalita</translation>
+    </message>
+</context>
+<context>
+    <name>SpokenNudge</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/spoken_nudge.py"/>
+        <source>Yes</source>
+        <translation type="unfinished">Oo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/spoken_nudge.py"/>
+        <source>Not now</source>
+        <translation type="unfinished">Hindi muna</translation>
     </message>
 </context>
 <context>
@@ -4944,11 +7136,6 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/transcript_window.py"/>
-        <source>Looks wrong?</source>
-        <translation type="unfinished">Mukhang mali?</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/transcript_window.py"/>
         <source>No matches.</source>
         <translation type="unfinished">Walang tugma.</translation>
     </message>
@@ -4959,13 +7146,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/transcript_window.py"/>
-        <source>Check this line with our best model</source>
-        <translation type="unfinished">Suriin ang linyang ito gamit ang aming pinakamahusay na model</translation>
+        <source>Copy</source>
+        <translation type="unfinished">Kopyahin</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/transcript_window.py"/>
-        <source>Copy</source>
-        <translation type="unfinished">Kopyahin</translation>
+        <source>Copy what was said</source>
+        <translation type="unfinished">Kopyahin ang sinabi</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/transcript_window.py"/>
+        <source>Copy the translation</source>
+        <translation type="unfinished">Kopyahin ang salin</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/transcript_window.py"/>
@@ -5121,8 +7313,59 @@
     <name>Transcripts</name>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
+        <source>Save the transcript?</source>
+        <translation type="unfinished">I-save ang transcript?</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
+        <source>Save the transcript of {app} before quitting?</source>
+        <translation type="unfinished">I-save ang transcript ng {app} bago lumabas?</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
+        <source>It has %Ln line(s), and it&apos;s gone when Polyglotic quits.</source>
+        <translation type="unfinished">
+            <numerusform>May %Ln linya ito, at mawawala ito kapag lumabas ang Polyglotic.</numerusform>
+            <numerusform>May %Ln linya ito, at mawawala ito kapag lumabas ang Polyglotic.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
+        <source>Save…</source>
+        <translation type="unfinished">I-save…</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
+        <source>Quit without saving</source>
+        <translation type="unfinished">Lumabas nang hindi nagse-save</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
+        <source>Cancel</source>
+        <translation type="unfinished">Kanselahin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
+        <source>Don&apos;t ask again</source>
+        <translation type="unfinished">Huwag nang itanong</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
         <source>Transcript</source>
         <translation type="unfinished">Transcript</translation>
+    </message>
+</context>
+<context>
+    <name>UnlockSpot</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/unlock_spot.py"/>
+        <source>Unlock</source>
+        <translation type="unfinished">I-unlock</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/unlock_spot.py"/>
+        <source>Unlock every caption window</source>
+        <translation type="unfinished">I-unlock lahat ng window ng caption</translation>
     </message>
 </context>
 <context>
@@ -5204,6 +7447,11 @@
         <source>Time captions were on, counted on this PC.</source>
         <translation type="unfinished">Oras na naka-on ang mga caption, binilang sa PC na ito.</translation>
     </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/heard_card.py"/>
+        <source>Time captions were on, counted on this Mac.</source>
+        <translation type="unfinished">Oras na naka-on ang mga caption, binilang sa Mac na ito.</translation>
+    </message>
     <message numerus="yes">
         <location filename="../src/polyglotic_desktop/ui_next/heard_card.py"/>
         <source>+%Ln new in the last 7 days</source>
@@ -5239,6 +7487,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/heard_card.py"/>
+        <source>Counted on this Mac from finished captions, and kept here.</source>
+        <translation type="unfinished">Binilang sa Mac na ito mula sa mga tapos na caption, at itinatabi rito.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/heard_card.py"/>
         <source>Words met</source>
         <translation type="unfinished">Mga salitang nakita</translation>
     </message>
@@ -5256,6 +7509,16 @@
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
         <source>Not set yet - words count as known up to a middle level.</source>
         <translation type="unfinished">Hindi pa naitakda - itinuturing na alam ang mga salita hanggang gitnang antas.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Just starting - no words known yet</source>
+        <translation type="unfinished">Nagsisimula pa lang - wala pang alam na salita</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>About {count} of the most common words</source>
+        <translation type="unfinished">Mga {count} sa pinakakaraniwang mga salita</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
@@ -5344,7 +7607,7 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/word_bands.py"/>
-        <source>Words met, by how common they are</source>
+        <source>Words met, by frequency</source>
         <translation type="unfinished">Mga salitang nakita, ayon sa kung gaano kakaraniwan</translation>
     </message>
     <message>
@@ -5409,6 +7672,19 @@
         <translation type="unfinished">Alisin sa mga naka-save na salita</translation>
     </message>
     <message>
+        <location filename="../src/polyglotic_desktop/ui_next/word_table.py"/>
+        <source>Clear</source>
+        <translation type="unfinished">I-clear</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/word_table.py"/>
+        <source>%Ln word(s) picked</source>
+        <translation type="unfinished">
+            <numerusform>%Ln salitang napili</numerusform>
+            <numerusform>%Ln salitang napili</numerusform>
+        </translation>
+    </message>
+    <message>
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
         <source>HSK 3.0 (2025 exam syllabus)</source>
         <translation type="unfinished">HSK 3.0 (syllabus ng exam sa 2025)</translation>
@@ -5428,6 +7704,14 @@
         <source>Couldn&apos;t write {name}. It may be open in another program, or the folder may be read-only - close it or pick another folder, and try again.</source>
         <translation type="unfinished">Hindi ma-write ang {name}. Baka bukas ito sa ibang program, o read-only ang folder - isara ito o pumili ng ibang folder, at subukan ulit.</translation>
     </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>%Ln saved sentence(s) written to {name}.</source>
+        <translation type="unfinished">
+            <numerusform>%Ln naka-save na pangungusap ang naisulat sa {name}.</numerusform>
+            <numerusform>%Ln naka-save na pangungusap ang naisulat sa {name}.</numerusform>
+        </translation>
+    </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
         <source>No new words since the last export - {name} is empty.</source>
@@ -5444,6 +7728,15 @@
         <translation type="unfinished">
             <numerusform>%Ln salita ang naisulat sa {name}.</numerusform>
             <numerusform>%Ln salita ang naisulat sa {name}.</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>And %Ln saved sentence(s).</source>
+        <extracomment>after &quot;12 words written to polyglotic-words.apkg.&quot;</extracomment>
+        <translation type="unfinished">
+            <numerusform>At %Ln naka-save na pangungusap.</numerusform>
+            <numerusform>At %Ln naka-save na pangungusap.</numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -5527,6 +7820,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>I know these</source>
+        <translation type="unfinished">Alam ko ang mga ito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
         <source>Nothing yet - words new to you show here once you&apos;ve heard them a few times.</source>
         <translation type="unfinished">Wala pa - lalabas dito ang mga bagong salita kapag ilang beses mo na silang narinig.</translation>
     </message>
@@ -5577,6 +7875,16 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>New again</source>
+        <translation type="unfinished">Bago ulit</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>Ignore</source>
+        <translation type="unfinished">Balewalain</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
         <source>Saved words</source>
         <translation type="unfinished">Mga naka-save na salita</translation>
     </message>
@@ -5594,6 +7902,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
         <source>Add</source>
         <translation type="unfinished">Idagdag</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>Move to…</source>
+        <translation type="unfinished">Ilipat sa…</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
@@ -5654,6 +7967,19 @@
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
         <source>Heard in: {sentence}</source>
         <translation type="unfinished">Narinig sa: {sentence}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>Remove saved words</source>
+        <translation type="unfinished">Alisin ang mga naka-save na salita</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>Remove %Ln saved word(s)? The lines they were saved from go with them.</source>
+        <translation type="unfinished">
+            <numerusform>Alisin ang %Ln naka-save na salita? Kasama ring mawawala ang linyang pinag-save-an nito.</numerusform>
+            <numerusform>Alisin ang %Ln naka-save na salita? Kasama ring mawawala ang mga linyang pinag-save-an nila.</numerusform>
+        </translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>

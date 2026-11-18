@@ -1,7 +1,7 @@
 """Writes the desktop's rules as shared test cases (`docs/rule-cases/`), for any later port to pass.
 
 polyglotic-hq project 051 (from project 050: mobile kept open). The
-timing rules, the level curve, highlights, the Chinese word split and the
+timing rules, the known line, highlights, the Chinese word split and the
 caption display rules are written in Python here; a phone app (project
 050 recommends Kotlin Multiplatform) would write them again. These JSON
 files say what they must answer, as polyglotic-server's protocol examples
@@ -30,10 +30,12 @@ from typing import Any
 
 from polyglotic_desktop.core.learning.highlights import caption_cap, unfamiliar_words
 from polyglotic_desktop.core.learning.levels import (
-    KNOWN_AT,
-    NEXT_BAND,
-    SLOPE,
-    LevelCurve,
+    DEFAULT_WINDOW,
+    UNLIMITED,
+    WORDS,
+    KnownLine,
+    WindowSize,
+    place,
 )
 from polyglotic_desktop.core.learning.statuses import estimated_status
 from polyglotic_desktop.core.lexicon.chinese import ChineseDictionary
@@ -75,36 +77,69 @@ def _round(value: float) -> float:
     return round(value, DECIMALS)
 
 
-# -- the level curve -------------------------------------------------------------------
+# -- the known line and the learning window ------------------------------------------------
+
+
+def _placed(level: int | None, level_words: int | None, rank: int | None) -> EntryFacts:
+    return EntryFacts(EntryId("test:word"), level, rank, False, level_words)
 
 
 def levels() -> dict[str, Any]:
-    curves = [
-        ("picked", LevelCurve.picked(Level("hsk-2025", 0))),
-        ("picked", LevelCurve.picked(Level("hsk-2025", 2))),
-        ("picked", LevelCurve.picked(Level("hsk-2025", 4))),
-        ("midpoint", LevelCurve("en-frequency", 3.5)),
+    lines: list[tuple[KnownLine, WindowSize | None]] = [
+        (KnownLine.picked(Level("hsk-2025", 0)), None),
+        (KnownLine.picked(Level("hsk-2025", 2)), None),
+        (KnownLine.picked(Level("hsk-2025", 4)), 100),  # a level's window: the next
+        (KnownLine.picked(Level("en-frequency", 3)), None),
+        (KnownLine.words(0), None),
+        (KnownLine.words(1000), None),
+        (KnownLine.words(1000), 500),
+        (KnownLine.words(3000), 2000),
+        (KnownLine.words(3000), 3000),  # a size of the learner's own (0144)
+        (KnownLine.words(3000), UNLIMITED),  # no end: every word past the line
+        (KnownLine.picked(Level("hsk-2025", 4)), UNLIMITED),  # every level above
+    ]
+    hsk = (300, 500, 1000, 2000, 3600, 5400, 11000)
+    words = [
+        *(
+            _placed(n, size, rank)
+            for n, size in enumerate(hsk, 1)
+            for rank in (40, 8000)
+        ),
+        *(
+            _placed(None, None, rank)
+            for rank in (1, 1000, 1001, 1500, 3000, 3001, 5000)
+        ),
+        _placed(3, None, 2500),  # an English band: its rank places it
+        _placed(None, None, None),  # no rank, no level: rarer than any line
     ]
     cases = []
-    for how, curve in curves:
-        case: dict[str, Any] = {"scheme": curve.scheme}
-        if how == "picked":
-            case["picked_level"] = curve.picked_level
-        case["midpoint"] = curve.midpoint
-        case["levels"] = [
+    for line, size in lines:
+        window = line.window(size)
+        cases.append(
             {
-                "level": level,
-                "chance_known": _round(curve.chance_known(level)),
-                "estimates_known": curve.estimates_known(level),
-                "within_reach": curve.within_reach(level),
+                "scale": line.scale,
+                "known": line.known,
+                "stored": {"scheme": line.scale, "midpoint": line.midpoint},
+                "window_size": UNLIMITED.value if size is UNLIMITED else size,
+                "window_last": window.last,
+                "words": [
+                    {
+                        "level": w.level,
+                        "level_words": w.level_words,
+                        "rank": w.frequency_rank,
+                        "place": place(w),
+                        "known": line.knows(w),
+                        "reached": window.reaches(w),
+                        "in_window": window.holds(w),
+                    }
+                    for w in words
+                ],
             }
-            for level in [*range(1, 8), None]
-        ]
-        cases.append(case)
+        )
     return {
-        "rule": "The level curve: the chance a learner knows a word at a level",
+        "rule": "The known line and the learning window: known, learning or rarer",
         "code": "src/polyglotic_desktop/core/learning/levels.py",
-        "constants": {"slope": SLOPE, "known_at": KNOWN_AT, "next_band": NEXT_BAND},
+        "constants": {"words": WORDS, "default_window": DEFAULT_WINDOW},
         "cases": cases,
     }
 
@@ -128,7 +163,8 @@ def _heard_from(heard: dict[str, int]) -> Callable[[EntryId], int]:
 
 
 def highlights() -> dict[str, Any]:
-    curve = LevelCurve.picked(Level("hsk-2025", 2))
+    by_level = KnownLine.picked(Level("hsk-2025", 2))
+    in_words = KnownLine.words(1000)
     a, b, c = (_facts(n, level=3, rank=r) for n, r in (("a", 1), ("b", 2), ("c", 3)))
     within_reach = [
         *_known(30),
@@ -143,35 +179,66 @@ def highlights() -> dict[str, Any]:
         _facts("commoner", level=3, rank=900),
         _facts("heard-often", level=3, rank=8000),
     ]
-    inputs: list[tuple[str, list[list[EntryFacts]], dict[str, int], bool]] = [
-        ("only new words within reach, never names", [within_reach], {}, True),
-        ("every new word without the cap, still no names", [within_reach], {}, False),
-        ("the commonest wins the one place", [ranked], {}, True),
-        ("the most heard wins it", [ranked], {"heard-often": 7}, True),
+    by_rank = [
+        *_known(30),
+        _facts("in-window", level=None, rank=1400),
+        _facts("window-end", level=None, rank=2000),
+        _facts("rarer", level=None, rank=2001),
+        _facts("no-rank", level=None, rank=None),
+        _facts("Zhang", level=None, rank=1200, is_name=True),
+    ]
+    Line = list[EntryFacts]
+    inputs: list[tuple[str, KnownLine, list[Line], dict[str, int], bool]] = [
+        (
+            "only new words the window reaches, never names",
+            by_level,
+            [within_reach],
+            {},
+            True,
+        ),
+        (
+            "a level's every new word: the rarer too, no names",
+            by_level,
+            [within_reach],
+            {},
+            False,
+        ),
+        ("the commonest wins the one place", by_level, [ranked], {}, True),
+        ("the most heard wins it", by_level, [ranked], {"heard-often": 7}, True),
         (
             "at most two a line, each word once",
+            by_level,
             [[*_known(40), a, b, c], [*_known(40), a, c]],
             {},
             True,
         ),
+        ("in words: a few of the window's", in_words, [by_rank], {}, True),
+        (
+            "in words: every word of the window, never a rarer one",
+            in_words,
+            [by_rank],
+            {},
+            False,
+        ),
     ]
     cases = []
-    for name, lines, heard, common_only in inputs:
+    for name, curve, lines, heard, common_only in inputs:
         words = [
             [WordInLine(i * 2, i * 2 + 2, e) for i, e in enumerate(line)]
             for line in lines
         ]
         shown = unfamiliar_words(
             words,
-            lambda f: estimated_status(f, curve),
-            curve,
+            lambda f, line=curve: estimated_status(f, line),  # type: ignore[misc]
+            curve.window(),
             _heard_from(heard),
             common_only,
         )
         cases.append(
             {
                 "name": name,
-                "midpoint": curve.midpoint,
+                "scale": curve.scale,
+                "known": curve.known,
                 "common_only": common_only,
                 "heard": heard,
                 "lines": [
@@ -196,7 +263,7 @@ def highlights() -> dict[str, Any]:
             }
         )
     return {
-        "rule": 'Unfamiliar words a finished caption shows, under "common words only"',
+        "rule": "Unfamiliar words a finished caption shows: the learning window's",
         "code": "src/polyglotic_desktop/core/learning/highlights.py",
         "caption_cap": [
             {"words": n, "cap": caption_cap(n)} for n in (1, 10, 29, 30, 50, 100)
@@ -209,7 +276,10 @@ def highlights() -> dict[str, Any]:
 
 
 def word_split() -> dict[str, Any]:
-    from tests.lexicon.sample import chinese_sample  # the tests' CC-CEDICT sample
+    from tests.lexicon.sample import (  # the tests' CC-CEDICT samples
+        chinese_sample,
+        phrases_sample,
+    )
 
     ties = """\
 是 是 [shi4] /is; are; am; yes; to be/
@@ -247,6 +317,10 @@ def word_split() -> dict[str, Any]:
         ),
         (chinese_sample(ties, frequency_ranks=tie_ranks), ["是非常简单的", "不公平"]),
         (chinese_sample(ties), ["不公平"]),
+        (  # a phrase of two common words (polyglotic-hq 359, decision 0151)
+            phrases_sample(),
+            ["生活中的人", "有了人", "有的人", "去马里", "自由自在", "沧龙"],
+        ),
     ]
     cases = []
     for file, texts in dictionaries:
@@ -255,6 +329,16 @@ def word_split() -> dict[str, Any]:
             {
                 "headwords": sorted(file.headwords()),
                 "frequency_ranks": dict(sorted(file.frequency_ranks().items())),
+                "kept_whole": sorted(
+                    form
+                    for form in file.headwords()
+                    if any(
+                        r.reading[:1].isupper()
+                        or r.levels
+                        or any("(idiom)" in m for m in r.meanings)
+                        for r in file.records(form)
+                    )
+                ),
                 "splits": [
                     {"text": t, "words": [t[a:b] for a, b in split.split(t)]}
                     for t in texts

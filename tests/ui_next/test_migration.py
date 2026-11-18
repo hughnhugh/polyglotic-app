@@ -117,7 +117,17 @@ def test_todays_keys_are_not_touched() -> None:
     before = dict(TODAY)
     stored = moved_over(TODAY)
     assert before == TODAY
-    assert set(stored.to_stored()) == {"windows", "last", "joined", "looked_up"}
+    assert set(stored.to_stored()) == {
+        "windows",
+        "last",
+        "joined",
+        "looked_up",
+        "recent_spoken",
+        "declined_spoken",
+        "reading_hinted",
+        "set_up",  # the first window's set-up answered (465)
+        "start_like_this",
+    }
 
 
 def test_a_source_today_didnt_name_takes_todays_values_until_saved() -> None:

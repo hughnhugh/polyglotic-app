@@ -29,7 +29,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import asdict
 from enum import StrEnum
 
-from polyglotic_desktop.connection import protocol
+from polyglotic_desktop.connection import protocol, tls
 from polyglotic_desktop.connection.addresses import server_address
 from polyglotic_desktop.core.shared.client import USER_AGENT
 from polyglotic_desktop.ports.credentials import CredentialStore
@@ -67,7 +67,7 @@ def send_report(
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        with tls.urlopen(request, timeout) as response:
             protocol.validate(protocol.FeedbackResponse, json.load(response))
     except urllib.error.HTTPError as error:
         if error.code in (400, 413):

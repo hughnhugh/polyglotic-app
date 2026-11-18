@@ -31,7 +31,12 @@ from polyglotic_desktop.ports.capture import MicPiece
 from polyglotic_desktop.ui.app import ConnectionState
 from polyglotic_desktop.ui.dictation import Dictating
 from polyglotic_desktop.ui.settings import AppSettings, Settings
-from polyglotic_desktop.ui_next.dictation_sign import DictationSign, said_text
+from polyglotic_desktop.ui_next.dictation_sign import (
+    LONGER_SAID_MS,
+    SAID_MS,
+    DictationSign,
+    said_text,
+)
 
 WINDOW, OTHER_WINDOW = 0x100, 0x200
 
@@ -73,6 +78,7 @@ class Rig:
         self.types = True
         self.window = WINDOW
         self.esc = False
+        self.allowed = True
         self.sessions: list[bool] = []
         self.signed_in = signed_in
         self.now = 100.0
@@ -90,6 +96,7 @@ class Rig:
             clock=lambda: self.now,
             mic_held=lambda held, tail: self.mic_held.append((held, tail)),
             forget_unsent=self._forget,
+            typing_allowed=lambda: self.allowed,
         )
         self.dictating.sign_changed.connect(
             lambda state, _level: self.signs.append(state)
@@ -281,6 +288,30 @@ def test_typing_refused_is_said(rig: Rig) -> None:
     assert rig.signs[-1] == Said.NOT_TYPED.value
 
 
+def test_typing_the_os_hasnt_allowed_says_so(rig: Rig) -> None:
+    """A Mac without the Accessibility permission (polyglotic-hq 438): the
+    sign says it isn't allowed, not that it couldn't type there - and it
+    stays up longer, as something to do."""
+    rig.types, rig.allowed = False, False
+    rig.hold(1.0)
+    rig.mic.last_piece(0.0, 1.2)
+    rig.answer("Refused.")
+    assert rig.signs[-1] == Said.NOT_ALLOWED.value
+    assert "Settings > Dictation" in said_text(Said.NOT_ALLOWED.value)
+
+
+def test_the_sign_keeps_not_allowed_up_longer(qapp: QApplication) -> None:
+    sign = DictationSign()
+    try:
+        sign.show_state(Said.NOT_ALLOWED.value)
+        assert sign.isVisible()
+        assert sign._hide_later.interval() == LONGER_SAID_MS > SAID_MS
+        sign.show_state(Said.NOTHING_HEARD.value)
+        assert sign._hide_later.interval() == SAID_MS
+    finally:
+        shiboken6.delete(sign)
+
+
 def test_esc_cancels_and_the_late_answer_is_ignored(rig: Rig) -> None:
     rig.hold(1.0)
     rig.mic.last_piece(0.0, 1.2)
@@ -415,8 +446,9 @@ def test_every_language_the_speech_model_takes_is_offered_by_name(
 
 
 def test_dictation_is_a_source_of_its_own_on_the_session_only_when_on() -> None:
-    off = listening_settings(AppSettings())
+    off = listening_settings(AppSettings(dictation=False))
     assert DICTATION not in off.source_targets
+    assert DICTATION in listening_settings(AppSettings()).source_targets  # on: 478
     on = listening_settings(
         AppSettings(dictation=True, dictation_language="zh", spoken_language="en")
     )
@@ -467,7 +499,7 @@ def test_dictations_answers_never_reach_the_caption_feed(qapp: QApplication) -> 
 
 
 def test_dictation_settings_are_read_leniently() -> None:
-    assert AppSettings().dictation is False  # off until turned on
+    assert AppSettings().dictation is True  # on for a new learner (478; off in 283)
     assert AppSettings().dictation_key == "right_ctrl"  # polyglotic-hq 289
     for kept in ("insert", "ctrl+alt+d", "ctrl+win", "pause"):  # 283's still read
         assert AppSettings.from_stored({"dictation_key": kept}).dictation_key == kept
@@ -489,7 +521,7 @@ def test_dictation_settings_are_read_leniently() -> None:
         {"dictation": "yes", "dictation_key": "space", "dictation_language": "Klingon"}
     )
     assert (bad.dictation, bad.dictation_key, bad.dictation_language) == (
-        False,
+        True,  # the default (478)
         "right_ctrl",
         None,
     )

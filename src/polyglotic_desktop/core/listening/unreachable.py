@@ -40,8 +40,16 @@ class Unreachable(StrEnum):
     """The secure connection failed: something on this network is in the
     way - a firewall, an antivirus, a Wi-Fi sign-in page."""
     CLOCK = "clock"
-    """The server's certificate isn't valid at this PC's time: its date or
-    time is likely wrong (the connection is refused as not secure)."""
+    """This PC's clock is wrong for certain - before this copy of the app
+    was built - and a certificate on the way is out of date at the time it
+    says, so the connection is refused (connection.tls, decision 0104). A
+    clock that's wrong while the certificates check is let through, and
+    said on Home without stopping anything."""
+    OUT_OF_DATE = "out_of_date"
+    """A certificate on the way to our server is out of date, and this
+    PC's clock looks right: something on this network is in the way - an
+    antivirus's HTTPS scanning or a VPN, most often - with a certificate
+    of its own (connection.tls, decision 0104; polyglotic-hq 313)."""
     # the server answered, and won't serve this PC for now (protocol.md's
     # refusals that wait): read "Reconnecting", like a dropped connection
     TOO_MANY_SESSIONS = "too_many_sessions"
@@ -50,6 +58,11 @@ class Unreachable(StrEnum):
     TOO_MANY_TRIES = "too_many_tries"
     """Too many failed sign-ins from this network: the server's guessing
     limit (`auth_failed` `too_many_attempts`, close 4003)."""
+    MAINTENANCE = "maintenance"
+    """Our server is in a planned maintenance window it told the app of: it
+    refused listening for it (`server_busy` `reason` `maintenance`), or
+    didn't answer while the window is on (core.listening.maintenance;
+    polyglotic-hq 319)."""
 
 
 class Side(StrEnum):
@@ -72,8 +85,10 @@ _SIDES = {
     Unreachable.BLOCKED: Side.YOURS,
     Unreachable.NOT_SECURE: Side.YOURS,
     Unreachable.CLOCK: Side.YOURS,
+    Unreachable.OUT_OF_DATE: Side.YOURS,
     Unreachable.TOO_MANY_SESSIONS: Side.YOURS,
     Unreachable.TOO_MANY_TRIES: Side.EITHER,
+    Unreachable.MAINTENANCE: Side.OURS,
 }
 
 

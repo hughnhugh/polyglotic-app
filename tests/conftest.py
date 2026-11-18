@@ -14,7 +14,8 @@ source, which has no `.github/`, the tests of CI's workflows are skipped."""
 import os
 import re
 import sys
-from collections.abc import Generator
+import threading
+from collections.abc import Generator, Iterator
 from pathlib import Path
 
 import pytest
@@ -154,6 +155,20 @@ def _an_english_pc(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(languages, "own_languages", lambda: ["en"])
 
 
+@pytest.fixture(autouse=True)
+def _pack_warm_ups_end() -> Iterator[None]:
+    """A pack's word split reading its data on its own thread ("pack warm",
+    `main.PackDelivery`) ends with the test that opened it: it runs in short
+    turns at the interpreter (decision 0207), which would time the next
+    test's slots differently - the watchdog's tests missed a slow slot
+    beside one (polyglotic-hq 436). `QTest.qWait` keeps the interpreter, so
+    one can still be reading when a test ends; it's waited for here."""
+    yield
+    for thread in threading.enumerate():
+        if thread.name == "pack warm":
+            thread.join(30)
+
+
 def pytest_configure(config: pytest.Config) -> None:
     """Each `.qm` from its `.ts`, before a test's application installs it."""
     from tools.i18n import __main__ as i18n
@@ -165,7 +180,11 @@ def pytest_collection_modifyitems(
     config: pytest.Config, items: list[pytest.Item]
 ) -> None:
     """`windows_only` tests are skipped off Windows (decision 0038): the Linux
-    checks run everything else."""
+    checks run everything else; `macos_only` tests off macOS (409)."""
+    if sys.platform != "darwin":
+        for item in items:
+            if item.get_closest_marker("macos_only"):
+                item.add_marker(pytest.mark.skip(reason="macOS only"))
     if sys.platform == "win32":
         return
     skip = pytest.mark.skip(reason="Windows only")
@@ -188,12 +207,19 @@ def pytest_collection_modifyitems(
 
 def pytest_terminal_summary(terminalreporter: pytest.TerminalReporter) -> None:
     budget_judge = sys.modules.get("tests.budget_judge")  # only if a budget test ran
-    if budget_judge is None or not budget_judge.JUDGED:
+    # a start that is recorded, not judged, has notes alone (322)
+    if budget_judge is None or not (budget_judge.JUDGED or budget_judge.NOTES):
         return
     terminalreporter.section("budget tests")
+    budget_judge.keep_mains_record()  # on CI's run of main (decision 0136)
     for line in budget_judge.summary_lines():
         terminalreporter.write_line(line)
+    for note in budget_judge.NOTES:  # the start's parts beside main's (314)
+        terminalreporter.write_line(note)
     page = os.environ.get("GITHUB_STEP_SUMMARY")
     if page:  # in CI: the table on the run's page
         with open(page, "a", encoding="utf-8") as out:
-            out.write(budget_judge.summary_markdown())
+            if budget_judge.JUDGED:
+                out.write(budget_judge.summary_markdown())
+            for note in budget_judge.NOTES:
+                out.write(f"\n```\n{note}\n```\n")

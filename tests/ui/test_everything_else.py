@@ -27,6 +27,7 @@ from polyglotic_desktop.main import (
     chosen_capture,
     everything_else_change,
     follow_settings,
+    follow_transcripts,
     picker_of,
     stop_captioning,
     wire_caption_windows,
@@ -37,6 +38,7 @@ from polyglotic_desktop.ui.settings import AppSettings
 from polyglotic_desktop.ui.theme import SOURCE_COLORS
 from polyglotic_desktop.ui_next.caption_windows import CaptionWindows
 from polyglotic_desktop.ui_next.home import PickerCard
+from polyglotic_desktop.ui_next.os_words import pc_or_mac
 from polyglotic_desktop.ui_next.transcripts import Transcripts
 from polyglotic_desktop.ui_next.views.home import (
     AppRow,
@@ -49,7 +51,7 @@ from polyglotic_desktop.ui_next.views.placement import Rect
 KEY = "everything_else"
 APP = "Web Browser"
 APP_1 = SourceId("app-1")
-ONE_AND_ELSE = AppSettings(apps=(APP,), everything_else=True)
+ONE_AND_ELSE = AppSettings(whole_system=False, apps=(APP,), everything_else=True)
 
 
 def ids(name: str) -> SourceId:
@@ -63,7 +65,7 @@ def test_everything_else_is_captioned_beside_one_app_only() -> None:
     """Windows leaves only one app out of a capture: with 0, 2 or 3 apps,
     or everything the PC plays, it doesn't apply (even if it was kept on)."""
     assert ONE_AND_ELSE.captions_everything_else
-    assert not AppSettings(apps=(APP,)).captions_everything_else
+    assert not AppSettings(whole_system=False, apps=(APP,)).captions_everything_else
     for apps in ((), (APP, "Video Player"), (APP, "Video Player", "Chat App")):
         assert not replace(ONE_AND_ELSE, apps=apps).captions_everything_else
     assert not replace(ONE_AND_ELSE, whole_system=True).captions_everything_else
@@ -95,12 +97,17 @@ def test_a_window_for_the_app_then_one_for_everything_else() -> None:
 
 
 def test_turning_it_on_needs_one_app_and_fixes_its_colour() -> None:
-    changes = everything_else_change(AppSettings(apps=(APP,)), True)
+    changes = everything_else_change(AppSettings(whole_system=False, apps=(APP,)), True)
     assert changes is not None and changes["everything_else"] is True
     colours = changes["source_colors"]
     assert isinstance(colours, dict) and KEY in colours
     assert everything_else_change(AppSettings(), True) is None
-    assert everything_else_change(AppSettings(apps=(APP, "Chat App")), True) is None
+    assert (
+        everything_else_change(
+            AppSettings(whole_system=False, apps=(APP, "Chat App")), True
+        )
+        is None
+    )
     assert (
         everything_else_change(replace(ONE_AND_ELSE, whole_system=True), True) is None
     )
@@ -134,7 +141,10 @@ def test_the_usage_statistics_name_the_mode() -> None:
     assert chosen_capture(ONE_AND_ELSE) == Capture(
         CaptureMode.APPS_PLUS_REST, 1, my_speech=False
     )
-    assert chosen_capture(AppSettings(apps=(APP,))).mode is CaptureMode.APPS
+    assert (
+        chosen_capture(AppSettings(whole_system=False, apps=(APP,))).mode
+        is CaptureMode.APPS
+    )
 
 
 # -- Home --------------------------------------------------------------------------
@@ -202,8 +212,9 @@ def test_homes_switch_says_why_it_is_off(
     built, view, commands = card
     switch = built.everything_else
     assert not switch.isHidden() and switch.switch.isEnabled()
-    assert switch.detail.text() == (
-        "Everything the PC plays except Web Browser, in a window of its own"
+    assert switch.detail.text() == pc_or_mac(
+        "Everything the PC plays except Web Browser, in a window of its own",
+        "Everything the Mac plays except Web Browser, in a window of its own",
     )
     switch.switch.click()
     assert commands.calls[-1] == ("set_everything_else", (True,))
@@ -227,7 +238,9 @@ def test_homes_switch_on_shows_its_row_and_the_limit(
     view.follow(Picker(captioned=(row(APP), ELSE_ROW), everything_else=True))
     assert built.everything_else.switch.isChecked()
     assert list(built.rows) == [APP, KEY]
-    assert built.rows[KEY].status.text() == "everything else the PC plays"
+    assert built.rows[KEY].status.text() == pc_or_mac(
+        "everything else the PC plays", "everything else the Mac plays"
+    )
     assert not built.rows[KEY].stop.isHidden()  # x turns it off
     assert built.count.text() == "1 app + everything else"
     assert not built.full.isHidden()
@@ -308,3 +321,19 @@ def test_helps_check_looks_at_it(
         (APP_1, APP, "app"),
         (EVERYTHING_ELSE, "Everything else", "system"),
     ]
+
+
+def test_every_place_captions_are_kept_settles_after_the_time_chosen(
+    switched: tuple[DesktopApp, CaptionWindows, Transcripts],
+) -> None:
+    """polyglotic-hq 309: how long shown text may still change is one
+    setting - each caption window, each transcript and the app's own feed
+    follow it (decision 0088: each keeps a caption history)."""
+    desktop, windows, transcripts = switched
+    assert {w.view.settle_after for w in windows.windows.values()} == {3.0}
+    desktop.settings.update(text_settles_after=1.0)
+    follow_settings(windows, desktop, FakeSources())  # type: ignore[arg-type]
+    follow_transcripts(transcripts)
+    assert {w.view.settle_after for w in windows.windows.values()} == {1.0}
+    assert {t.settle_after for t in transcripts.transcripts.values()} == {1.0}
+    assert transcripts.transcripts and desktop.feed.history.settle_after == 1.0

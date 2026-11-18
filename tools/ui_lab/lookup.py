@@ -6,7 +6,8 @@ whole, Save to open, after Add to deck, the learner's dictionary damaged
 (polyglotic-hq 199), the speaker saying the word and no voice for it (286)
 - and two of W1's marks: a word's links on hover, and
 a word both linked and in the deck. And other learners' cards (215): an
-English learner's (ECDICT's meanings are Chinese) and a Japanese word's
+English learner's (ECDICT's meanings are Chinese; and in English,
+polyglotic-hq 447) and a Japanese word's
 (a basic dictionary, Sudachi's word split), each pinned, checked by the
 font checks (`japanese_font`, `chinese_font`) like every state.
 
@@ -16,6 +17,7 @@ Known - shown within 30 ms, the captions holding the word repainted).
 """
 
 from collections.abc import Iterator
+from dataclasses import replace
 from functools import partial
 
 from PySide6.QtCore import QPoint, QRect
@@ -32,7 +34,14 @@ from polyglotic_desktop.core.lexicon.chinese import ChineseDictionary
 from polyglotic_desktop.core.lexicon.english import EnglishDictionary
 from polyglotic_desktop.core.lexicon.entries import ENGLISH_FREQUENCY
 from polyglotic_desktop.core.listening.captions import Clause, Language
-from polyglotic_desktop.core.listening.display import WordLinks
+from polyglotic_desktop.core.listening.display import (
+    ReadingColour,
+    ReadingSize,
+    ReadingSystem,
+    RowKind,
+    WordLinks,
+)
+from polyglotic_desktop.core.listening.selection import Place, Selection
 from polyglotic_desktop.core.shared import EntryFacts, EntryId, WordStatus
 from polyglotic_desktop.main import LearningOffer
 from polyglotic_desktop.perf import budgets
@@ -45,6 +54,7 @@ from polyglotic_desktop.ui.settings import Settings
 from polyglotic_desktop.ui_next.caption_window import CaptionWindow, Marked
 from polyglotic_desktop.ui_next.caption_windows import CaptionWindows
 from polyglotic_desktop.ui_next.views.caption_window import CaptionLook
+from polyglotic_desktop.ui_next.views.presets import BY_KEY
 from polyglotic_desktop.ui_next.word_speech import WordSpeech
 from tools.ui_lab.caption_window import LABELS, _areas
 from tools.ui_lab.lab import SCENE, Lab, State
@@ -121,15 +131,18 @@ class _Together(QWidget):
         self.area = area.adjusted(-12, -12, 12, 12)
         self.resize(self.area.size())
 
+    def places(self) -> list[tuple[QWidget, QPoint, float]]:
+        """Each window and where it's drawn (`checks.place_in`)."""
+        return [
+            (each, each.geometry().topLeft() - self.area.topLeft(), 1.0)
+            for each in self.shown
+        ]
+
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.fillRect(self.rect(), QColor(SCENE))
-        for each in self.shown:
-            at = each.geometry().topLeft() - self.area.topLeft()
-            each.render(
-                painter, QPoint(at.x(), at.y()), QRegion(),
-                QWidget.RenderFlag.DrawChildren,
-            )  # fmt: skip
+        for each, at, _scale in self.places():
+            each.render(painter, at, QRegion(), QWidget.RenderFlag.DrawChildren)
         painter.end()
 
 
@@ -282,6 +295,81 @@ def linked_arrows(lab: Lab) -> QWidget:
     return shown
 
 
+MATCHED = CaptionLook(
+    word_links=WordLinks.COLOURS,
+    reading_lines=("zh",),
+    reading_size=ReadingSize.MEDIUM,  # Small's 11 px is under the lab's 12 (369)
+    reading_colour=ReadingColour.LINK,
+    said_in_link_colours=True,
+    translation_in_link_colours=True,
+)
+"""Pinyin in its word link's colour, and the linked words too: a word, its
+pinyin and its translation all match (polyglotic-hq 395)."""
+
+
+def _drawn(lab: Lab, look: CaptionLook) -> QWidget:
+    found = windows(lab, look)
+    lab.pump()
+    shown = window_of(found)
+    shown.canvas.repaint()
+    return shown
+
+
+def pinyin_in_link_colours(lab: Lab) -> QWidget:
+    """395: pinyin, the word and its translation in the link's colour."""
+    return _drawn(lab, MATCHED)
+
+
+def translation_in_link_colours(lab: Lab) -> QWidget:
+    """431: each side on its own (the user, 2026-11-17: "toggleable
+    separately") - only the translation's linked words in their link's
+    colour, what was said and its pinyin in their own; readable on
+    Classic's panel at its own 72 %."""
+    look = replace(
+        MATCHED,
+        said_in_link_colours=False,
+        reading_colour=ReadingColour.SAME,
+    )
+    return _drawn(lab, look)
+
+
+def pinyin_in_link_colours_paper(lab: Lab) -> QWidget:
+    """The same on Paper's light panel: the link colours darkened to read."""
+    paper = BY_KEY["paper"]
+    look = replace(
+        MATCHED,
+        original=paper.original,
+        translation=paper.translation,
+        background=paper.background,
+        opacity=paper.opacity,
+    )
+    return _drawn(lab, look)
+
+
+def pinyin_custom(lab: Lab) -> QWidget:
+    """395: pinyin in one colour picked (the default custom one)."""
+    return _drawn(
+        lab,
+        CaptionLook(
+            reading_lines=("zh",),
+            reading_size=ReadingSize.MEDIUM,
+            reading_colour=ReadingColour.CUSTOM,
+        ),
+    )
+
+
+def zhuyin(lab: Lab) -> QWidget:
+    """395: zhuyin (bopomofo) above Chinese in place of pinyin."""
+    return _drawn(
+        lab,
+        CaptionLook(
+            reading_lines=("zh",),
+            reading_size=ReadingSize.MEDIUM,
+            reading_system=ReadingSystem.ZHUYIN,
+        ),
+    )
+
+
 def dictionary_out(lab: Lab) -> QWidget:
     """The learner's dictionary damaged: a pinned card says so, and how to
     fix it (polyglotic-hq 199)."""
@@ -401,14 +489,52 @@ RUSSIAN_SAMPLE = FakeDictionaryFile(
 each inflected form (polyglotic-hq 298)."""
 
 
+DE = Language("de")
+GERMAN_CAPTIONS = (
+    clause(
+        "Die Internetmaterialien sind gut.",
+        "The internet materials are good.",
+        (("Internetmaterialien", "internet materials"),),
+        into=EN,
+    ),
+)
+GERMAN_SAMPLE = FakeDictionaryFile(
+    [
+        EntryRecord(
+            "wiktde:1", "Internet", "", "/ˈɪntɐnɛt/", ("(noun) Internet",), 900
+        ),
+        EntryRecord(
+            "wiktde:2",
+            "Material",
+            "",
+            "/mateˈʁi̯aːl/",
+            ("(noun) material", "(noun) equipment"),
+            1500,
+        ),
+    ],
+    {"Internet": ["wiktde:1"], "Material": ["wiktde:2"]},
+    lemmas={"Materialien": "Material"},
+)
+"""A German compound the pack hasn't got whole, made of two it has
+(polyglotic-hq 390)."""
+
+
 def _other_learners_windows(
-    lab: Lab, tools: LearningTools, captions: tuple[Clause, ...], language: Language
+    lab: Lab,
+    tools: LearningTools,
+    captions: tuple[Clause, ...],
+    language: Language,
+    into: Language | None = None,
 ) -> CaptionWindows:
-    """One caption window over captions in `language`, with `tools`' card."""
+    """One caption window over captions in `language`, with `tools`' card;
+    translated `into` a language (None: an English learner's into Chinese,
+    the others' into English)."""
     found = CaptionWindows(None, MIC, _areas, learner=tools)
     found.set_labels(LABELS, "You")
     found.set_captioned([("lab", APP)])
-    if language == EN:
+    if into is not None:
+        found.set_language("lab", into)
+    elif language == EN:
         found.set_language("lab", ZH)  # an English learner's: into Chinese
     for n, said in enumerate(captions * 3):
         found.apply(recorded.finished(f"lab-{n:03d}", said, language=language))
@@ -422,9 +548,51 @@ def _other_learners_windows(
 
 
 def english_card(lab: Lab) -> QWidget:
-    """An English learner's card (ECDICT's meanings are Chinese): the
-    commonest Chinese on a card, which 198 found in MS UI Gothic."""
+    """An English learner's card in a Chinese interface (ECDICT's meanings
+    are Chinese): the commonest Chinese on a card, which 198 found in MS UI
+    Gothic."""
     dictionary = EnglishDictionary(english_sample())
+    tools = _tools(dictionary, ENGLISH_FREQUENCY.id)
+    found = _other_learners_windows(lab, tools, ENGLISH_CAPTIONS, EN)
+    _pinned(found, "awkward")
+    lab.pump()
+    return _photo(found)
+
+
+ENGLISH_IN_ENGLISH = FakeDictionaryFile(
+    [
+        EntryRecord(
+            "ecdict:awkward",
+            "awkward",
+            "",
+            "ˈɔ:kwəd",
+            (
+                '(adj) causing inconvenience: "they arrived at an awkward time"',
+                "(adj) lacking grace or skill in manner or movement or performance",
+                "(adj) difficult to handle or manage especially because of shape",
+            ),
+            2500,
+        ),
+        EntryRecord(
+            "ecdict:thing",
+            "thing",
+            "",
+            "θiŋ",
+            ("(noun) an object; something you do not name exactly",),
+            180,
+        ),
+    ],
+    {"awkward": ["ecdict:awkward"], "thing": ["ecdict:thing"]},
+)
+"""An English learner's dictionary in English (`ecdict-en.sqlite`,
+decision 0211), as built from Open English WordNet: "awkward"'s."""
+
+
+def english_card_in_english(lab: Lab) -> QWidget:
+    """An English learner's card in an interface that isn't Chinese: its
+    meanings in English, each with its part of speech, the first with an
+    example (polyglotic-hq 447)."""
+    dictionary = EnglishDictionary(ENGLISH_IN_ENGLISH)
     tools = _tools(dictionary, ENGLISH_FREQUENCY.id)
     found = _other_learners_windows(lab, tools, ENGLISH_CAPTIONS, EN)
     _pinned(found, "awkward")
@@ -460,6 +628,19 @@ def russian_card(lab: Lab) -> QWidget:
     return _photo(found)
 
 
+def german_compound(lab: Lab) -> QWidget:
+    """A German compound the pack hasn't got (Internetmaterialien) for an
+    English learner: not in the dictionary as a whole, its parts' meanings
+    joined, and each part below - polyglotic-hq 390."""
+    english = EnglishDictionary(english_sample())
+    tools = _tools(english, ENGLISH_FREQUENCY.id)
+    tools.basic["de"] = BasicDictionary(GERMAN_SAMPLE, SpacedSplit("de"), "de")
+    found = _other_learners_windows(lab, tools, GERMAN_CAPTIONS, DE)
+    _pinned(found, "Internetmaterialien")
+    lab.pump()
+    return _photo(found)
+
+
 def learn_too(lab: Lab) -> QWidget:
     """The Japanese word's card for a Chinese learner, asking once whether
     to learn Japanese too (DECISIONS.md #65, polyglotic-hq 262)."""
@@ -477,6 +658,80 @@ def learn_too(lab: Lab) -> QWidget:
     return _photo(found)
 
 
+# -- the word's counterpart in its line (polyglotic-hq 328) ---------------------------
+
+VI = Language("vi")
+KO = Language("ko")
+INTO_VIETNAMESE = (
+    clause(
+        "That was an awkward thing to say.",
+        "Nói như vậy thật là ngượng ngùng.",
+        (("awkward", "ngượng ngùng"),),
+        into=VI,
+    ),
+    clause(
+        "Phones are ubiquitous now.",
+        "Giờ đây điện thoại có mặt ở khắp mọi nơi trên thế giới.",
+        (("ubiquitous", "có mặt ở khắp mọi nơi trên thế giới"),),
+        into=VI,
+    ),
+)
+"""An English learner whose translation is Vietnamese: ECDICT's meanings
+are Chinese, the line's are Vietnamese."""
+KOREAN_CAPTIONS = (
+    clause("내일 은행에 가요.", "I'm going to the bank tomorrow.", (("은행", "bank"),)),
+    clause("은행이 문을 닫았어요.", "The bank is closed.", (("은행", "bank"),)),
+)
+"""Korean, with no dictionary on this PC: the counterpart is the card."""
+
+
+def _into_vietnamese(lab: Lab) -> CaptionWindows:
+    tools = _tools(EnglishDictionary(english_sample()), ENGLISH_FREQUENCY.id)
+    found = _other_learners_windows(lab, tools, INTO_VIETNAMESE, EN, into=VI)
+    return found
+
+
+def counterpart_vietnamese(lab: Lab) -> QWidget:
+    """An English learner reading Vietnamese (328): the card says "Here:
+    ngượng ngùng" above ECDICT's Chinese meaning - a meaning in their own
+    language, from the line's own translation."""
+    found = _into_vietnamese(lab)
+    _pinned(found, "awkward")
+    lab.pump()
+    return _photo(found)
+
+
+def counterpart_long(lab: Lab) -> QWidget:
+    """A long counterpart, hovered (328): a paraphrase of one word - the
+    hover card as wide as it may be, the words wrapping in it."""
+    found = _into_vietnamese(lab)
+    _hovered(found, "ubiquitous")
+    lab.pump()
+    return _photo(found)
+
+
+def counterpart_no_dictionary(lab: Lab) -> QWidget:
+    """A word in a language with no dictionary here (Korean), pinned (328):
+    what it is in the line's translation is the card's main content."""
+    chinese = ChineseDictionary(chinese_sample())
+    chinese.prepare()
+    found = _other_learners_windows(
+        lab, _tools(chinese, "hsk-2025"), KOREAN_CAPTIONS, KO
+    )
+    _pinned(found, "은행에")
+    lab.pump()
+    return _photo(found)
+
+
+def counterpart_none(lab: Lab) -> QWidget:
+    """A word with no link in its line (这个), pinned (328): no "Here:"
+    line - never an empty one."""
+    found = windows(lab)
+    _pinned(found, "这个")
+    lab.pump()
+    return _photo(found)
+
+
 def _tools(
     dictionary: ChineseDictionary | EnglishDictionary, scheme: str
 ) -> LearningTools:
@@ -488,6 +743,39 @@ def _tools(
     return LearningTools(vocabulary, dictionary)
 
 
+def _sentence_offered(lab: Lab) -> CaptionWindow:
+    """Words selected across the newest captions in view (up to three),
+    from part way through the first: the card that saves them as a
+    sentence, under the selection's last line (polyglotic-hq 459)."""
+    shown = window_of(windows(lab))
+    lines = [line for line, _, _ in shown.canvas.placed]
+    first, last = lines[-min(3, len(lines))], lines[-1]
+    shown.held.hold(
+        Selection(
+            Place(first.key, 0, 2, RowKind.ORIGINAL),
+            Place(last.key, 0, 4, RowKind.ORIGINAL),
+        )
+    )
+    lab.time("sentence_offered", shown._offer_sentence, budget=budgets.CLICK)
+    lab.pump()
+    return shown
+
+
+def sentence_offered(lab: Lab) -> QWidget:
+    card = _sentence_offered(lab).sentence_card
+    assert card is not None and card.isVisible()
+    return card
+
+
+def sentence_saved(lab: Lab) -> QWidget:
+    """The same, a category clicked: "Saved to Tricky" for a moment."""
+    card = _sentence_offered(lab).sentence_card
+    assert card is not None
+    card.buttons[-1].click()
+    lab.pump()
+    return card
+
+
 STATES = [
     State(f"ui_next.{name}", run, gated=True, scene=scene)
     for name, run, scene in (
@@ -497,15 +785,28 @@ STATES = [
         ("w3_not_found", not_found, False),
         ("w3_learning_action", learning_action, False),
         ("w3_save_to", save_to, False),
+        ("w3_sentence_offered", sentence_offered, False),
+        ("w3_sentence_saved", sentence_saved, False),
         ("w3_dictionary_out", dictionary_out, False),
         ("w3_say_it", say_it, False),
         ("w3_no_voice", no_voice, False),
         ("w1_links_on_hover", links_on_hover, False),
         ("w1_linked_and_in_deck", linked_and_in_deck, True),
         ("w1_linked_arrows", linked_arrows, True),
+        ("w1_pinyin_in_link_colours", pinyin_in_link_colours, True),
+        ("w1_pinyin_in_link_colours_paper", pinyin_in_link_colours_paper, True),
+        ("w1_translation_in_link_colours", translation_in_link_colours, True),
+        ("w1_pinyin_custom", pinyin_custom, True),
+        ("w1_zhuyin", zhuyin, True),
         ("w3_english_card", english_card, False),
+        ("w3_english_card_in_english", english_card_in_english, False),
         ("w3_japanese_card", japanese_card, False),
         ("w3_russian_card", russian_card, False),
+        ("w3_german_compound", german_compound, False),
         ("w3_learn_too", learn_too, False),
+        ("w3_counterpart_vietnamese", counterpart_vietnamese, False),
+        ("w3_counterpart_long", counterpart_long, False),
+        ("w3_counterpart_no_dictionary", counterpart_no_dictionary, False),
+        ("w3_counterpart_none", counterpart_none, False),
     )
 ]

@@ -48,6 +48,33 @@ The rules are project 109's (polyglotic-hq
 11. **Caption windows stay neutral in every theme**; Margin, Glaze and
     Signal colour the main window, the transcripts and the lookup.
 
+## Impeccable's lenses (polyglotic-hq 347)
+
+The design detector (`design.md`) has measured the type scale, fonts, radii,
+targets, alignment, line length and colour count: read its findings, don't
+redo them. Then judge what it can't, in Impeccable's words:
+
+- **audit:** accessibility (contrast, names, keyboard, targets), the text
+  sizes and window sizes, theming (dark and light where themed), and
+  implementation integrity - is this window built from the interface's own
+  parts and tokens, or one-offs?
+- **critique:** hierarchy, clarity, cognitive load (more than four choices
+  at one decision point?), emotional fit (reassurance where a learner
+  worries: data, paying, deleting), and Nielsen's ten heuristics, 0-4 each.
+- **polish:** states (hover, disabled, loading, error, empty), consistent
+  affordances (the same button looks the same everywhere), alignment and
+  spacing rhythm (tight groups, generous separation, more space above a
+  heading than below it).
+- **quieter / distill:** one accent per window; colour only for the primary
+  action, the current choice and state; no decoration that carries no
+  state; nothing a learner must read twice.
+- **clarify:** controls name their action; notices name the problem and
+  the way out, in the glossary's words.
+- **Bans (Impeccable's, kept here):** a card inside a card; a coloured side
+  stripe as decoration; a small capitals label above a heading inside
+  content; a modal where an inline line would do; an emoji standing in for an
+  icon (the icons are Segoe Fluent Icons).
+
 ## Consistency of spacing and alignment
 
 - Do the same things have the same padding, gaps and corner radii across

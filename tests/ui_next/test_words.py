@@ -21,9 +21,10 @@ from tests.ui.fakes import tools_for
 from tests.ui_next.made_up import export_written
 
 from polyglotic_desktop.core.learning.exposures import ExposureCount
-from polyglotic_desktop.core.learning.levels import LevelCurve
+from polyglotic_desktop.core.learning.levels import KnownLine
 from polyglotic_desktop.core.learning.lookups import LookupContext
 from polyglotic_desktop.core.learning.saved_words import SavedWord
+from polyglotic_desktop.core.learning.vocabulary import AnkiFormat
 from polyglotic_desktop.core.lexicon.chinese import ChineseDictionary
 from polyglotic_desktop.core.shared import EntryId, Level, WordStatus
 from polyglotic_desktop.perf import budgets
@@ -129,10 +130,10 @@ def test_a_rows_text_is_looked_up_only_when_asked_for_and_once() -> None:
 
 def test_the_level_in_words() -> None:
     assert not level_line(None).picked
-    starting = level_line(LevelCurve("hsk-2025", 0))
+    starting = level_line(KnownLine("hsk-2025", 0))
     assert starting.picked and starting.level == "" and "HSK" in starting.scheme
-    assert level_line(LevelCurve("hsk-2025", 3)).level
-    unknown = level_line(LevelCurve("from-a-newer-version", 2))
+    assert level_line(KnownLine("hsk-2025", 3)).level
+    unknown = level_line(KnownLine("from-a-newer-version", 2))
     assert (unknown.scheme, unknown.level) == ("from-a-newer-version", "2")
 
 
@@ -586,6 +587,29 @@ def test_an_export_writes_off_the_interface_thread_with_the_buttons_busy(
     assert tools.vocabulary.is_exported(entry(tools, "电脑"))  # marked once written
 
 
+def test_a_csv_of_only_new_words_after_a_deck_file_has_them(
+    page: WordsPage,
+    tools: LearningTools,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """368 (QA 361's B5): after an .apkg, Export CSV with "Only words not
+    exported yet" said nothing new - the two kinds shared one record."""
+    computer = entry(tools, "电脑")
+    tools.vocabulary.set_status(computer, WordStatus.LEARNING)
+    tools.vocabulary.mark_exported([computer], AnkiFormat.DECK)  # an .apkg had it
+    page.first.only_new.setChecked(True)
+    chosen_file(monkeypatch, tmp_path / "words.csv")
+    page.first.export_csv.click()
+    written(page)
+    assert page.first.export_result.text().startswith("1 word written to")
+    assert "电脑" in (tmp_path / "words.csv").read_text(encoding="utf-8-sig")
+    chosen_file(monkeypatch, tmp_path / "again.csv")
+    page.first.export_csv.click()  # the CSV's own record now has it
+    written(page)
+    assert page.first.export_result.text().startswith("No new words")
+
+
 def test_an_export_click_within_the_click_budget(
     page: WordsPage,
     tools: LearningTools,
@@ -681,6 +705,11 @@ def test_what_an_export_says(qapp: QApplication) -> None:
         "No new words since the last export"
     )
     assert "open in another program" in export_said(None, "w.csv", False)
+    # saved sentences go with the words (polyglotic-hq 459)
+    assert export_said(12, "w.apkg", False, 3) == (
+        "12 words written to w.apkg. And 3 saved sentences."
+    )
+    assert export_said(0, "w.apkg", True, 1) == "1 saved sentence written to w.apkg."
 
 
 def test_a_word_pins_the_caption_windows_lookup(

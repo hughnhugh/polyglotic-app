@@ -4,22 +4,30 @@ per line, forgotten on a Learning change. Made-up captions, the sample
 dictionary. (Here rather than in tests/ui_next: the learning tools are
 today's `ui.learning.LearningTools`, which `main` hands over.)"""
 
-from PySide6.QtGui import QTextCharFormat
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor, QTextCharFormat
 from PySide6.QtWidgets import QApplication
 from tests.lexicon.sample import english_sample
 from tests.ui.fakes import chinese_tools, tools_for
 
 from polyglotic_desktop.core.learning.highlights import WordIntroductions
+from polyglotic_desktop.core.learning.lookups import LookupContext
 from polyglotic_desktop.core.learning.vocabulary import Changed
 from polyglotic_desktop.core.lexicon.english import EnglishDictionary
 from polyglotic_desktop.core.lexicon.entries import ENGLISH_FREQUENCY
 from polyglotic_desktop.core.listening.captions import Language
-from polyglotic_desktop.core.listening.display import DisplayOptions, WordLinks
+from polyglotic_desktop.core.listening.display import (
+    DisplayOptions,
+    RowKind,
+    WordLinks,
+)
 from polyglotic_desktop.core.shared import WordStatus
+from polyglotic_desktop.ui.learning import LearningTools
 from polyglotic_desktop.ui.recorded_captions import APP, clause, finished, live
 from polyglotic_desktop.ui_next.caption_layout import LINK_MARK
-from polyglotic_desktop.ui_next.caption_marks import IN_DECK, CaptionMarks
+from polyglotic_desktop.ui_next.caption_marks import IN_DECK, CaptionMarks, Panel
 from polyglotic_desktop.ui_next.views.captions import CaptionLines
+from polyglotic_desktop.ui_next.views.presets import BY_KEY, contrast
 
 EN = Language("en")
 
@@ -199,3 +207,137 @@ def test_only_rows_in_the_language_being_learned_are_marked(
     assert [row.language for row in line.rows] == ["es", "en"]
     assert dashed(marks(line, 0)) == []  # the Spanish row: nothing
     assert [(s, e) for s, e, _ in dashed(marks(line, 1))] == [(0, 2)]  # "He"
+
+
+def saved_in(tools: LearningTools, word: str, category: str = "saved") -> str:
+    """`word` saved into `category`: its category's colour."""
+    entry = tools.lookup(word)[0]
+    tools.vocabulary.save(
+        entry.entry_id, entry.headword, entry.traditional, entry.reading, "",
+        category, LookupContext(""),
+    )  # fmt: skip
+    found = tools.vocabulary.category(category)
+    assert found is not None
+    return found.color
+
+
+def colours(marks: object) -> list[tuple[int, int, str, QColor | None]]:
+    """The marks drawn in a colour of their own - saved words - with the
+    tint behind any (None: none)."""
+    assert isinstance(marks, list | tuple)
+    return [
+        (
+            start,
+            end,
+            format_.foreground().color().name(),
+            format_.background().color()
+            if format_.background().style() is not Qt.BrushStyle.NoBrush
+            else None,
+        )
+        for start, end, format_ in marks
+        if format_.foreground().style() is not Qt.BrushStyle.NoBrush
+    ]
+
+
+def test_a_saved_word_is_in_its_category_colour_on_classic(qapp: QApplication) -> None:
+    """Classic (the default): exactly the category's colour, nothing behind
+    it - as before 305."""
+    tools = chinese_tools()
+    blue = saved_in(tools, "电脑")
+    view = CaptionLines((APP,), EN, keep=10)
+    view.apply(finished("a", clause("我的电脑又卡了，", "My computer froze,")))
+    marks = CaptionMarks(tools)
+    marks.set_look(WordLinks.OFF, WordIntroductions.A_FEW, panel_of("classic"))
+    assert colours(marks(view.lines[0], 0)) == [(2, 4, blue, None)]
+
+
+def test_saved_words_and_dots_are_readable_on_papers_cream(qapp: QApplication) -> None:
+    """Polyglotic-hq 305: the categories' colours are picked for dark
+    panels, and on Paper's cream a saved word showed at 1.4-2.2:1 - "Saved"
+    a pale blue that hardly read as a word, let alone a saved one. Now as
+    readable as text (4.5:1), the dots under new words as a mark (3:1)."""
+    tools = chinese_tools()
+    saved_in(tools, "电脑")
+    saved_in(tools, "游戏", "tricky")
+    view = CaptionLines((APP,), EN, keep=10)
+    view.apply(finished("a", clause("我的电脑又卡了，", "My computer froze,")))
+    view.apply(finished("b", clause("我们打游戏吧", "Let's play games")))
+    paper = panel_of("paper")
+    marks = CaptionMarks(tools)
+    marks.set_look(WordLinks.OFF, WordIntroductions.EVERY, paper)
+    shown = [c for line in view.lines for c in colours(marks(line, 0))]
+    assert len(shown) == 2
+    assert all(contrast(colour, paper.background) >= 4.5 for _, _, colour, _ in shown)
+    dots = [d for line in view.lines for d in dotted(marks(line, 0))]
+    assert dots and all(contrast(c, paper.background) >= 3.0 for _, _, c in dots)
+
+
+def test_a_saved_word_in_its_rows_own_colour_gets_a_tint_behind_it(
+    qapp: QApplication,
+) -> None:
+    """Polyglotic-hq 305: on Teletext a Chinese translation row is cyan, and
+    a word saved in "Saved" (blue) in it looked like the rest of the row. A
+    tint of its colour behind it says it's saved; in the white row above,
+    its colour alone does."""
+    tools = chinese_tools()
+    blue = saved_in(tools, "电脑")
+    hant = Language("zh-hant")
+    view = CaptionLines((APP,), hant, keep=10)
+    view.apply(
+        finished(
+            "a",
+            clause("My computer froze again.", "我的電腦又當機了。", into=hant),
+            language=EN,
+        )
+    )
+    view.apply(
+        finished("b", clause("我的电脑又卡了，", "我的電腦又當機了，", into=hant))
+    )
+    marks = CaptionMarks(tools)
+    marks.set_look(WordLinks.OFF, WordIntroductions.A_FEW, panel_of("teletext"))
+    english, chinese = view.lines
+    assert [row.kind for row in english.rows] == [RowKind.ORIGINAL, RowKind.TRANSLATION]
+    (start, end, colour, tint), *_ = colours(marks(english, 1))
+    assert (start, end, colour) == (2, 4, blue)
+    assert tint is not None and tint.name() == blue and 0 < tint.alphaF() < 1
+    assert colours(marks(chinese, 0)) == [(2, 4, blue, None)]  # white "said" row
+
+
+def test_a_caption_windows_marks_follow_its_look(qapp: QApplication) -> None:
+    """The window hands its marks the look's panel and rows' colours, and
+    a preset chosen while it's open reaches them."""
+    from polyglotic_desktop.core.listening.sources import SourceLabel
+    from polyglotic_desktop.ui_next.caption_window import CaptionWindow
+    from polyglotic_desktop.ui_next.views.caption_window import (
+        CaptionLook,
+        WindowChoices,
+    )
+    from polyglotic_desktop.ui_next.views.placement import Rect
+
+    window = CaptionWindow(
+        "lab",
+        APP,
+        WindowChoices(),
+        SourceLabel("Discord", "#4dd0e1"),
+        areas=lambda: [Rect(0, 0, 1920, 1040)],
+        learner=chinese_tools(),
+    )
+    try:
+        assert window.marks.panel == panel_of("classic")
+        paper = BY_KEY["paper"]
+        window.set_look(
+            CaptionLook(
+                background=paper.background,
+                original=paper.original,
+                translation=paper.translation,
+            )
+        )
+        assert window.marks.panel == panel_of("paper")
+    finally:
+        window.close()
+        window.deleteLater()
+
+
+def panel_of(key: str) -> Panel:
+    preset = BY_KEY[key]
+    return Panel(preset.background, preset.original, preset.translation)

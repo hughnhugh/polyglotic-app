@@ -32,7 +32,7 @@ from polyglotic_desktop.core.learning.bands import (
     by_level,
 )
 from polyglotic_desktop.ui_next import style
-from polyglotic_desktop.ui_next.controls import Segmented, label
+from polyglotic_desktop.ui_next.controls import Flow, Segmented, label
 
 DECK = "#b08c30"
 """In your deck: a deeper step of the app's yellow (#f2c14e is too light
@@ -173,9 +173,7 @@ class Legend(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
-        row = QHBoxLayout(self)
-        row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(16)
+        row = Flow(self, spacing=16)  # onto more lines where it's narrow (354)
         for band, text in (
             (Band(known=1), _tr("known")),
             (Band(deck=1), _tr("in your deck")),
@@ -189,8 +187,7 @@ class Legend(QWidget):
             swatch.set_band(band)
             key.addWidget(swatch)
             key.addWidget(label(text, "Faint"))
-            row.addLayout(key)
-        row.addStretch(1)
+            row.add_layout(key)
 
 
 class WordBands(QWidget):
@@ -203,9 +200,9 @@ class WordBands(QWidget):
         column = QVBoxLayout(self)
         column.setContentsMargins(0, 0, 0, 0)
         column.setSpacing(10)
-        head = QHBoxLayout()
-        self.title = label("", "SectionLabel")
-        head.addWidget(self.title, 1)
+        head = Flow()  # the switch under the title where it's narrow (354)
+        self.title = label("", "SectionLabel", wrap=True)
+        head.add_widget(self.title, 1)
         self.view = Segmented(
             [(BY_FREQUENCY, _tr("By frequency")), (BY_LEVEL, _tr("By HSK level"))],
             BY_FREQUENCY,
@@ -251,7 +248,7 @@ class WordBands(QWidget):
             ranked, rarer = by_frequency(self._met, frequency)
             names = [*frequency_names(), _tr("Rarer")]
             bands = [*ranked, rarer]
-            self.title.setText(_tr("Words met, by how common they are").upper())
+            self.title.setText(_tr("Words met, by frequency").upper())
         while len(self.rows) < len(bands):
             row = BandRow()
             self.rows.append(row)

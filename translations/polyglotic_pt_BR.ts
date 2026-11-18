@@ -40,6 +40,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/account_page.py"/>
+        <source>This Mac</source>
+        <translation type="unfinished">Este Mac</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/account_page.py"/>
         <source>Plus</source>
         <translation type="unfinished">Plus</translation>
     </message>
@@ -62,6 +67,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/account_page.py"/>
         <source>The words you look up, save and mark are kept on our server as dictionary words and times: saved words and statuses follow you to another PC, and lookups show us how people learn. You can delete them there, in every language you learn - and on this PC too, if you choose.</source>
         <translation type="unfinished">As palavras que você consulta, salva e marca ficam no nosso servidor como palavras do dicionário e horários: as salvas e os status vão com você para outro PC, e as consultas nos mostram como as pessoas aprendem. Você pode excluí-las lá, em todos os idiomas que aprende, e neste PC também, se quiser.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/account_page.py"/>
+        <source>The words you look up, save and mark are kept on our server as dictionary words and times: saved words and statuses follow you to another computer, and lookups show us how people learn. You can delete them there, in every language you learn - and on this Mac too, if you choose.</source>
+        <translation type="unfinished">As palavras que você consulta, salva e marca ficam no nosso servidor como palavras do dicionário e horários: as salvas e os status vão com você para outro computador, e as consultas nos mostram como as pessoas aprendem. Você pode excluí-las lá, em todos os idiomas que aprende, e neste Mac também, se quiser.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/account_page.py"/>
@@ -97,6 +107,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/account_page.py"/>
         <source>Signed in on this PC.</source>
         <translation type="unfinished">Conectado neste PC.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/account_page.py"/>
+        <source>Signed in on this Mac.</source>
+        <translation type="unfinished">Conectado neste Mac.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/account_page.py"/>
@@ -136,6 +151,49 @@
     </message>
 </context>
 <context>
+    <name>CaptionSetUp</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_set_up.py"/>
+        <source>Detect works out the language each time someone speaks.</source>
+        <translation type="unfinished">Detectar descobre o idioma cada vez que alguém fala.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_set_up.py"/>
+        <source>Translate those lines into a second language too, or leave them.</source>
+        <translation type="unfinished">Traduza essas linhas também para um segundo idioma, ou deixe-as.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_set_up.py"/>
+        <source>Set up your captions</source>
+        <translation type="unfinished">Configure suas legendas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_set_up.py"/>
+        <source>Shown as &quot;You&quot;. Your mic is sent to the server only while it&apos;s on.</source>
+        <translation type="unfinished">Mostrado como &quot;Você&quot;. Seu microfone só vai ao servidor enquanto isto estiver ativado.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_set_up.py"/>
+        <source>Use as my default</source>
+        <translation type="unfinished">Usar como meu padrão</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_set_up.py"/>
+        <source>New caption windows start like this, and this stops showing</source>
+        <translation type="unfinished">Novas janelas de legendas começam assim, e isto deixa de aparecer</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_set_up.py"/>
+        <source>Start captions</source>
+        <translation type="unfinished">Começar legendas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_set_up.py"/>
+        <source>On: new windows start like this and this stops showing. The languages on a window&apos;s bar change them, or bring it back.</source>
+        <translation type="unfinished">Ativado: novas janelas começam assim e isto deixa de aparecer. Os idiomas na barra de uma janela os mudam ou trazem isto de volta.</translation>
+    </message>
+</context>
+<context>
     <name>CaptionWindow</name>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -169,8 +227,28 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Pinyin above Chinese: turn it on in Settings, under Readings</source>
+        <translation type="unfinished">Pinyin sobre o chinês: ative em Configurações, em Leituras</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Click any word to look it up</source>
         <translation type="unfinished">Clique em qualquer palavra para consultá-la</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Anything the PC plays is captioned here</source>
+        <translation type="unfinished">Tudo o que o PC toca é legendado aqui</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Anything the Mac plays is captioned here</source>
+        <translation type="unfinished">Tudo o que o Mac toca é legendado aqui</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>{app}&apos;s captions appear here</source>
+        <translation type="unfinished">As legendas de {app} aparecem aqui</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -214,6 +292,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Stopped - quit from the menu bar and start again</source>
+        <translation type="unfinished">Parado: saia pela barra de menus e abra de novo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Plus has ended - captions stopped; see Home</source>
         <translation type="unfinished">O Plus terminou: legendas paradas; veja Início</translation>
     </message>
@@ -249,11 +332,6 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
-        <source>Polyglotic&apos;s server is down</source>
-        <translation type="unfinished">O servidor do Polyglotic está fora do ar</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Polyglotic&apos;s server is restarting</source>
         <translation type="unfinished">O servidor do Polyglotic está reiniciando</translation>
     </message>
@@ -279,13 +357,28 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Check this Mac&apos;s date and time - see Home</source>
+        <translation type="unfinished">Confira a data e a hora do Mac: veja Início</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Open on too many of your PCs - see Home</source>
         <translation type="unfinished">Aberto em PCs demais seus: veja Início</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Open on too many of your computers - see Home</source>
+        <translation type="unfinished">Aberto em computadores demais seus: veja Início</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Too many sign-in tries</source>
         <translation type="unfinished">Tentativas de entrar demais</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Planned maintenance - captions come back by themselves</source>
+        <translation type="unfinished">Manutenção programada - as legendas voltam sozinhas</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -296,11 +389,6 @@
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Can&apos;t reach Polyglotic&apos;s server - trying again in {n} s</source>
         <translation type="unfinished">Servidor do Polyglotic inacessível: nova tentativa em {n} s</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
-        <source>Polyglotic&apos;s server is down - trying again in {n} s</source>
-        <translation type="unfinished">Servidor do Polyglotic fora do ar: nova tentativa em {n} s</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -326,6 +414,26 @@
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Locked - unlock on Home or from the tray</source>
         <translation type="unfinished">Travada: destrave em Início ou pela bandeja</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Locked - unlock on Home or from the menu bar</source>
+        <translation type="unfinished">Travada: destrave em Início ou pela barra de menus</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Lock - clicks pass through to what&apos;s underneath, Ctrl+Alt+L</source>
+        <translation type="unfinished">Travar: os cliques passam para o que está embaixo, Ctrl+Alt+L</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Lock - clicks pass through to what&apos;s underneath. To unlock, rest the mouse on the lock in the corner, or use Home or the tray</source>
+        <translation type="unfinished">Travar: os cliques passam para o que está embaixo. Para destravar, deixe o mouse sobre o cadeado no canto, ou use Início ou a bandeja</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Lock - clicks pass through to what&apos;s underneath. To unlock, rest the mouse on the lock in the corner, or use Home or the menu bar</source>
+        <translation type="unfinished">Travar: os cliques passam para o que está embaixo. Para destravar, deixe o mouse sobre o cadeado no canto, ou use Início ou a barra de menus</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -359,13 +467,24 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
-        <source>{app}&apos;s captions appear here</source>
-        <translation type="unfinished">As legendas de {app} aparecem aqui</translation>
+        <source>{spoken} → {translation}</source>
+        <extracomment>Short, on a caption window&apos;s bar: the language heard (or &quot;Detect&quot;) and the one its captions are translated into</extracomment>
+        <translation type="unfinished">{spoken} → {translation}</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
-        <source>Looks wrong?</source>
-        <translation type="unfinished">Algo errado?</translation>
+        <source>Detect</source>
+        <translation type="unfinished">Detectar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Original only</source>
+        <translation type="unfinished">Só o original</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Your speech is shown here: your microphone is sent to the server only while this is on</source>
+        <translation type="unfinished">Sua voz aparece aqui: seu microfone só é enviado ao servidor enquanto isto está ligado</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -389,6 +508,36 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Fill the width</source>
+        <translation type="unfinished">Preencher a largura</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Fill the width on or off, in every window: captions run on, line by line, in lines as wide as the window - each line of what was said over its translation</source>
+        <translation type="unfinished">Preencher a largura ligado ou desligado, em todas as janelas: as legendas continuam em sequência, linha por linha, em linhas da largura da janela - cada linha do que foi dito acima da sua tradução</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Line up the parts</source>
+        <translation type="unfinished">Alinhar as partes</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Line up the parts on or off, in every window: each part of what was said starts at the same place as its translation, so a word&apos;s translation is under it</source>
+        <translation type="unfinished">Alinhar as partes ligado ou desligado, em todas as janelas: cada parte do que foi dito começa no mesmo lugar que sua tradução, de modo que a tradução de uma palavra fica embaixo dela</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Colour linked words in what was said</source>
+        <translation type="unfinished">Colorir as palavras ligadas no que foi dito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Colour linked words in the translation</source>
+        <translation type="unfinished">Colorir as palavras ligadas na tradução</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Smaller text (Ctrl+wheel)</source>
         <translation type="unfinished">Texto menor (Ctrl+roda)</translation>
     </message>
@@ -399,13 +548,28 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
-        <source>Lock all windows</source>
-        <translation type="unfinished">Travar todas as janelas</translation>
+        <source>Smaller translation</source>
+        <translation type="unfinished">Tradução menor</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
-        <source>Lock - clicks pass through to what&apos;s underneath, Ctrl+Alt+L</source>
-        <translation type="unfinished">Travar: os cliques passam para o que está embaixo, Ctrl+Alt+L</translation>
+        <source>Bigger translation</source>
+        <translation type="unfinished">Tradução maior</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Same as what was said</source>
+        <translation type="unfinished">Igual ao que foi dito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>The translation as big as what was said</source>
+        <translation type="unfinished">A tradução do mesmo tamanho do que foi dito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Lock all windows</source>
+        <translation type="unfinished">Travar todas as janelas</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -429,6 +593,26 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Start new windows like this</source>
+        <translation type="unfinished">Começar novas janelas assim</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>New caption windows take this one&apos;s languages - what they speak too, not Detect</source>
+        <translation type="unfinished">Novas janelas de legendas usam os idiomas desta – o falado também, não Detectar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Ask when a window opens</source>
+        <translation type="unfinished">Perguntar ao abrir uma janela</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>A caption window that opens asks what they speak and what to translate into, until you choose Use as my default there</source>
+        <translation type="unfinished">Uma janela de legendas que abre pergunta o idioma falado e para qual traduzir, até você escolher Usar como meu padrão nela</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Show my speech here</source>
         <translation type="unfinished">Mostrar minha fala aqui</translation>
     </message>
@@ -446,6 +630,16 @@
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Colours, font, word links, timing and the rest - for every window, in Settings</source>
         <translation type="unfinished">Cores, fonte, ligações de palavras, ritmo e o resto, para todas as janelas, em Configurações</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Copy all captions</source>
+        <translation type="unfinished">Copiar todas as legendas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Every caption this window holds, with its time and translation</source>
+        <translation type="unfinished">Todas as legendas que esta janela guarda, com horário e tradução</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -469,6 +663,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>What this app speaks, and what it&apos;s translated into - change them here</source>
+        <translation type="unfinished">O que este app fala e para que é traduzido – mude aqui</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Stop captioning {app}</source>
         <translation type="unfinished">Parar de legendar {app}</translation>
     </message>
@@ -476,11 +675,6 @@
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Word links need what was said: turn on “Show the original above the translation” in Settings</source>
         <translation type="unfinished">As ligações de palavras precisam do que foi dito: ligue &quot;Mostrar o original acima da tradução&quot; em Configurações</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
-        <source>Original only</source>
-        <translation type="unfinished">Só o original</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -496,6 +690,19 @@
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Back to live</source>
         <translation type="unfinished">Voltar ao vivo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Nothing to copy yet</source>
+        <translation type="unfinished">Ainda não há nada para copiar</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Copied %Ln caption(s)</source>
+        <translation type="unfinished">
+            <numerusform>%Ln legenda copiada</numerusform>
+            <numerusform>%Ln legendas copiadas</numerusform>
+        </translation>
     </message>
 </context>
 <context>
@@ -637,127 +844,6 @@
     </message>
 </context>
 <context>
-    <name>ComparisonCard</name>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Looks wrong?</source>
-        <translation type="unfinished">Algo errado?</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>What you saw</source>
-        <translation type="unfinished">O que você viu</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Best model</source>
-        <translation type="unfinished">Melhor modelo</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>The best model is right</source>
-        <translation type="unfinished">O melhor modelo está certo</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Both are fine</source>
-        <translation type="unfinished">Os dois estão bons</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Both are wrong</source>
-        <translation type="unfinished">Os dois estão errados</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Answering is optional. Nothing from this line is kept: the server checks it and forgets it.</source>
-        <translation type="unfinished">Responder é opcional. Nada desta linha é guardado: o servidor confere e esquece.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Send report sends this line&apos;s audio again to our best model; the server checks it and forgets it. Nothing is sent until you press Send report.</source>
-        <translation type="unfinished">&quot;Enviar relatório&quot; envia de novo o áudio desta linha ao nosso melhor modelo; o servidor confere e esquece. Nada é enviado até você clicar em &quot;Enviar relatório&quot;.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Cancel</source>
-        <translation type="unfinished">Cancelar</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Send report</source>
-        <translation type="unfinished">Enviar relatório</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Done</source>
-        <translation type="unfinished">Pronto</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Think this line is wrong? Our best model can listen to it again and show you its version.</source>
-        <translation type="unfinished">Acha que esta linha está errada? Nosso melhor modelo pode ouvi-la de novo e mostrar a versão dele.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Checking with our best model…</source>
-        <translation type="unfinished">Conferindo com nosso melhor modelo…</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Checked with our best model: it heard no words here.</source>
-        <translation type="unfinished">Conferido com nosso melhor modelo: ele não ouviu palavras aqui.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Checked with our best model: it heard the same.</source>
-        <translation type="unfinished">Conferido com nosso melhor modelo: ele ouviu o mesmo.</translation>
-    </message>
-    <message numerus="yes">
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Checked with our best model · about %n s</source>
-        <translation type="unfinished">
-            <numerusform>Conferido com nosso melhor modelo · cerca de %n s</numerusform>
-            <numerusform>Conferido com nosso melhor modelo · cerca de %n s</numerusform>
-        </translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Checked with our best model</source>
-        <translation type="unfinished">Conferido com nosso melhor modelo</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>The best model isn&apos;t available right now.</source>
-        <translation type="unfinished">O melhor modelo não está disponível agora.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>The best model is busy - try again in a minute.</source>
-        <translation type="unfinished">O melhor modelo está ocupado: tente de novo em um minuto.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>This line&apos;s audio isn&apos;t held any more: the app keeps only the last 2 minutes of speech, in memory. Try a newer line.</source>
-        <translation type="unfinished">O áudio desta linha não está mais guardado: o app mantém só os últimos 2 minutos de fala, na memória. Tente uma linha mais recente.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Lines are checked while Polyglotic is listening.</source>
-        <translation type="unfinished">As linhas são conferidas enquanto o Polyglotic está escutando.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>No answer from the best model - try again later.</source>
-        <translation type="unfinished">Sem resposta do melhor modelo: tente mais tarde.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>This line couldn&apos;t be checked.</source>
-        <translation type="unfinished">Não foi possível conferir esta linha.</translation>
-    </message>
-</context>
-<context>
     <name>ConsentDialog</name>
     <message>
         <location filename="../src/polyglotic_desktop/ui/consent.py"/>
@@ -811,6 +897,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/consent.py"/>
+        <source>Daily counts of how often you heard each dictionary word - no sentences, no times of day, nothing from your own mic. They help us improve levels and word suggestions. Your counts stay on this Mac either way.</source>
+        <translation type="unfinished">Contagens diárias de quantas vezes você ouviu cada palavra do dicionário: sem frases, sem horários, nada do seu microfone. Elas nos ajudam a melhorar os níveis e as sugestões de palavras. Suas contagens ficam neste Mac de qualquer forma.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/consent.py"/>
         <source>You&apos;re testing the alpha: usage statistics and crash reports are on while you test, so we can find and fix problems.</source>
         <translation type="unfinished">Você está testando a alfa: as estatísticas de uso e os relatórios de falha ficam ligados durante o teste, para podermos encontrar e corrigir problemas.</translation>
     </message>
@@ -854,6 +945,29 @@
         <source>To caption what you hear, Polyglotic sends the speech it detects to our server. Audio and captions are used only to caption it for you - never stored. To run the service we keep your account, the minutes you listen, connection details (app version, the country you connect from, the kind of app you listen to - never its name) and your learning data: the dictionary words you look up, save or mark, and when - never the sentence around them. Your saved words and word statuses follow you to another PC; your lookups show us how people learn and what the dictionaries miss. You can delete your learning data any time. These aren&apos;t optional: without them there&apos;s no service.</source>
         <translation type="unfinished">Para legendar o que você ouve, o Polyglotic envia ao nosso servidor a fala que detecta. Áudio e legendas são usados só para legendar para você e nunca são guardados. Para manter o serviço, guardamos sua conta, os minutos que você escuta, dados de conexão (versão do app, o país de onde você se conecta, o tipo de app que você escuta, nunca o nome) e seus dados de aprendizado: as palavras do dicionário que você consulta, salva ou marca, e quando, nunca a frase em volta delas. Suas palavras salvas e os status delas vão com você para outro PC; suas consultas nos mostram como as pessoas aprendem e o que falta nos dicionários. Você pode excluir seus dados de aprendizado quando quiser. Eles não são opcionais: sem eles não há serviço.</translation>
     </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/consent.py"/>
+        <source>To caption what you hear, Polyglotic sends the speech it detects to our server. Audio and captions are used only to caption it for you - never stored. To run the service we keep your account, the minutes you listen, connection details (app version, the country you connect from, the kind of app you listen to - never its name) and your learning data: the dictionary words you look up, save or mark, and when - never the sentence around them. Your saved words and word statuses follow you to another computer; your lookups show us how people learn and what the dictionaries miss. You can delete your learning data any time. These aren&apos;t optional: without them there&apos;s no service.</source>
+        <translation type="unfinished">Para legendar o que você ouve, o Polyglotic envia ao nosso servidor a fala que detecta. Áudio e legendas são usados só para legendar para você e nunca são guardados. Para manter o serviço, guardamos sua conta, os minutos que você escuta, dados de conexão (versão do app, o país de onde você se conecta, o tipo de app que você escuta, nunca o nome) e seus dados de aprendizado: as palavras do dicionário que você consulta, salva ou marca, e quando, nunca a frase em volta delas. Suas palavras salvas e os status delas vão com você para outro computador; suas consultas nos mostram como as pessoas aprendem e o que falta nos dicionários. Você pode excluir seus dados de aprendizado quando quiser. Eles não são opcionais: sem eles não há serviço.</translation>
+    </message>
+</context>
+<context>
+    <name>Copying</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/copying.py"/>
+        <source>Copy</source>
+        <translation type="unfinished">Copiar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/copying.py"/>
+        <source>Select all</source>
+        <translation type="unfinished">Selecionar tudo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/copying.py"/>
+        <source>Copied</source>
+        <translation type="unfinished">Copiado</translation>
+    </message>
 </context>
 <context>
     <name>DeleteLearningDialog</name>
@@ -874,8 +988,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/delete_learning.py"/>
-        <source>Also delete it from this PC, for the language you&apos;re learning now - your word statuses, saved words and how often you heard each word</source>
-        <translation type="unfinished">Excluir também deste PC, para o idioma que você aprende agora: os status das suas palavras, as palavras salvas e quantas vezes você ouviu cada uma</translation>
+        <source>We&apos;ll delete the words you looked up, saved and marked, and any exposure counts you shared, in every language you learn. Your other computers keep their own copies until you delete them there too.</source>
+        <translation type="unfinished">Vamos excluir as palavras que você consultou, salvou e marcou, e as contagens de exposição que compartilhou, em todos os idiomas que você aprende. Seus outros computadores mantêm as próprias cópias até você excluí-las lá também.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/delete_learning.py"/>
+        <source>Also delete it from this PC, in every language you&apos;re learning - your word statuses, saved words and how often you heard each word</source>
+        <translation type="unfinished">Excluir também deste PC, em todos os idiomas que você aprende: os status das suas palavras, as palavras salvas e quantas vezes você ouviu cada uma</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/delete_learning.py"/>
+        <source>Also delete it from this Mac, in every language you&apos;re learning - your word statuses, saved words and how often you heard each word</source>
+        <translation type="unfinished">Excluir também deste Mac, em todos os idiomas que você aprende: os status das suas palavras, as palavras salvas e quantas vezes você ouviu cada uma</translation>
     </message>
     <message numerus="yes">
         <location filename="../src/polyglotic_desktop/ui/delete_learning.py"/>
@@ -883,6 +1007,14 @@
         <translation type="unfinished">
             <numerusform>Isso também exclui %Ln cópia dos seus dados de aprendizado separada neste PC quando foi encontrada danificada.</numerusform>
             <numerusform>Isso também exclui as %Ln cópias dos seus dados de aprendizado separadas neste PC quando foram encontradas danificadas.</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui/delete_learning.py"/>
+        <source>This also deletes the %Ln copy(s) of your learning data set aside on this Mac when it was found damaged.</source>
+        <translation type="unfinished">
+            <numerusform>Isso também exclui %Ln cópia dos seus dados de aprendizado separada neste Mac quando foi encontrada danificada.</numerusform>
+            <numerusform>Isso também exclui as %Ln cópias dos seus dados de aprendizado separadas neste Mac quando foram encontradas danificadas.</numerusform>
         </translation>
     </message>
     <message>
@@ -895,8 +1027,18 @@
     <name>DesktopApp</name>
     <message>
         <location filename="../src/polyglotic_desktop/main.py"/>
-        <source>This PC</source>
-        <translation type="unfinished">Este PC</translation>
+        <source>Your Mac didn&apos;t allow Polyglotic to use the microphone, so your own speech isn&apos;t captioned. To caption it, allow Polyglotic in System Settings &gt; Privacy &amp; Security &gt; Microphone, then turn on Show my speech here.</source>
+        <translation type="unfinished">Seu Mac não permitiu que o Polyglotic usasse o microfone, então sua própria fala não tem legendas. Para legendá-la, permita o Polyglotic em Ajustes do Sistema &gt; Privacidade e Segurança &gt; Microfone e depois ative Mostrar minha fala aqui.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/main.py"/>
+        <source>Everything the PC plays</source>
+        <translation type="unfinished">Tudo o que o PC toca</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/main.py"/>
+        <source>Everything the Mac plays</source>
+        <translation type="unfinished">Tudo o que o Mac toca</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/main.py"/>
@@ -907,6 +1049,16 @@
         <location filename="../src/polyglotic_desktop/main.py"/>
         <source>You</source>
         <translation type="unfinished">Você</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/main.py"/>
+        <source>Some of your {language} learning data couldn&apos;t be deleted from this PC. Restart Polyglotic, then delete it again on Account.</source>
+        <translation type="unfinished">Parte dos seus dados de aprendizado de {language} não pôde ser excluída deste PC. Reinicie o Polyglotic e exclua de novo em Conta.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/main.py"/>
+        <source>Some of your {language} learning data couldn&apos;t be deleted from this Mac. Restart Polyglotic, then delete it again on Account.</source>
+        <translation type="unfinished">Parte dos seus dados de aprendizado de {language} não pôde ser excluída deste Mac. Reinicie o Polyglotic e exclua de novo em Conta.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/main.py"/>
@@ -923,6 +1075,11 @@
         <location filename="../src/polyglotic_desktop/main.py"/>
         <source>Windows on this PC couldn&apos;t caption one app alone, so Polyglotic captions everything the PC plays. You can try apps again on Home.</source>
         <translation type="unfinished">O Windows neste PC não conseguiu legendar um app sozinho, então o Polyglotic legenda tudo o que o PC toca. Você pode tentar apps de novo em Início.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/main.py"/>
+        <source>This Mac couldn&apos;t caption one app alone, so Polyglotic captions everything the Mac plays. You can try apps again on Home.</source>
+        <translation type="unfinished">Este Mac não conseguiu legendar um app sozinho, então o Polyglotic legenda tudo o que o Mac toca. Você pode tentar apps de novo em Início.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
@@ -1006,13 +1163,13 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
-        <source>Resume</source>
-        <translation type="unfinished">Retomar</translation>
+        <source>Stop captioning and close Polyglotic - closing the window keeps it in the menu bar</source>
+        <translation type="unfinished">Parar de legendar e fechar o Polyglotic; fechar a janela o mantém na barra de menus</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
-        <source>Check the newest line with our best model</source>
-        <translation type="unfinished">Conferir a linha mais recente com nosso melhor modelo</translation>
+        <source>Resume</source>
+        <translation type="unfinished">Retomar</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
@@ -1021,8 +1178,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
-        <source>Detect the language</source>
-        <translation type="unfinished">Detectar o idioma</translation>
+        <source>Detect automatically</source>
+        <translation type="unfinished">Detectar automaticamente</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
@@ -1033,6 +1190,19 @@
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
         <source>Hold {key} and speak: your words are typed where your cursor is</source>
         <translation type="unfinished">Segure {key} e fale: suas palavras são digitadas onde está o cursor</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/app.py"/>
+        <source>Captioning {apps} while hidden</source>
+        <translation type="unfinished">Legendando {apps} com as janelas ocultas</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui/app.py"/>
+        <source>Captions paused after %n minute(s) hidden - show the windows to carry on</source>
+        <translation type="unfinished">
+            <numerusform>Legendas pausadas após %n minuto ocultas – mostre as janelas para continuar</numerusform>
+            <numerusform>Legendas pausadas após %n minutos ocultas – mostre as janelas para continuar</numerusform>
+        </translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
@@ -1051,6 +1221,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
+        <source>It&apos;s in the menu bar. Resume or quit from there.</source>
+        <translation type="unfinished">Ele está na barra de menus. Retome ou saia por lá.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/app.py"/>
         <source>Polyglotic is still running</source>
         <translation type="unfinished">O Polyglotic continua aberto</translation>
     </message>
@@ -1058,6 +1233,11 @@
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
         <source>It&apos;s in the tray. Quit from there.</source>
         <translation type="unfinished">Ele está na bandeja. Saia por lá.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/app.py"/>
+        <source>It&apos;s in the menu bar. Quit from there.</source>
+        <translation type="unfinished">Ele está na barra de menus. Saia por lá.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
@@ -1101,12 +1281,29 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/app.py"/>
+        <source>Lots of speech at once - live updates slowed; captions continue</source>
+        <translation type="unfinished">Muita fala ao mesmo tempo: atualizações mais lentas; as legendas seguem</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/app.py"/>
         <source>Listening moved to another device</source>
         <translation type="unfinished">A escuta passou para outro dispositivo</translation>
     </message>
 </context>
 <context>
     <name>DictationKey</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
+        <source>Right {key}</source>
+        <extracomment>a modifier key on the right of a Mac&apos;s keyboard: {key} is its symbol (⌘)</extracomment>
+        <translation type="unfinished">{key} direito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
+        <source>Left {key}</source>
+        <extracomment>a modifier key on the left of a Mac&apos;s keyboard: {key} is its symbol (⌘)</extracomment>
+        <translation type="unfinished">{key} esquerdo</translation>
+    </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
         <source>Ctrl</source>
@@ -1270,6 +1467,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
+        <source>That key types. Hold it with ⌘ or ⌃, or choose another.</source>
+        <translation type="unfinished">Essa tecla digita. Segure-a com ⌘ ou ⌃, ou escolha outra.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
         <source>Esc cancels dictation: choose another key.</source>
         <translation type="unfinished">Esc cancela o ditado: escolha outra tecla.</translation>
     </message>
@@ -1280,8 +1482,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
+        <source>macOS keeps that one for itself: choose another.</source>
+        <translation type="unfinished">O macOS guarda essa para si: escolha outra.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
         <source>Every program uses that one (copy, paste…): add Alt or Shift to it.</source>
         <translation type="unfinished">Todo programa usa essa (copiar, colar…): junte Alt ou Shift a ela.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
+        <source>Every app uses that one (copy, paste…): add ⌥ or ⇧ to it.</source>
+        <translation type="unfinished">Todo app usa essa (copiar, colar…): adicione ⌥ ou ⇧.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
@@ -1290,8 +1502,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
+        <source>On their own, only Right ⌘ or ⌃⌘ work: hold ⌘, ⌥ or ⇧ with a key.</source>
+        <translation type="unfinished">Sozinhas, só ⌘ direito ou ⌃⌘ funcionam: segure ⌘, ⌥ ou ⇧ com uma tecla.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
         <source>Letting go of Alt opens a program&apos;s menu, and your words would go there: hold Ctrl with it too.</source>
         <translation type="unfinished">Soltar Alt abre o menu do programa, e suas palavras iriam para lá: segure Ctrl junto.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
+        <source>⌥ with a key types a character of its own: hold ⌘ with it too.</source>
+        <translation type="unfinished">⌥ com uma tecla digita um caractere próprio: segure ⌘ também.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/dictation_key.py"/>
@@ -1360,6 +1582,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/dictation_sign.py"/>
         <source>Couldn&apos;t type it here</source>
         <translation type="unfinished">Não foi possível digitar aqui</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/dictation_sign.py"/>
+        <source>Not allowed to type - see Settings &gt; Dictation</source>
+        <translation type="unfinished">Sem permissão para digitar: veja Configurações &gt; Ditado</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/dictation_sign.py"/>
@@ -1433,6 +1660,11 @@
         <location filename="../src/polyglotic_desktop/ui/feedback.py"/>
         <source>There&apos;s no log on this PC yet.</source>
         <translation type="unfinished">Ainda não há registro neste PC.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/feedback.py"/>
+        <source>There&apos;s no log on this Mac yet.</source>
+        <translation type="unfinished">Ainda não há registro neste Mac.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/feedback.py"/>
@@ -1567,6 +1799,16 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>What&apos;s new</source>
+        <translation type="unfinished">Novidades</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>The release notes are in English.</source>
+        <translation type="unfinished">As notas da versão estão em inglês.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Still stuck?</source>
         <translation type="unfinished">Ainda travado?</translation>
     </message>
@@ -1582,8 +1824,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Version {version}</source>
+        <translation type="unfinished">Versão {version}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Changes aren&apos;t kept on this PC until you restart Polyglotic; your saved words then come back from your account. The old file is kept as {path}, in case we ask for it in a report.</source>
         <translation type="unfinished">As mudanças não são guardadas neste PC até você reiniciar o Polyglotic; suas palavras salvas voltam então da sua conta. O arquivo antigo fica guardado como {path}, caso o peçamos num relatório.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Changes aren&apos;t kept on this Mac until you restart Polyglotic; your saved words then come back from your account. The old file is kept as {path}, in case we ask for it in a report.</source>
+        <translation type="unfinished">As mudanças não são guardadas neste Mac até você reiniciar o Polyglotic; suas palavras salvas voltam então da sua conta. O arquivo antigo fica guardado como {path}, caso o peçamos num relatório.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1594,6 +1846,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Your learning data on this PC was damaged and has been set aside</source>
         <translation type="unfinished">Seus dados de aprendizado neste PC estavam danificados e foram separados</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Your learning data on this Mac was damaged and has been set aside</source>
+        <translation type="unfinished">Seus dados de aprendizado neste Mac estavam danificados e foram separados</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1662,6 +1919,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Sign in on Account with your invite code - the one this Mac used before works again - or the code in your Plus email.</source>
+        <translation type="unfinished">Entre em Conta com seu código de convite (o que este Mac usou antes funciona de novo) ou o código do seu e-mail do Plus.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Plus has ended</source>
         <translation type="unfinished">O Plus terminou</translation>
     </message>
@@ -1679,6 +1941,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>It downloads the update and restarts by itself. If it doesn&apos;t, quit from the tray and start it again.</source>
         <translation type="unfinished">Ele baixa a atualização e reinicia sozinho. Se não reiniciar, saia pela bandeja e abra de novo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>It downloads the update and restarts by itself. If it doesn&apos;t, quit from the menu bar and start it again.</source>
+        <translation type="unfinished">Ele baixa a atualização e reinicia sozinho. Se não reiniciar, saia pela barra de menus e abra de novo.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1702,6 +1969,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Quit from the menu bar and start Polyglotic again. If it keeps happening, report a problem.</source>
+        <translation type="unfinished">Saia pela barra de menus e abra o Polyglotic de novo. Se continuar acontecendo, relate um problema.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Nothing is added to caption</source>
         <translation type="unfinished">Nada foi adicionado para legendar</translation>
     </message>
@@ -1709,6 +1981,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>On Home, add an app (up to 3), or choose Everything the PC plays.</source>
         <translation type="unfinished">Em Início, adicione um app (até 3), ou escolha Tudo o que o PC toca.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>On Home, add an app (up to 3), or choose Everything the Mac plays.</source>
+        <translation type="unfinished">Em Início, adicione um app (até 3), ou escolha Tudo o que o Mac toca.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1732,13 +2009,28 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Is it playing sound? Is its output going to this Mac&apos;s speakers or headset, and not muted?</source>
+        <translation type="unfinished">Ele está tocando som? A saída vai para os alto-falantes ou o fone deste Mac, sem estar no mudo?</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>The PC is quiet: nothing it plays has made sound in 30 seconds</source>
         <translation type="unfinished">O PC está em silêncio: nada do que ele toca fez som em 30 segundos</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>The Mac is quiet: nothing it plays has made sound in 30 seconds</source>
+        <translation type="unfinished">O Mac está em silêncio: nada do que ele toca fez som em 30 segundos</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Play something. If you hear it on a headset that isn&apos;t the PC&apos;s default device, make that the default, or add the app instead.</source>
         <translation type="unfinished">Toque algo. Se você ouve num fone que não é o dispositivo padrão do PC, torne-o padrão, ou adicione o app.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Play something. If you hear it on a headset that isn&apos;t the Mac&apos;s default device, make that the default, or add the app instead.</source>
+        <translation type="unfinished">Toque algo. Se você ouve num fone que não é o dispositivo padrão do Mac, torne-o padrão, ou adicione o app.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1749,6 +2041,33 @@
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Is it muted, or is another microphone chosen in the PC&apos;s sound settings?</source>
         <translation type="unfinished">Ele está no mudo, ou há outro microfone escolhido nas configurações de som do PC?</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Is it muted, or is another microphone chosen in the Mac&apos;s sound settings?</source>
+        <translation type="unfinished">Ele está no mudo, ou há outro microfone escolhido nas configurações de som do Mac?</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Polyglotic isn&apos;t allowed to hear what the Mac plays</source>
+        <translation type="unfinished">O Polyglotic não tem permissão para ouvir o que o Mac reproduz</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>In System Settings, open Privacy &amp; Security, then Screen &amp; System Audio Recording, and turn on Polyglotic under System Audio Recording Only. Then quit Polyglotic and open it again.</source>
+        <extracomment>macOS System Settings&apos; own names (macOS 15 and later): keep them as the Mac shows them in the language</extracomment>
+        <translation type="unfinished">Em Ajustes do Sistema, abra &quot;Privacidade e Segurança&quot;, depois &quot;Gravação de Tela e Áudio do Sistema&quot;, e ative o Polyglotic em &quot;Somente Gravação de Áudio do Sistema&quot;. Depois, encerre o Polyglotic e abra-o de novo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Polyglotic isn&apos;t allowed to use the microphone</source>
+        <translation type="unfinished">O Polyglotic não tem permissão para usar o microfone</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>In System Settings, open Privacy &amp; Security, then Microphone, and turn on Polyglotic. Then quit Polyglotic and open it again.</source>
+        <extracomment>macOS System Settings&apos; own names: keep them as the Mac shows them</extracomment>
+        <translation type="unfinished">Em Ajustes do Sistema, abra &quot;Privacidade e Segurança&quot;, depois &quot;Microfone&quot;, e ative o Polyglotic. Depois, encerre o Polyglotic e abra-o de novo.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1772,6 +2091,21 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Choose Resume on Home or in the menu bar&apos;s menu, or press Ctrl+Alt+P.</source>
+        <translation type="unfinished">Escolha Retomar em Início ou no menu da barra de menus, ou pressione Ctrl+Alt+P.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Choose Resume on Home or in the tray menu.</source>
+        <translation type="unfinished">Escolha Retomar em Início ou no menu da bandeja.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Choose Resume on Home or in the menu bar&apos;s menu.</source>
+        <translation type="unfinished">Escolha Retomar em Início ou no menu da barra de menus.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>The caption windows are hidden</source>
         <translation type="unfinished">As janelas de legendas estão ocultas</translation>
     </message>
@@ -1782,6 +2116,21 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Press Ctrl+Alt+H, or use Hide all on Home or the menu bar&apos;s menu. An app&apos;s transcript shows whether captions are arriving.</source>
+        <translation type="unfinished">Pressione Ctrl+Alt+H, ou use Ocultar tudo em Início ou no menu da barra de menus. A transcrição de um app mostra se as legendas estão chegando.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Use Hide all on Home or the tray menu. An app&apos;s transcript shows whether captions are arriving.</source>
+        <translation type="unfinished">Use Ocultar tudo em Início ou no menu da bandeja. A transcrição de um app mostra se as legendas estão chegando.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Use Hide all on Home or the menu bar&apos;s menu. An app&apos;s transcript shows whether captions are arriving.</source>
+        <translation type="unfinished">Use Ocultar tudo em Início ou no menu da barra de menus. A transcrição de um app mostra se as legendas estão chegando.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Captions are failing on the server</source>
         <translation type="unfinished">As legendas estão falhando no servidor</translation>
     </message>
@@ -1789,6 +2138,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>It keeps trying by itself - nothing on this PC needs changing. If it goes on for more than a few minutes, report a problem.</source>
         <translation type="unfinished">Ele continua tentando sozinho; nada neste PC precisa mudar. Se durar mais que alguns minutos, relate um problema.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>It keeps trying by itself - nothing on this Mac needs changing. If it goes on for more than a few minutes, report a problem.</source>
+        <translation type="unfinished">Ele continua tentando sozinho; nada neste Mac precisa mudar. Se durar mais que alguns minutos, relate um problema.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1807,8 +2161,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Caption apps you add (macOS 14.2 or later)</source>
+        <translation type="unfinished">Legendar os apps que você adiciona (macOS 14.2 ou posterior)</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>On Home, add up to 3 apps with sound open; each gets a caption window of its own, labelled with its name. An app you added that isn&apos;t open is captioned when it opens. Windows 10 can&apos;t tell apps apart, so there everything the PC plays is captioned.</source>
         <translation type="unfinished">Em Início, adicione até 3 apps com som aberto; cada um ganha a própria janela de legendas, com o nome dele. Um app adicionado que não está aberto é legendado quando abrir. O Windows 10 não distingue apps, então lá tudo o que o PC toca é legendado.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>On Home, add up to 3 apps with sound open; each gets a caption window of its own, labelled with its name. An app you added that isn&apos;t open is captioned when it opens. Before macOS 14.2 a Mac can&apos;t tell apps apart, so there everything the Mac plays is captioned.</source>
+        <translation type="unfinished">Em Início, adicione até 3 apps com som aberto; cada um ganha a própria janela de legendas, com o nome dele. Um app adicionado que não está aberto é legendado quando abrir. Antes do macOS 14.2, o Mac não distingue apps, então lá tudo o que o Mac toca é legendado.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1822,13 +2186,28 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>With one app added on Home, turn on Also caption everything else the Mac plays: everything except that app gets a caption window of its own, labelled Everything else - a call in one window, the game or video in the other, nothing in both. It&apos;s there with one app at a time.</source>
+        <translation type="unfinished">Com um app adicionado em Início, ligue Legendar também todo o resto que o Mac toca: tudo exceto esse app ganha a própria janela de legendas, chamada Todo o resto. Uma chamada numa janela, o jogo ou vídeo na outra, nada nas duas. Funciona com um app de cada vez.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Caption everything the PC plays</source>
         <translation type="unfinished">Legendar tudo o que o PC toca</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Caption everything the Mac plays</source>
+        <translation type="unfinished">Legendar tudo o que o Mac toca</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>On Home, choose Everything the PC plays: all it plays through its default speakers or headset, labelled This PC. If your headset isn&apos;t the default device, make it the default.</source>
         <translation type="unfinished">Em Início, escolha Tudo o que o PC toca: tudo o que ele toca pelos alto-falantes ou fone padrão, chamado Este PC. Se seu fone não é o dispositivo padrão, torne-o padrão.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>On Home, choose Everything the Mac plays: all it plays through its default speakers or headset, labelled This Mac. If your headset isn&apos;t the default device, make it the default.</source>
+        <translation type="unfinished">Em Início, escolha Tudo o que o Mac toca: tudo o que ele toca pelos alto-falantes ou fone padrão, chamado Este Mac. Se seu fone não é o dispositivo padrão, torne-o padrão.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1842,6 +2221,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Turn on Show my speech here in a caption window&apos;s settings, or Caption my own speech in the menu bar&apos;s menu for every window. It&apos;s off until you do, and your microphone&apos;s audio goes to the server only while a window shows it.</source>
+        <translation type="unfinished">Ligue Mostrar minha fala aqui nas configurações de uma janela de legendas, ou Legendar minha própria fala no menu da barra de menus para todas as janelas. Fica desligado até você ligar, e o áudio do seu microfone só vai ao servidor enquanto uma janela o mostra.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Move, lock and resize the caption windows</source>
         <translation type="unfinished">Mover, travar e redimensionar as janelas de legendas</translation>
     </message>
@@ -1849,6 +2233,16 @@
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Drag a caption window to move it, or drag its edges to resize it. Lock all (Ctrl+Alt+L) lets clicks pass through; Hide all is Ctrl+Alt+H; Pause captions is Ctrl+Alt+P. Lost one? Reset positions on Home puts every window back.</source>
         <translation type="unfinished">Arraste uma janela de legendas para movê-la, ou as bordas para redimensioná-la. Travar tudo (Ctrl+Alt+L) deixa os cliques passarem; Ocultar tudo é Ctrl+Alt+H; Pausar legendas é Ctrl+Alt+P. Perdeu uma? Redefinir posições em Início traz cada janela de volta.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Drag a caption window to move it, or drag its edges to resize it. Lock all, on Home or in the tray menu, lets clicks pass through. Lost one? Reset positions on Home puts every window back.</source>
+        <translation type="unfinished">Arraste uma janela de legendas para movê-la, ou as bordas para redimensioná-la. Travar tudo, em Início ou no menu da bandeja, deixa os cliques passarem. Perdeu uma? Redefinir posições em Início traz cada janela de volta.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Drag a caption window to move it, or drag its edges to resize it. Lock all, on Home or in the menu bar&apos;s menu, lets clicks pass through. Lost one? Reset positions on Home puts every window back.</source>
+        <translation type="unfinished">Arraste uma janela de legendas para movê-la, ou as bordas para redimensioná-la. Travar tudo, em Início ou no menu da barra de menus, deixa os cliques passarem. Perdeu uma? Redefinir posições em Início traz cada janela de volta.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1862,13 +2256,28 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>A caption window never takes the game&apos;s keyboard or mouse: it is never the active window. Put it where it doesn&apos;t cover what you need to see, then Lock all on Home or in the tray menu so clicks go through to the game. A game in exclusive full screen covers every other window: choose its borderless or windowed full screen instead.</source>
+        <translation type="unfinished">Uma janela de legendas nunca pega o teclado ou o mouse do jogo: ela nunca é a janela ativa. Coloque-a onde não cubra o que você precisa ver, depois Travar tudo em Início ou no menu da bandeja para os cliques irem para o jogo. Um jogo em tela cheia exclusiva cobre todas as outras janelas: escolha o modo sem bordas ou tela cheia em janela.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>A caption window never takes the game&apos;s keyboard or mouse: it is never the active window. Put it where it doesn&apos;t cover what you need to see, then Lock all on Home or in the menu bar&apos;s menu so clicks go through to the game. A game in exclusive full screen covers every other window: choose its borderless or windowed full screen instead.</source>
+        <translation type="unfinished">Uma janela de legendas nunca pega o teclado ou o mouse do jogo: ela nunca é a janela ativa. Coloque-a onde não cubra o que você precisa ver, depois Travar tudo em Início ou no menu da barra de menus para os cliques irem para o jogo. Um jogo em tela cheia exclusiva cobre todas as outras janelas: escolha o modo sem bordas ou tela cheia em janela.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Dictate into any program (preview)</source>
         <translation type="unfinished">Ditar em qualquer programa (prévia)</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
-        <source>Turn on Dictation in Settings &gt; App, or in the tray menu. Hold {key} and speak; let go, and your words are typed where your cursor is. Esc cancels before they&apos;re typed. To use another key or combination, click the key in Settings &gt; App and press the one you want.</source>
-        <translation type="unfinished">Ligue Ditado em Configurações &gt; App, ou no menu da bandeja. Segure {key} e fale; solte, e suas palavras são digitadas onde está o cursor. Esc cancela antes de digitar. Para usar outra tecla ou combinação, clique na tecla em Configurações &gt; App e pressione a que quiser.</translation>
+        <source>Turn on Dictation in Settings &gt; Dictation, or in the tray menu. Hold {key} and speak; let go, and your words are typed where your cursor is. Esc cancels before they&apos;re typed. To use another key or combination, click the key in Settings &gt; Dictation and press the one you want.</source>
+        <translation type="unfinished">Ligue Ditado em Configurações &gt; Ditado, ou no menu da bandeja. Segure {key} e fale; solte, e suas palavras são digitadas onde está o cursor. Esc cancela antes de digitar. Para usar outra tecla ou combinação, clique na tecla em Configurações &gt; Ditado e pressione a que quiser.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Turn on Dictation in Settings &gt; Dictation, or in the menu bar&apos;s menu. Hold {key} and speak; let go, and your words are typed where your cursor is. Esc cancels before they&apos;re typed. To use another key or combination, click the key in Settings &gt; Dictation and press the one you want.</source>
+        <translation type="unfinished">Ligue Ditado em Configurações &gt; Ditado, ou no menu da barra de menus. Segure {key} e fale; solte, e suas palavras são digitadas onde está o cursor. Esc cancela antes de digitar. Para usar outra tecla ou combinação, clique na tecla em Configurações &gt; Ditado e pressione a que quiser.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1877,8 +2286,13 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
-        <source>Only speech leaves this PC: our server turns it into captions and translations, and never stores the audio, the captions or the translations. This PC holds the last 2 minutes of each app&apos;s finished speech in memory, so &quot;Looks wrong?&quot; can send that line&apos;s audio again to be checked - only when you ask. Your transcript never leaves this PC, and it&apos;s gone when you quit Polyglotic unless you save it. We keep your account, your minutes, a record of each session (never what was said or the app&apos;s name) and the dictionary words you look up, save or mark - never the sentence around them. Usage statistics and word counts are shared only if you turn them on (Account &gt; Choose what to share), and you can delete your learning data on Account. The privacy notice, below, says it all.</source>
-        <translation type="unfinished">Só a fala sai deste PC: nosso servidor a transforma em legendas e traduções e nunca guarda o áudio, as legendas ou as traduções. Este PC mantém na memória os últimos 2 minutos de fala concluída de cada app, para que &quot;Algo errado?&quot; possa enviar o áudio dessa linha de novo para conferir, só quando você pede. Sua transcrição nunca sai deste PC e some quando você fecha o Polyglotic, a menos que a salve. Guardamos sua conta, seus minutos, um registro de cada sessão (nunca o que foi dito ou o nome do app) e as palavras do dicionário que você consulta, salva ou marca, nunca a frase em volta delas. As estatísticas de uso e as contagens de palavras só são compartilhadas se você ligá-las (Conta &gt; Escolher o que compartilhar), e você pode excluir seus dados de aprendizado em Conta. O aviso de privacidade, abaixo, explica tudo.</translation>
+        <source>Only speech leaves this PC: our server turns it into captions and translations, and never stores the audio, the captions or the translations. This PC holds the last 2 minutes of each app&apos;s finished speech in memory, and sends it again only when you ask. Your transcript never leaves this PC, and it&apos;s gone when you quit Polyglotic unless you save it. We keep your account, your minutes, a record of each session (never what was said or the app&apos;s name) and the dictionary words you look up, save or mark - never the sentence around them. Usage statistics and word counts are shared only if you turn them on (Account &gt; Choose what to share), and you can delete your learning data on Account. The privacy notice, below, says it all.</source>
+        <translation type="unfinished">Só a fala sai deste PC: nosso servidor a transforma em legendas e traduções e nunca guarda o áudio, as legendas ou as traduções. Este PC mantém na memória os últimos 2 minutos de fala concluída de cada app e só a envia de novo quando você pede. Sua transcrição nunca sai deste PC e some quando você fecha o Polyglotic, a menos que a salve. Guardamos sua conta, seus minutos, um registro de cada sessão (nunca o que foi dito ou o nome do app) e as palavras do dicionário que você consulta, salva ou marca, nunca a frase em volta delas. As estatísticas de uso e as contagens de palavras só são compartilhadas se você ligá-las (Conta &gt; Escolher o que compartilhar), e você pode excluir seus dados de aprendizado em Conta. O aviso de privacidade, abaixo, explica tudo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Only speech leaves this Mac: our server turns it into captions and translations, and never stores the audio, the captions or the translations. This Mac holds the last 2 minutes of each app&apos;s finished speech in memory, and sends it again only when you ask. Your transcript never leaves this Mac, and it&apos;s gone when you quit Polyglotic unless you save it. We keep your account, your minutes, a record of each session (never what was said or the app&apos;s name) and the dictionary words you look up, save or mark - never the sentence around them. Usage statistics and word counts are shared only if you turn them on (Account &gt; Choose what to share), and you can delete your learning data on Account. The privacy notice, below, says it all.</source>
+        <translation type="unfinished">Só a fala sai deste Mac: nosso servidor a transforma em legendas e traduções e nunca guarda o áudio, as legendas ou as traduções. Este Mac mantém na memória os últimos 2 minutos de fala concluída de cada app e só a envia de novo quando você pede. Sua transcrição nunca sai deste Mac e some quando você fecha o Polyglotic, a menos que a salve. Guardamos sua conta, seus minutos, um registro de cada sessão (nunca o que foi dito ou o nome do app) e as palavras do dicionário que você consulta, salva ou marca, nunca a frase em volta delas. As estatísticas de uso e as contagens de palavras só são compartilhadas se você ligá-las (Conta &gt; Escolher o que compartilhar), e você pode excluir seus dados de aprendizado em Conta. O aviso de privacidade, abaixo, explica tudo.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1887,8 +2301,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
-        <source>Captions and translations are made by machine and can be wrong, most of all with names, slang, music behind a voice and several people talking at once. Add slang, memes and names you hear often - rizz, yyds, a streamer&apos;s name - in Names and slang, under Settings &gt; Captions &gt; Speech, so they&apos;re spelled your way.</source>
-        <translation type="unfinished">Legendas e traduções são feitas por máquina e podem errar, principalmente com nomes, gírias, música atrás de uma voz e várias pessoas falando ao mesmo tempo. Adicione gírias, memes e nomes que você ouve muito (rizz, yyds, o nome de um streamer) em Nomes e gírias, em Configurações &gt; Legendas &gt; Fala, para que sejam escritos do seu jeito.</translation>
+        <source>Captions and translations are made by machine and can be wrong, most of all with names, slang, music behind a voice and several people talking at once. Add slang, memes and names you hear often - rizz, yyds, a streamer&apos;s name - in Names and slang, under Settings &gt; Speech, so they&apos;re spelled your way.</source>
+        <translation type="unfinished">Legendas e traduções são feitas por máquina e podem errar, principalmente com nomes, gírias, música atrás de uma voz e várias pessoas falando ao mesmo tempo. Adicione gírias, memes e nomes que você ouve muito (rizz, yyds, o nome de um streamer) em Nomes e gírias, em Configurações &gt; Fala, para que sejam escritos do seu jeito.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1897,8 +2311,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
-        <source>Steady, the default: each sentence appears once, finished and translated, about half a second after it ends; a small bar moves under the captions while it&apos;s on its way, and if the speaker talks on, a dim line shows the words so far. Quick preview: a dim first line after about 2 seconds, then the finished caption and its translation when the sentence ends. Live updates: words appear as they&apos;re said and rewrite themselves until the sentence ends. Choose one in Settings &gt; Captions &gt; Timing, or in a caption window&apos;s settings. In every one, nobody talks longer than the Longest wait for text (3 seconds, unless you change it) before you see text.</source>
-        <translation type="unfinished">Estável, o padrão: cada frase aparece uma vez, pronta e traduzida, cerca de meio segundo depois de terminar; uma barrinha se move sob as legendas enquanto ela chega, e se a pessoa continua falando, uma linha apagada mostra as palavras até ali. Prévia: uma primeira linha apagada depois de uns 2 segundos, e então a legenda final e a tradução quando a frase termina. Ao vivo: as palavras aparecem conforme são ditas e se reescrevem até a frase terminar. Escolha em Configurações &gt; Legendas &gt; Ritmo, ou nas configurações de uma janela de legendas. Em todos, ninguém fala por mais tempo que a Espera máxima por texto (3 segundos, a menos que você mude) antes de você ver texto.</translation>
+        <source>Steady, the default: each sentence appears once, finished and translated, about half a second after it ends; a small bar moves under the captions while it&apos;s on its way, and if the speaker talks on, a dim line shows the words so far. Quick preview: a dim first line after about 2 seconds, then the finished caption and its translation when the sentence ends. Live updates: words appear as they&apos;re said and rewrite themselves until the sentence ends. Choose one in Settings &gt; Timing, or in a caption window&apos;s settings. In every one, nobody talks longer than the Longest wait for text (3 seconds, unless you change it) before you see text.</source>
+        <translation type="unfinished">Estável, o padrão: cada frase aparece uma vez, pronta e traduzida, cerca de meio segundo depois de terminar; uma barrinha se move sob as legendas enquanto ela chega, e se a pessoa continua falando, uma linha apagada mostra as palavras até ali. Prévia: uma primeira linha apagada depois de uns 2 segundos, e então a legenda final e a tradução quando a frase termina. Ao vivo: as palavras aparecem conforme são ditas e se reescrevem até a frase terminar. Escolha em Configurações &gt; Ritmo, ou nas configurações de uma janela de legendas. Em todos, ninguém fala por mais tempo que a Espera máxima por texto (3 segundos, a menos que você mude) antes de você ver texto.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -1922,6 +2336,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
+        <source>Words you look up and save are on Words. They are kept on this Mac and, with your account, on our server, so they follow you to another computer.</source>
+        <translation type="unfinished">As palavras que você consulta e salva estão em Palavras. Elas ficam neste Mac e, com sua conta, no nosso servidor, então vão com você para outro computador.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
         <source>Put your words into Anki</source>
         <translation type="unfinished">Levar suas palavras para o Anki</translation>
     </message>
@@ -1940,8 +2359,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Your learning data on this Mac was damaged, so it&apos;s been set aside as {name}. Your saved words are coming back from your account.</source>
+        <translation type="unfinished">Seus dados de aprendizado neste Mac estavam danificados, então foram separados como {name}. Suas palavras salvas estão voltando da sua conta.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Your learning data on this PC was damaged, so changes aren&apos;t kept on this PC until you restart Polyglotic. Your saved words then come back from your account.</source>
         <translation type="unfinished">Seus dados de aprendizado neste PC estavam danificados, então as mudanças não são guardadas aqui até você reiniciar o Polyglotic. Suas palavras salvas voltam então da sua conta.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Your learning data on this Mac was damaged, so changes aren&apos;t kept on this Mac until you restart Polyglotic. Your saved words then come back from your account.</source>
+        <translation type="unfinished">Seus dados de aprendizado neste Mac estavam danificados, então as mudanças não são guardadas aqui até você reiniciar o Polyglotic. Suas palavras salvas voltam então da sua conta.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2031,11 +2460,6 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
-        <source>Polyglotic&apos;s server is down</source>
-        <translation type="unfinished">O servidor do Polyglotic está fora do ar</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Polyglotic&apos;s server is restarting</source>
         <translation type="unfinished">O servidor do Polyglotic está reiniciando</translation>
     </message>
@@ -2061,8 +2485,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Check this Mac&apos;s date and time</source>
+        <translation type="unfinished">Confira a data e a hora deste Mac</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Polyglotic is open on too many of your PCs</source>
         <translation type="unfinished">O Polyglotic está aberto em PCs demais seus</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Polyglotic is open on too many of your computers</source>
+        <translation type="unfinished">O Polyglotic está aberto em computadores demais seus</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2077,13 +2511,48 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>This PC&apos;s date or time looks wrong: it says {date}, {time}. Captions work; to set it, turn on Set time automatically in Windows&apos; Settings, Time &amp; language, Date &amp; time, then choose Sync now.</source>
+        <extracomment>{date}, {time}: what this PC&apos;s clock says, in its regional format</extracomment>
+        <translation type="unfinished">A data ou a hora deste PC parece errada: ele mostra {date}, {time}. As legendas funcionam; para acertar, ative Definir horário automaticamente em Configurações do Windows, Hora e idioma, Data e hora, e depois escolha Sincronizar agora.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>This Mac&apos;s date or time looks wrong: it says {date}, {time}. Captions work; to set it, turn on Set time and date automatically in System Settings, General, Date &amp; Time.</source>
+        <extracomment>{date}, {time}: what this Mac&apos;s clock says, in its regional format</extracomment>
+        <translation type="unfinished">A data ou a hora deste Mac parece errada: ele mostra {date}, {time}. As legendas funcionam; para acertar, ative Definir data e hora automaticamente em Ajustes do Sistema, Geral, Data e Hora.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>you need a code from us: an invite, or the one in your Plus email</source>
         <translation type="unfinished">você precisa de um código nosso: um convite, ou o do seu e-mail do Plus</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>resume here or from the tray</source>
+        <translation type="unfinished">retome aqui ou pela bandeja</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>resume here or from the menu bar</source>
+        <translation type="unfinished">retome aqui ou pela barra de menus</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>resume with Ctrl+Alt+P, or from the tray</source>
         <translation type="unfinished">retome com Ctrl+Alt+P, ou pela bandeja</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>resume with Ctrl+Alt+P, or from the menu bar</source>
+        <translation type="unfinished">retome com Ctrl+Alt+P, ou pela barra de menus</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>every caption window hidden over %n minute(s) - show them to carry on</source>
+        <translation type="unfinished">
+            <numerusform>todas as janelas de legendas ocultas há mais de %n minuto – mostre-as para continuar</numerusform>
+            <numerusform>todas as janelas de legendas ocultas há mais de %n minutos – mostre-as para continuar</numerusform>
+        </translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2099,6 +2568,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>quit from the tray and start Polyglotic again - if it keeps stopping, Help can check what&apos;s wrong</source>
         <translation type="unfinished">saia pela bandeja e abra o Polyglotic de novo; se continuar parando, a Ajuda pode verificar o que está errado</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>quit from the menu bar and start Polyglotic again - if it keeps stopping, Help can check what&apos;s wrong</source>
+        <translation type="unfinished">saia pela barra de menus e abra o Polyglotic de novo; se continuar parando, a Ajuda pode verificar o que está errado</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2137,6 +2611,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>the update is downloaded - quit from the menu bar and start Polyglotic again to install it</source>
+        <translation type="unfinished">a atualização foi baixada: saia pela barra de menus e abra o Polyglotic de novo para instalá-la</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>no update is ready yet - Polyglotic looks again every few minutes, or ask us for the newest installer</source>
         <translation type="unfinished">nenhuma atualização pronta ainda: o Polyglotic olha de novo a cada poucos minutos, ou peça o instalador mais novo</translation>
     </message>
@@ -2155,6 +2634,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>this PC seems to be offline. Check its internet connection; if it&apos;s working, the problem is ours</source>
         <translation type="unfinished">este PC parece estar offline. Confira a conexão com a internet; se estiver funcionando, o problema é nosso</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>this Mac seems to be offline. Check its internet connection; if it&apos;s working, the problem is ours</source>
+        <translation type="unfinished">este Mac parece estar offline. Confira a conexão com a internet; se estiver funcionando, o problema é nosso</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2183,8 +2667,21 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
-        <source>a secure connection needs them right. Set them in Windows&apos; Settings, Time &amp; language; if they&apos;re right, the problem is ours</source>
-        <translation type="unfinished">uma conexão segura precisa delas certas. Ajuste em Configurações do Windows, Hora e idioma; se estiverem certas, o problema é nosso</translation>
+        <source>this PC says it&apos;s {date}, which can&apos;t be right. Turn on Set time automatically in Windows&apos; Settings, Time &amp; language, Date &amp; time, then choose Sync now</source>
+        <extracomment>{date}: the date this PC&apos;s clock says, in its regional format</extracomment>
+        <translation type="unfinished">este PC diz que hoje é {date}, o que não pode estar certo. Ative Definir horário automaticamente em Configurações do Windows, Hora e idioma, Data e hora, e depois escolha Sincronizar agora</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>this Mac says it&apos;s {date}, which can&apos;t be right. Turn on Set time and date automatically in System Settings, General, Date &amp; Time</source>
+        <extracomment>{date}: the date this Mac&apos;s clock says, in its regional format</extracomment>
+        <translation type="unfinished">este Mac diz que hoje é {date}, o que não pode estar certo. Ative Definir data e hora automaticamente em Ajustes do Sistema, Geral, Data e Hora</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>something on this network is in the way with an out-of-date certificate - most often an antivirus&apos;s HTTPS scanning, or a VPN. Turn it off for Polyglotic, or try another network</source>
+        <extracomment>a certificate out of date, and this PC&apos;s clock looks right (313)</extracomment>
+        <translation type="unfinished">algo nesta rede está atrapalhando com um certificado vencido: quase sempre a verificação HTTPS de um antivírus, ou uma VPN. Desative isso para o Polyglotic, ou tente outra rede</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2195,6 +2692,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>too many failed sign-ins came from this network, so the server waits before it lets this PC in</source>
         <translation type="unfinished">vieram tentativas de entrar com erro demais desta rede, então o servidor espera antes de deixar este PC entrar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>too many failed sign-ins came from this network, so the server waits before it lets this Mac in</source>
+        <translation type="unfinished">vieram tentativas de entrar com erro demais desta rede, então o servidor espera antes de deixar este Mac entrar</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2213,13 +2715,31 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
-        <source>everything the PC plays</source>
-        <translation type="unfinished">tudo o que o PC toca</translation>
+        <source>every app&apos;s sound</source>
+        <translation type="unfinished">o som de todos os apps</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>everything else the PC plays</source>
         <translation type="unfinished">todo o resto que o PC toca</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>everything else the Mac plays</source>
+        <translation type="unfinished">todo o resto que o Mac toca</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>captioning while hidden</source>
+        <translation type="unfinished">legendando com a janela oculta</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>paused after %n minute(s) hidden - show it to carry on</source>
+        <translation type="unfinished">
+            <numerusform>pausada após %n minuto oculta – mostre-a para continuar</numerusform>
+            <numerusform>pausada após %n minutos oculta – mostre-a para continuar</numerusform>
+        </translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2268,13 +2788,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Show its caption window</source>
+        <translation type="unfinished">Mostrar a janela de legendas dele</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Hidden - Ctrl+Alt+H</source>
         <translation type="unfinished">Oculta: Ctrl+Alt+H</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
-        <source>Show its caption window</source>
-        <translation type="unfinished">Mostrar a janela de legendas dele</translation>
+        <source>Hidden - turn off Hide all to show it</source>
+        <translation type="unfinished">Oculta: desative Ocultar tudo para mostrá-la</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2333,8 +2858,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Nothing is captioned until you add an app, or choose Everything the Mac plays.</source>
+        <translation type="unfinished">Nada é legendado até você adicionar um app ou escolher Tudo o que o Mac toca.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Also caption everything else the PC plays (in its own window)</source>
         <translation type="unfinished">Legendar também todo o resto que o PC toca (numa janela própria)</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Also caption everything else the Mac plays (in its own window)</source>
+        <translation type="unfinished">Legendar também todo o resto que o Mac toca (numa janela própria)</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2393,6 +2928,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Everything the Mac plays</source>
+        <translation type="unfinished">Tudo o que o Mac toca</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Try apps again</source>
         <translation type="unfinished">Tentar apps de novo</translation>
     </message>
@@ -2403,11 +2943,6 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
-        <source>This PC</source>
-        <translation type="unfinished">Este PC</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>1 app + everything else</source>
         <translation type="unfinished">1 app + todo o resto</translation>
     </message>
@@ -2415,6 +2950,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>{n} of {limit}</source>
         <translation type="unfinished">{n} de {limit}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Caption one app instead</source>
+        <translation type="unfinished">Legendar só um app</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2433,13 +2973,43 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Everything the PC plays is captioned - a call&apos;s voices too. To caption one app instead, choose it below.</source>
+        <translation type="unfinished">Tudo o que o PC toca é legendado, inclusive as vozes de uma chamada. Para legendar só um app, escolha-o abaixo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Everything the Mac plays is captioned - a call&apos;s voices too. To caption one app instead, choose it below.</source>
+        <translation type="unfinished">Tudo o que o Mac toca é legendado, inclusive as vozes de uma chamada. Para legendar só um app, escolha-o abaixo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Everything the PC plays is captioned - a call&apos;s voices too.</source>
+        <translation type="unfinished">Tudo o que o PC toca é legendado, inclusive as vozes de uma chamada.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Everything the Mac plays is captioned - a call&apos;s voices too.</source>
+        <translation type="unfinished">Tudo o que o Mac toca é legendado, inclusive as vozes de uma chamada.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>instead of apps: Windows on this PC couldn&apos;t caption one app alone</source>
         <translation type="unfinished">em vez de apps: o Windows neste PC não conseguiu legendar um app sozinho</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>instead of apps: this Mac couldn&apos;t caption one app alone</source>
+        <translation type="unfinished">em vez de apps: este Mac não conseguiu legendar um app sozinho</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>instead of apps (the only choice on this version of Windows)</source>
         <translation type="unfinished">em vez de apps (a única opção nesta versão do Windows)</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>instead of apps (the only choice on this version of macOS)</source>
+        <translation type="unfinished">em vez de apps (a única opção nesta versão do macOS)</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2450,6 +3020,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Everything the PC plays except {app}, in a window of its own</source>
         <translation type="unfinished">Tudo o que o PC toca exceto {app}, numa janela própria</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Everything the Mac plays except {app}, in a window of its own</source>
+        <translation type="unfinished">Tudo o que o Mac toca exceto {app}, numa janela própria</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2493,13 +3068,23 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Download anyway</source>
+        <translation type="unfinished">Baixar mesmo assim</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Later</source>
         <translation type="unfinished">Depois</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
-        <source>Or later: it installs the next time Polyglotic starts.</source>
-        <translation type="unfinished">Ou depois: ela é instalada na próxima vez que o Polyglotic abrir.</translation>
+        <source>All the changes</source>
+        <translation type="unfinished">Todas as mudanças</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Close</source>
+        <translation type="unfinished">Fechar</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2523,18 +3108,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
-        <source>Ctrl+Alt+L</source>
-        <translation type="unfinished">Ctrl+Alt+L</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Hide all</source>
         <translation type="unfinished">Ocultar tudo</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
-        <source>Ctrl+Alt+H</source>
-        <translation type="unfinished">Ctrl+Alt+H</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2545,6 +3120,16 @@
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Reset positions</source>
         <translation type="unfinished">Redefinir posições</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Ctrl+Alt+L</source>
+        <translation type="unfinished">Ctrl+Alt+L</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Ctrl+Alt+H</source>
+        <translation type="unfinished">Ctrl+Alt+H</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2570,6 +3155,46 @@
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Version {version} is ready. Restart to install it.</source>
         <translation type="unfinished">A versão {version} está pronta. Reinicie para instalar.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Or later: it installs the next time Polyglotic starts.</source>
+        <translation type="unfinished">Ou depois: ela é instalada na próxima vez que o Polyglotic abrir.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Version {version} is available: {size} MB to download.</source>
+        <translation type="unfinished">A versão {version} está disponível: {size} MB para baixar.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Version {version} is available.</source>
+        <translation type="unfinished">A versão {version} está disponível.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Your connection is metered, so it isn&apos;t downloaded by itself. It is once you&apos;re on a connection that isn&apos;t.</source>
+        <translation type="unfinished">Sua conexão é limitada, então ela não é baixada sozinha. Ela será baixada quando você estiver em uma conexão que não seja limitada.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Downloading. This can take a few minutes.</source>
+        <translation type="unfinished">Baixando. Isso pode levar alguns minutos.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>What&apos;s new in Polyglotic {version}</source>
+        <translation type="unfinished">Novidades do Polyglotic {version}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Also new since your last update: {versions}.</source>
+        <translation type="unfinished">Também novo desde a sua última atualização: {versions}.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>The release notes are in English.</source>
+        <translation type="unfinished">As notas da versão estão em inglês.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2603,13 +3228,28 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Open Polyglotic when you log in?</source>
+        <translation type="unfinished">Abrir o Polyglotic ao iniciar sessão?</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>Start with Windows</source>
         <translation type="unfinished">Abrir com o Windows</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>Open at login</source>
+        <translation type="unfinished">Abrir ao iniciar sessão</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
         <source>It waits in the tray, so captions are a click away when you play or watch. Windows&apos; Startup apps can turn it off.</source>
         <translation type="unfinished">Ele espera na bandeja, então as legendas ficam a um clique quando você joga ou assiste. Os Aplicativos de inicialização do Windows podem desligá-lo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>It opens when you log in, so captions are a click away when you play or watch. Login Items in System Settings can turn it off.</source>
+        <translation type="unfinished">Ele abre quando você inicia sessão, então as legendas ficam a um clique quando você joga ou assiste. Os Itens de Início, nos Ajustes do Sistema, podem desligá-lo.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
@@ -2628,11 +3268,6 @@
         <location filename="../src/polyglotic_desktop/ui_next/joined_window.py"/>
         <source>Lock all windows</source>
         <translation type="unfinished">Travar todas as janelas</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/joined_window.py"/>
-        <source>Lock - clicks pass through to what&apos;s underneath, Ctrl+Alt+L</source>
-        <translation type="unfinished">Travar: os cliques passam para o que está embaixo, Ctrl+Alt+L</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/joined_window.py"/>
@@ -2731,6 +3366,16 @@
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
         <source>How bright the captions before the newest stay. 100%: as bright as the newest. The translation dims a little less.</source>
         <translation type="unfinished">Quanto brilho as legendas antes da mais recente mantêm. 100%: tão brilhantes quanto a mais recente. A tradução escurece um pouco menos.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Older captions dim</source>
+        <translation type="unfinished">Legendas anteriores escurecem</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>All at once to Older captions&apos; brightness, or step by step: each caption back a little dimmer, over this many captions.</source>
+        <translation type="unfinished">Todas de uma vez para o brilho das legendas anteriores, ou passo a passo: cada legenda para trás um pouco mais apagada, ao longo de tantas legendas.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
@@ -2834,6 +3479,16 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Gap between new lines</source>
+        <translation type="unfinished">Intervalo entre linhas novas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>A new caption&apos;s lines show one at a time, this far apart, instead of all together. 0 s: together, as now. None waits longer than the longest wait for text.</source>
+        <translation type="unfinished">As linhas de uma legenda nova aparecem uma de cada vez, com este intervalo, em vez de todas juntas. 0 s: juntas, como agora. Nenhuma espera mais do que a espera máxima pelo texto.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
         <source>Reset the lab</source>
         <translation type="unfinished">Redefinir o laboratório</translation>
     </message>
@@ -2844,8 +3499,211 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Your speech on the right</source>
+        <translation type="unfinished">Sua fala à direita</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>What you say lines up on the right, as in a chat.</source>
+        <translation type="unfinished">O que você diz fica alinhado à direita, como num chat.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>A tint behind your speech</source>
+        <translation type="unfinished">Um tom atrás da sua fala</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>A soft panel of your label&apos;s colour behind what you say.</source>
+        <translation type="unfinished">Um fundo suave na cor do seu rótulo atrás do que você diz.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>A bar beside your speech</source>
+        <translation type="unfinished">Uma barra ao lado da sua fala</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>A line of your label&apos;s colour at the side of what you say.</source>
+        <translation type="unfinished">Uma linha na cor do seu rótulo ao lado do que você diz.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Badge</source>
+        <translation type="unfinished">Selo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>None</source>
+        <translation type="unfinished">Nenhum</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Your speech&apos;s label</source>
+        <translation type="unfinished">Rótulo da sua fala</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>&quot;You&quot; over what you say: as now, in a badge, or not shown.</source>
+        <translation type="unfinished">&quot;Você&quot; acima do que você diz: como agora, num selo ou oculto.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Off</source>
+        <translation type="unfinished">Não</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Translation below</source>
+        <translation type="unfinished">Tradução abaixo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Line by line</source>
+        <translation type="unfinished">Linha por linha</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Line by line: a line of what was said, then the line of its translation, both cut where their words match. A long clause that can&apos;t be cut so wraps as it does now.</source>
+        <translation type="unfinished">Linha por linha: uma linha do que foi dito e, abaixo, a linha da tradução, as duas cortadas onde as palavras se correspondem. Uma oração longa que não possa ser cortada assim quebra como agora.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Captions fill the width</source>
+        <translation type="unfinished">As legendas preenchem a largura</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Off: each clause on a row of its own, as now. Translation below: a caption&apos;s clauses run on in lines as wide as the window, and its translation fills the lines under them. No Arrows while captions fill the width.</source>
+        <translation type="unfinished">Não: cada parte da frase em uma linha própria, como agora. Tradução abaixo: as partes de uma legenda seguem uma após a outra em linhas da largura da janela, e a tradução preenche as linhas abaixo. Sem Setas enquanto as legendas preenchem a largura.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>At line ends too</source>
+        <translation type="unfinished">Também no fim da linha</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Space</source>
+        <translation type="unfinished">Espaço</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Between clauses</source>
+        <translation type="unfinished">Entre partes da frase</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>When captions fill the width: an ellipsis where one clause ends and the next begins, one at the end of every line that runs on as well, or only a space. Choosing one while Captions fill the width is Off sets it to Translation below.</source>
+        <translation type="unfinished">Quando as legendas preenchem a largura: reticências onde uma parte termina e a seguinte começa, também no fim de cada linha que continua, ou só um espaço. Escolher um com As legendas preenchem a largura em Não o põe em Tradução abaixo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>New layout</source>
+        <translation type="unfinished">Novo layout</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Captions are laid out a new way, however they fill the width: Arrows and word links work in all of them and in Learning load, and Line by line always fills its lines.</source>
+        <translation type="unfinished">As legendas são dispostas de um jeito novo, como quer que preencham a largura: Setas e as ligações de palavras funcionam em todas e na Carga de aprendizado, e Linha por linha sempre preenche suas linhas.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Captions run on</source>
+        <translation type="unfinished">As legendas continuam em sequência</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>A caption carries on in the line the one before ended in, instead of starting a line of its own. Turning it on also turns on New layout and Line by line.</source>
+        <translation type="unfinished">Uma legenda continua na linha em que a anterior terminou, em vez de começar uma linha própria. Ligar isto também liga Novo layout e Linha por linha.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Parts lined up</source>
+        <translation type="unfinished">Partes alinhadas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Each part of what was said starts at the same place as its translation, so a word&apos;s translation is under it - however captions fill the width. Turning it on also turns on New layout.</source>
+        <translation type="unfinished">Cada parte do que foi dito começa no mesmo lugar que sua tradução, de modo que a tradução de uma palavra fica embaixo dela, seja qual for a forma como as legendas preenchem a largura. Ligar isto também liga Novo layout.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Packed</source>
+        <translation type="unfinished">Juntas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Nearest their links</source>
+        <translation type="unfinished">Perto das ligações</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Evenly</source>
+        <translation type="unfinished">Distribuídas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Parts placed</source>
+        <translation type="unfinished">Posição das partes</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Where the parts of a line go in the room the line has. Packed: each straight after the one before, as now. Nearest their links: each part moves over its translation&apos;s words, so the word links are as short as they can be. Evenly: a full line&apos;s parts are spread over the width. Choosing one also turns on New layout.</source>
+        <translation type="unfinished">Onde ficam as partes de uma linha no espaço que a linha tem. Juntas: cada uma logo depois da anterior, como agora. Perto das ligações: cada parte vai para cima das palavras da sua tradução, para que as ligações de palavras fiquem o mais curtas possível. Distribuídas: as partes de uma linha cheia são distribuídas pela largura. Escolher uma também liga Novo layout.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Learning load</source>
+        <translation type="unfinished">Carga de aprendizado</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>A set number of the next words past what you know, each coloured by how often you have heard it since: red, orange, yellow, green, then ready to check. In place of the marks under new words. Its words and settings are on Learning.</source>
+        <translation type="unfinished">Um número fixo das próximas palavras depois das que você já sabe, cada uma colorida conforme quantas vezes você a ouviu desde então: vermelho, laranja, amarelo, verde e depois pronta para conferir. Substitui as marcas sob as palavras novas. Suas palavras e ajustes ficam em Aprendizado.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>{open} - its words, the check and its settings.</source>
+        <translation type="unfinished">{open}: as palavras, a verificação e as configurações.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Open it on Learning</source>
+        <translation type="unfinished">Abrir em Aprendizado</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Dimmed</source>
+        <translation type="unfinished">Esmaecidas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Words outside the load</source>
+        <translation type="unfinished">Palavras fora da carga</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Rarer words you don&apos;t know yet, in Learning load: as now, or dimmed so the load&apos;s words stand out. Dimmed turns Learning load on.</source>
+        <translation type="unfinished">Palavras mais raras que você ainda não sabe, na carga de aprendizado: como agora, ou esmaecidas para destacar as palavras da carga. Esmaecidas liga a carga de aprendizado.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
         <source>Only the newest</source>
         <translation type="unfinished">Só a mais recente</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>All at once</source>
+        <translation type="unfinished">Todas de uma vez</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Over %n caption(s)</source>
+        <translation type="unfinished">
+            <numerusform>Ao longo de %n legenda</numerusform>
+            <numerusform>Ao longo de %n legendas</numerusform>
+        </translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
@@ -2856,6 +3714,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
         <source>As they come</source>
         <translation type="unfinished">Conforme chegam</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Together</source>
+        <translation type="unfinished">Juntas</translation>
     </message>
 </context>
 <context>
@@ -3007,6 +3870,51 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>Detect automatically</source>
+        <extracomment>A choice for a source&apos;s spoken language: the speech model finds the language itself, each time someone speaks</extracomment>
+        <translation type="unfinished">Detectar automaticamente</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>Detect · %Ln language(s)</source>
+        <extracomment>Short, on a button: the spoken language is found automatically, among this many languages</extracomment>
+        <translation type="unfinished">
+            <numerusform>Detectar · %Ln idioma</numerusform>
+            <numerusform>Detectar · %Ln idiomas</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>Any of the %Ln language(s) below</source>
+        <translation type="unfinished">
+            <numerusform>Qualquer um dos %Ln idioma abaixo</numerusform>
+            <numerusform>Qualquer um dos %Ln idiomas abaixo</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>Always hear as</source>
+        <extracomment>A heading over a list of languages: pick one and the app hears this app&apos;s speech as that language every time, rather than detecting it</extracomment>
+        <translation type="unfinished">Sempre ouvir como</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>Always {language}</source>
+        <extracomment>Short, on a button: this app&apos;s speech is always heard as {language} (named by the learner, not detected)</extracomment>
+        <translation type="unfinished">Sempre {language}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>Find a language</source>
+        <translation type="unfinished">Buscar um idioma</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>No language by that name</source>
+        <translation type="unfinished">Nenhum idioma com esse nome</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
         <source>Swedish</source>
         <translation type="unfinished">Sueco</translation>
     </message>
@@ -3055,9 +3963,19 @@
         <source>Cantonese (Hong Kong characters)</source>
         <translation type="unfinished">Cantonês (caracteres de Hong Kong)</translation>
     </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>This sounds like {language}. Always hear it as {language}?</source>
+        <translation type="unfinished">Isto parece {language}. Sempre ouvir como {language}?</translation>
+    </message>
 </context>
 <context>
     <name>Learning</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/main.py"/>
+        <source>Reset</source>
+        <translation type="unfinished">Redefinir</translation>
+    </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
         <source>Full dictionary</source>
@@ -3085,13 +4003,43 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
-        <source>From open data, meanings not checked by a person. Lookups in {language} captions work, marked basic; your level, word introductions and saved words come later.</source>
-        <translation type="unfinished">Feito com dados abertos, significados não revisados por uma pessoa. As consultas em legendas em {language} funcionam, marcadas como básicas; seu nível, a apresentação de palavras e as palavras salvas vêm depois.</translation>
+        <source>From open data, meanings not checked by a person. Lookups, your level, word introductions, the words you hear and save, and an Anki deck.</source>
+        <translation type="unfinished">Feito com dados abertos, significados não revisados por uma pessoa. Consultas, seu nível, apresentação de palavras, as palavras que você ouve e salva, e um baralho do Anki.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
-        <source>Coming: a basic dictionary from open data, downloaded when it&apos;s ready. Until then captions and translation work, without lookups.</source>
-        <translation type="unfinished">Em breve: um dicionário básico com dados abertos, baixado quando estiver pronto. Até lá, legendas e tradução funcionam, sem consultas.</translation>
+        <source>Captions and translation work without one, and a word you look up says what it is in that line&apos;s translation.</source>
+        <translation type="unfinished">As legendas e a tradução funcionam sem ele, e uma palavra que você consultar mostra o que ela é na tradução dessa linha.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>There&apos;s no {language} dictionary to download yet. Captions and translation work, and a word you look up says what it is in that line&apos;s translation.</source>
+        <translation type="unfinished">Ainda não há um dicionário de {language} para baixar. As legendas e a tradução funcionam, e uma palavra que você consultar mostra o que ela é na tradução dessa linha.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Checking the list of dictionaries.</source>
+        <translation type="unfinished">Verificando a lista de dicionários.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>A basic dictionary from open data (meanings not checked by a person), if one is ready: lookups in {language} captions once it&apos;s on this PC. Captions and translation work either way.</source>
+        <translation type="unfinished">Um dicionário básico de dados abertos (com significados não revisados por uma pessoa), se houver um pronto: consultas nas legendas em {language} quando ele estiver neste PC. As legendas e a tradução funcionam de qualquer forma.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>A basic dictionary from open data (meanings not checked by a person), if one is ready: lookups in {language} captions once it&apos;s on this Mac. Captions and translation work either way.</source>
+        <translation type="unfinished">Um dicionário básico de dados abertos (com significados não revisados por uma pessoa), se houver um pronto: consultas nas legendas em {language} quando ele estiver neste Mac. As legendas e a tradução funcionam de qualquer forma.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>A basic dictionary from open data (meanings not checked by a person), if one is ready: its card offers it once you add {language}. Captions and translation work either way.</source>
+        <translation type="unfinished">Um dicionário básico de dados abertos (com significados não revisados por uma pessoa), se houver um pronto: o cartão dele o oferece quando você adicionar {language}. As legendas e a tradução funcionam de qualquer forma.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>A basic dictionary from open data, meanings not checked by a person: lookups in {language} captions once it&apos;s downloaded. Until then captions and translation work, without lookups.</source>
+        <translation type="unfinished">Um dicionário básico de dados abertos, com significados não revisados por uma pessoa: consultas nas legendas em {language} assim que for baixado. Até lá, as legendas e a tradução funcionam, sem consultas.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
@@ -3115,6 +4063,24 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Reset {language}&apos;s known words?</source>
+        <translation type="unfinished">Redefinir as palavras conhecidas de {language}?</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>About %Ln word(s) you marked known in bulk will count as new again, and your level goes back to: {level}. Words you marked yourself stay as you set them.</source>
+        <translation type="unfinished">
+            <numerusform>Cerca de %Ln palavra que você marcou como conhecida em lote voltará a contar como nova, e seu nível volta para: {level}. As palavras que você marcou uma a uma ficam como você deixou.</numerusform>
+            <numerusform>Cerca de %Ln palavras que você marcou como conhecidas em lote voltarão a contar como novas, e seu nível volta para: {level}. As palavras que você marcou uma a uma ficam como você deixou.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Its commonest words are recorded ({size}).</source>
+        <translation type="unfinished">As palavras mais comuns estão gravadas ({size}).</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
         <source>Your level</source>
         <translation type="unfinished">Seu nível</translation>
     </message>
@@ -3135,28 +4101,48 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
-        <source>In use from the next time Polyglotic starts. One full dictionary is in use at a time for now; each language keeps its words.</source>
-        <translation type="unfinished">Em uso a partir da próxima vez que o Polyglotic abrir. Por enquanto, um dicionário completo fica em uso por vez; cada idioma mantém suas palavras.</translation>
+        <source>Every word</source>
+        <translation type="unfinished">Todas as palavras</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
-        <source>In use until Polyglotic starts again; its words are kept.</source>
-        <translation type="unfinished">Em uso até o Polyglotic abrir de novo; as palavras dele ficam guardadas.</translation>
+        <source>Past what you know</source>
+        <translation type="unfinished">Além do que você conhece</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
-        <source>One full dictionary is in use at a time for now. Each language keeps its words.</source>
-        <translation type="unfinished">Por enquanto, um dicionário completo fica em uso por vez. Cada idioma mantém suas palavras.</translation>
+        <source>Off</source>
+        <translation type="unfinished">Desligado</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
-        <source>Keep using {language}</source>
-        <translation type="unfinished">Continuar usando {language}</translation>
+        <source>Word links</source>
+        <translation type="unfinished">Ligações de palavras</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
-        <source>Use {language} instead</source>
-        <translation type="unfinished">Usar {language} no lugar</translation>
+        <source>Which words are joined to their translation while word links are on.</source>
+        <translation type="unfinished">Quais palavras são unidas à tradução enquanto as ligações de palavras estão ligadas.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>No dictionary ranks {language} words yet, so only key words are linked.</source>
+        <translation type="unfinished">{language}: nenhum dicionário ordena ainda as palavras por frequência, então só as palavras-chave são ligadas.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Start links at</source>
+        <translation type="unfinished">Ligar a partir de</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>What you know</source>
+        <translation type="unfinished">O que você conhece</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Make {language} your main language</source>
+        <translation type="unfinished">Tornar {language} o idioma principal</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
@@ -3172,6 +4158,104 @@
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
         <source>Its words are kept - delete them on Account</source>
         <translation type="unfinished">As palavras ficam guardadas; exclua-as em Conta</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>How many of the most common words</source>
+        <translation type="unfinished">Quantas das palavras mais comuns</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>The first {count}</source>
+        <translation type="unfinished">As primeiras {count}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Another number…</source>
+        <translation type="unfinished">Outro número…</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Mark known</source>
+        <translation type="unfinished">Marcar como conhecidas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Mark the most common words known</source>
+        <translation type="unfinished">Marcar as palavras mais comuns como conhecidas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Every word up to the number you choose counts as known - your level moves there. Words you marked yourself stay as you set them.</source>
+        <translation type="unfinished">Cada palavra até o número que você escolher conta como conhecida: seu nível passa para esse ponto. As palavras que você marcou uma a uma ficam como você deixou.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Undo</source>
+        <translation type="unfinished">Desfazer</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Back to: {level}</source>
+        <translation type="unfinished">Voltar para: {level}</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>About %Ln more word(s) count as known now.</source>
+        <translation type="unfinished">
+            <numerusform>Agora conta como conhecida cerca de %Ln palavra a mais.</numerusform>
+            <numerusform>Agora contam como conhecidas cerca de %Ln palavras a mais.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Reset…</source>
+        <translation type="unfinished">Redefinir…</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Marked in bulk. Reset takes your level back to: {level}.</source>
+        <translation type="unfinished">Marcadas em lote. Redefinir leva seu nível de volta para: {level}.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Learning window</source>
+        <translation type="unfinished">Janela de aprendizado</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Words in the window</source>
+        <translation type="unfinished">Palavras na janela</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Words in the learning window</source>
+        <translation type="unfinished">Palavras na janela de aprendizado</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>{least} to {most}</source>
+        <translation type="unfinished">de {least} a {most}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Every word past what you know can be pointed out, however rare. Hover or click any word to look it up.</source>
+        <translation type="unfinished">Qualquer palavra depois das que você conhece pode ser destacada, por mais rara que seja. Passe o mouse ou clique em qualquer palavra para consultá-la.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>The next words past what you know are the ones pointed out. Rarer words are left alone: hover or click one to look it up.</source>
+        <translation type="unfinished">São destacadas as próximas palavras depois das que você conhece. As mais raras ficam como estão: passe o mouse ou clique em uma para consultá-la.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Unlimited</source>
+        <translation type="unfinished">Ilimitada</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Custom</source>
+        <translation type="unfinished">Personalizada</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
@@ -3220,11 +4304,6 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
-        <source>Off</source>
-        <translation type="unfinished">Desligado</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
         <source>A few per caption</source>
         <translation type="unfinished">Algumas por legenda</translation>
     </message>
@@ -3265,6 +4344,26 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Dictionaries on this PC</source>
+        <translation type="unfinished">Dicionários neste PC</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Dictionaries on this Mac</source>
+        <translation type="unfinished">Dicionários neste Mac</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Downloaded for the languages you learn. Removing one frees its space; lookups in its language stop until it&apos;s downloaded again.</source>
+        <translation type="unfinished">Baixados para os idiomas que você aprende. Remover um libera o espaço; as consultas no idioma param até que ele seja baixado de novo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>None yet: when you learn a language, its card offers its dictionary.</source>
+        <translation type="unfinished">Nenhum ainda: quando você aprende um idioma, o cartão dele oferece o dicionário.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
         <source>Your learning data</source>
         <translation type="unfinished">Seus dados de aprendizado</translation>
     </message>
@@ -3275,8 +4374,221 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>The words you look up, save and mark are kept on this Mac, and on our server as dictionary words and times. You can delete them, in every language you learn - the same as on Account.</source>
+        <translation type="unfinished">As palavras que você consulta, salva e marca ficam neste Mac, e no nosso servidor como palavras do dicionário e horários. Você pode excluí-las, em todos os idiomas que aprende, como em Conta.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>{language}: version {version}, {size}</source>
+        <translation type="unfinished">{language}: versão {version}, {size}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Remove</source>
+        <translation type="unfinished">Remover</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
         <source>{language} - {tier}</source>
         <translation type="unfinished">{language}: {tier}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>{size} MB</source>
+        <translation type="unfinished">{size} MB</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>less than a minute left</source>
+        <translation type="unfinished">menos de um minuto restante</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>about %n minute(s) left</source>
+        <translation type="unfinished">
+            <numerusform>cerca de %n minuto restante</numerusform>
+            <numerusform>cerca de %n minutos restantes</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>It won&apos;t try again by itself.</source>
+        <translation type="unfinished">Não vai tentar de novo sozinho.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Trying again in {seconds} s (try {tries} of {total}).</source>
+        <translation type="unfinished">Tentando de novo em {seconds} s (tentativa {tries} de {total}).</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>No connection.</source>
+        <translation type="unfinished">Sem conexão.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>The download stalled: no data for {seconds} s.</source>
+        <translation type="unfinished">O download travou: nenhum dado por {seconds} s.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Our server answered with an error ({status}).</source>
+        <translation type="unfinished">Nosso servidor respondeu com um erro ({status}).</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Paused: Windows says this connection is metered. {size} left to download.</source>
+        <translation type="unfinished">Pausado: o Windows diz que esta conexão é limitada. Faltam {size} para baixar.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Not enough room on this PC: it needs {size} free.</source>
+        <translation type="unfinished">Não há espaço suficiente neste PC: são necessários {size} livres.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Not enough room on this Mac: it needs {size} free.</source>
+        <translation type="unfinished">Não há espaço suficiente neste Mac: são necessários {size} livres.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Refused: the list of dictionaries failed our signature check, so nothing was downloaded.</source>
+        <translation type="unfinished">Recusado: a lista de dicionários não passou na nossa verificação de assinatura, então nada foi baixado.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Refused: the file didn&apos;t match our list, so it was deleted.</source>
+        <translation type="unfinished">Recusado: o arquivo não correspondia à nossa lista, então foi excluído.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Refused: the file isn&apos;t the {language} dictionary, so it was deleted.</source>
+        <translation type="unfinished">Recusado: o arquivo não é o dicionário de {language}, então foi excluído.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Its dictionary needs a newer Polyglotic. Update the app to get it.</source>
+        <translation type="unfinished">O dicionário dele precisa de uma versão mais nova do Polyglotic. Atualize o app para obtê-lo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Its dictionary isn&apos;t ready to download yet.</source>
+        <translation type="unfinished">O dicionário dele ainda não está pronto para baixar.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Waiting for another dictionary to finish.</source>
+        <translation type="unfinished">Aguardando outro dicionário terminar.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Downloading: {done} of {total} MB</source>
+        <translation type="unfinished">Baixando: {done} de {total} MB</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Checking the file.</source>
+        <translation type="unfinished">Verificando o arquivo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Opening the dictionary.</source>
+        <translation type="unfinished">Abrindo o dicionário.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Download</source>
+        <translation type="unfinished">Baixar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Cancel</source>
+        <translation type="unfinished">Cancelar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Retry</source>
+        <translation type="unfinished">Tentar de novo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Download anyway</source>
+        <translation type="unfinished">Baixar mesmo assim</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Get it now</source>
+        <translation type="unfinished">Obter agora</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>On this PC: version {version}, {size}.</source>
+        <translation type="unfinished">Neste PC: versão {version}, {size}.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>On this Mac: version {version}, {size}.</source>
+        <translation type="unfinished">Neste Mac: versão {version}, {size}.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>A newer version ({size}) waits for a connection that isn&apos;t metered.</source>
+        <translation type="unfinished">Uma versão mais nova ({size}) aguarda uma conexão que não seja limitada.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Its dictionary: {size} to download, then {recorded} of recorded words.</source>
+        <translation type="unfinished">O dicionário dele: {size} para baixar, depois {recorded} de palavras gravadas.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Its dictionary: {size} to download.</source>
+        <translation type="unfinished">O dicionário dele: {size} para baixar.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>The list of dictionaries couldn&apos;t be checked.</source>
+        <translation type="unfinished">Não foi possível verificar a lista de dicionários.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Download progress</source>
+        <translation type="unfinished">Progresso do download</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>The {language} dictionary is ready: look up words in {language} captions.</source>
+        <translation type="unfinished">O dicionário de {language} está pronto: consulte palavras nas legendas em {language}.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>The {language} dictionary couldn&apos;t be downloaded: see Learning.</source>
+        <translation type="unfinished">Não foi possível baixar o dicionário de {language}: veja Aprendizado.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Remove the {language} dictionary too?</source>
+        <translation type="unfinished">Remover também o dicionário de {language}?</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>It frees {size} on this PC. It downloads again if you learn {language} later.</source>
+        <translation type="unfinished">Isso libera {size} neste PC. Ele é baixado de novo se você aprender {language} depois.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>It frees {size} on this Mac. It downloads again if you learn {language} later.</source>
+        <translation type="unfinished">Isso libera {size} neste Mac. Ele é baixado de novo se você aprender {language} depois.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Remove it</source>
+        <translation type="unfinished">Remover</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>Keep it</source>
+        <translation type="unfinished">Manter</translation>
     </message>
 </context>
 <context>
@@ -3293,56 +4605,244 @@
     </message>
 </context>
 <context>
+    <name>LearningLoad</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Red</source>
+        <translation type="unfinished">Vermelho</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Orange</source>
+        <translation type="unfinished">Laranja</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Yellow</source>
+        <translation type="unfinished">Amarelo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Green</source>
+        <translation type="unfinished">Verde</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Ready to check</source>
+        <translation type="unfinished">Pronta para conferir</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>{colour}: waiting for room in the next colour</source>
+        <translation type="unfinished">{colour}: aguardando vaga na próxima cor</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>{colour}: heard {heard} of {needed}</source>
+        <translation type="unfinished">{colour}: ouvida {heard} de {needed}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>I know this</source>
+        <translation type="unfinished">Eu sei esta</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Not yet</source>
+        <translation type="unfinished">Ainda não</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Add to my load</source>
+        <translation type="unfinished">Adicionar à minha carga</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Learning load</source>
+        <translation type="unfinished">Carga de aprendizado</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>An experiment, turned on in {lab}, where you can turn it off.</source>
+        <translation type="unfinished">Um experimento, ativado em {lab}, onde você pode desativá-lo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Settings &gt; Lab</source>
+        <translation type="unfinished">Configurações &gt; Laboratório</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>In the load</source>
+        <translation type="unfinished">Na carga</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Next to enter</source>
+        <translation type="unfinished">Próximas a entrar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Graduated</source>
+        <translation type="unfinished">Formadas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>I know these</source>
+        <translation type="unfinished">Eu sei estas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Not now</source>
+        <translation type="unfinished">Agora não</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Show more</source>
+        <translation type="unfinished">Mostrar mais</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Add the next words now</source>
+        <translation type="unfinished">Adicionar as próximas palavras agora</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>They come in ahead of graduations, and the load grows by them.</source>
+        <translation type="unfinished">Elas entram antes que outras se formem, e a carga cresce com elas.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Words in the load</source>
+        <translation type="unfinished">Palavras na carga</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Raise it and the next words come in at once. Lower it and the words heard least leave first; they keep their counts and come back when there is room.</source>
+        <translation type="unfinished">Aumente e as próximas palavras entram na hora. Diminua e as menos ouvidas saem primeiro; elas mantêm suas contagens e voltam quando houver vaga.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Times heard to change colour</source>
+        <translation type="unfinished">Vezes ouvida para mudar de cor</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Red, orange, yellow, green: a word moves on each time it has been heard this often, then is ready to check.</source>
+        <translation type="unfinished">Vermelho, laranja, amarelo, verde: a palavra avança cada vez que é ouvida esse número de vezes e depois fica pronta para conferir.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>What counts as hearing a word</source>
+        <translation type="unfinished">O que conta como ouvir uma palavra</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Every time it is said</source>
+        <translation type="unfinished">Cada vez que é dita</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Once a caption</source>
+        <translation type="unfinished">Uma vez por legenda</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Once a session</source>
+        <translation type="unfinished">Uma vez por sessão</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Once a day</source>
+        <translation type="unfinished">Uma vez por dia</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Only what your PC plays counts, in finished captions - not what you say.</source>
+        <translation type="unfinished">Só conta o que seu PC reproduz, em legendas concluídas - não o que você diz.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Only what your Mac plays counts, in finished captions - not what you say.</source>
+        <translation type="unfinished">Só conta o que seu Mac reproduz, em legendas concluídas - não o que você diz.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>Most words in one colour</source>
+        <translation type="unfinished">Máximo de palavras por cor</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>No limit</source>
+        <translation type="unfinished">Sem limite</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>For orange, yellow and green. When a colour is full, a word waits in the one before it, the most heard first.</source>
+        <translation type="unfinished">Para laranja, amarelo e verde. Quando uma cor está cheia, a palavra espera na anterior; as mais ouvidas passam primeiro.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>In your load: {words} of {size}. Ready to check: {ready}. Graduated in the last 7 days: {week}.</source>
+        <translation type="unfinished">Na sua carga: {words} de {size}. Prontas para conferir: {ready}. Formadas nos últimos 7 dias: {week}.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>This language&apos;s dictionary has no word frequencies yet, so it has no learning load.</source>
+        <translation type="unfinished">O dicionário deste idioma ainda não tem frequências de palavras, então ele não tem carga de aprendizado.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>None yet. A word is ready to check once it has passed green; then one click here says whether you know it.</source>
+        <translation type="unfinished">Nenhuma ainda. Uma palavra fica pronta para conferir depois de passar pelo verde; então um clique aqui diz se você a sabe.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/load_card.py"/>
+        <source>No words here now.</source>
+        <translation type="unfinished">Não há palavras aqui agora.</translation>
+    </message>
+</context>
+<context>
     <name>LevelPicker</name>
     <message>
         <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>Your level</source>
-        <translation type="unfinished">Seu nível</translation>
+        <source>Words you know</source>
+        <translation type="unfinished">Palavras que você conhece</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>What&apos;s your level?</source>
-        <translation type="unfinished">Qual é o seu nível?</translation>
+        <source>About how many {language} words do you know?</source>
+        <translation type="unfinished">{language}: quantas palavras você conhece mais ou menos?</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>Words at or below your level count as known, so captions mark only the words you&apos;re likely to be learning. You can change it any time, and correct any word with one click.</source>
-        <translation type="unfinished">Palavras do seu nível ou abaixo contam como conhecidas, então as legendas marcam só as que você provavelmente está aprendendo. Você pode mudar quando quiser e corrigir qualquer palavra com um clique.</translation>
+        <source>The most common words up to here count as known, the next ones are pointed out, and rarer ones are left alone. Nothing is tested: change it any time, and a click on any word corrects it.</source>
+        <translation type="unfinished">As palavras mais comuns até aqui contam como conhecidas, as próximas são destacadas e as mais raras ficam como estão. Não há teste: mude quando quiser, e um clique em qualquer palavra a corrige.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>HSK 3.0 - the 2025 exam syllabus (what the exam tests)</source>
-        <translation type="unfinished">HSK 3.0: o conteúdo do exame de 2025 (o que o exame cobra)</translation>
+        <source>Not sure - start at about {count}</source>
+        <translation type="unfinished">Não sei: começar em cerca de {count}</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>HSK 3.0 - the 2021 standard</source>
-        <translation type="unfinished">HSK 3.0: o padrão de 2021</translation>
+        <source>I&apos;m just starting</source>
+        <translation type="unfinished">Estou começando agora</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>The most common English words</source>
-        <translation type="unfinished">As palavras mais comuns do inglês</translation>
+        <source>About {count} - HSK {level}</source>
+        <translation type="unfinished">Cerca de {count}: HSK {level}</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>Just starting - mark every word as new</source>
-        <translation type="unfinished">Estou começando: marcar todas as palavras como novas</translation>
+        <source>{count} or more</source>
+        <translation type="unfinished">{count} ou mais</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>I know most of the {count} most common words</source>
-        <translation type="unfinished">Conheço a maioria das {count} palavras mais comuns</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>HSK {level} - about {count} words</source>
-        <translation type="unfinished">HSK {level}: cerca de {count} palavras</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui/level_picker.py"/>
-        <source>HSK {level}</source>
-        <translation type="unfinished">HSK {level}</translation>
+        <source>About {count}</source>
+        <translation type="unfinished">Cerca de {count}</translation>
     </message>
 </context>
 <context>
@@ -3362,6 +4862,18 @@
             <numerusform>+%Ln leitura</numerusform>
             <numerusform>+%Ln leituras</numerusform>
         </translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>Here: {words}</source>
+        <extracomment>what the word looked up is in the translation of its caption line, e.g. &quot;Here: ngân hàng&quot;: what it means here</extracomment>
+        <translation type="unfinished">Aqui: {words}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>From the {language} dictionary</source>
+        <extracomment>the card&apos;s word was found in another language&apos;s dictionary than its caption line&apos;s, e.g. &quot;From the English dictionary&quot;</extracomment>
+        <translation type="unfinished">Do dicionário de {language}</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
@@ -3420,8 +4932,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
-        <source>The {language} dictionary is used once you learn {language}, from the next start. Captions and translation still work.</source>
-        <translation type="unfinished">O dicionário de {language} é usado quando você aprender {language}, a partir da próxima abertura. Legendas e tradução continuam funcionando.</translation>
+        <source>The {language} dictionary is used once you learn {language}. Captions and translation still work.</source>
+        <translation type="unfinished">O dicionário de {language} é usado quando você aprender {language}. Legendas e tradução continuam funcionando.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
@@ -3432,6 +4944,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
         <source>No Chinese for it in the dictionary</source>
         <translation type="unfinished">Sem chinês para isso no dicionário</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>{language} is on your Learning page now, with its dictionary to download there ({size} MB).</source>
+        <translation type="unfinished">{language} agora está na sua página Aprendizado, com o dicionário para baixar lá ({size} MB).</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
@@ -3462,6 +4979,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
         <source>No {language} voice on this PC yet. Windows adds one for free: Settings &gt; Time &amp; language &gt; Speech &gt; Add voices, then {language}.</source>
         <translation type="unfinished">Ainda não há voz em {language} neste PC. O Windows adiciona uma de graça: Configurações &gt; Hora e idioma &gt; Fala &gt; Adicionar vozes, depois {language}.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>No {language} voice on this Mac yet. macOS adds one for free: System Settings &gt; Accessibility &gt; Spoken Content &gt; System voice &gt; Manage Voices, then {language}.</source>
+        <translation type="unfinished">Ainda não há voz de {language} neste Mac. O macOS adiciona uma de graça: Ajustes do Sistema &gt; Acessibilidade &gt; Conteúdo Falado &gt; Voz do sistema &gt; Gerenciar Vozes, depois {language}.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
@@ -3520,6 +5042,16 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>Copied</source>
+        <translation type="unfinished">Copiado</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>Copy</source>
+        <translation type="unfinished">Copiar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
         <source>New category</source>
         <translation type="unfinished">Nova categoria</translation>
     </message>
@@ -3547,6 +5079,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
         <source>No {language} voice on this PC</source>
         <translation type="unfinished">Sem voz em {language} neste PC</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>No {language} voice on this Mac</source>
+        <translation type="unfinished">Sem voz de {language} neste Mac</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
@@ -3613,6 +5150,16 @@
         <source>Opens Windows&apos; Settings, where voices are added</source>
         <translation type="unfinished">Abre as Configurações do Windows, onde se adicionam vozes</translation>
     </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>Opens System Settings, where voices are added</source>
+        <translation type="unfinished">Abre os Ajustes do Sistema, onde as vozes são adicionadas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>Copy the word, its reading and meaning (Ctrl+C)</source>
+        <translation type="unfinished">Copiar a palavra, a leitura e o significado (Ctrl+C)</translation>
+    </message>
 </context>
 <context>
     <name>MainWindow</name>
@@ -3653,6 +5200,103 @@
     </message>
 </context>
 <context>
+    <name>Maintenance</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/maintenance.py"/>
+        <source>{day} {time}</source>
+        <extracomment>a weekday&apos;s name and a time on it: &quot;Sunday 00:30&quot;</extracomment>
+        <translation type="unfinished">{day} {time}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/maintenance.py"/>
+        <source>Planned maintenance</source>
+        <translation type="unfinished">Manutenção programada</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/maintenance.py"/>
+        <source>Planned maintenance until {time}</source>
+        <extracomment>Home&apos;s title and the tray&apos;s while Polyglotic&apos;s server is in it</extracomment>
+        <translation type="unfinished">Manutenção programada até {time}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/maintenance.py"/>
+        <source>not your internet - captions come back by themselves when it&apos;s over</source>
+        <extracomment>Home&apos;s line under &quot;Planned maintenance until 15:30&quot;</extracomment>
+        <translation type="unfinished">não é a sua internet: as legendas voltam sozinhas quando a manutenção terminar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/maintenance.py"/>
+        <source>Planned maintenance until {time}: captions pause until then, and come back by themselves.</source>
+        <translation type="unfinished">Manutenção programada até {time}: as legendas ficam pausadas até lá e voltam sozinhas.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/maintenance.py"/>
+        <source>Planned maintenance today, {start}-{end}: captions pause then, and come back by themselves.</source>
+        <translation type="unfinished">Manutenção programada hoje, {start}-{end}: as legendas vão pausar nesse horário e voltar sozinhas.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/maintenance.py"/>
+        <source>Planned maintenance tomorrow, {start}-{end}: captions pause then, and come back by themselves.</source>
+        <translation type="unfinished">Manutenção programada amanhã, {start}-{end}: as legendas vão pausar nesse horário e voltar sozinhas.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/maintenance.py"/>
+        <source>Captions pause at {start} for planned maintenance, until {end}</source>
+        <translation type="unfinished">As legendas pausam às {start} para uma manutenção programada, até {end}</translation>
+    </message>
+</context>
+<context>
+    <name>MoveToApplications</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/move_to_applications.py"/>
+        <source>Move Polyglotic to Applications?</source>
+        <translation type="unfinished">Mover o Polyglotic para Aplicativos?</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/move_to_applications.py"/>
+        <source>Polyglotic was opened outside your Applications folder, from Downloads perhaps, so your Mac runs it from a temporary copy. From there it can&apos;t update itself.</source>
+        <translation type="unfinished">O Polyglotic foi aberto fora da sua pasta Aplicativos, talvez em Downloads, então o seu Mac o executa a partir de uma cópia temporária. Dali ele não consegue se atualizar sozinho.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/move_to_applications.py"/>
+        <source>To do it yourself: quit Polyglotic, drag it into Applications in Finder, and open it there.</source>
+        <translation type="unfinished">Para fazer você mesmo: encerre o Polyglotic, arraste-o para Aplicativos no Finder e abra-o de lá.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/move_to_applications.py"/>
+        <source>Move to Applications</source>
+        <translation type="unfinished">Mover para Aplicativos</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/move_to_applications.py"/>
+        <source>Not now</source>
+        <translation type="unfinished">Agora não</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/move_to_applications.py"/>
+        <source>Polyglotic couldn&apos;t move itself to Applications.</source>
+        <translation type="unfinished">O Polyglotic não conseguiu se mover para Aplicativos.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/move_to_applications.py"/>
+        <source>Move it, and Polyglotic opens again from Applications.</source>
+        <translation type="unfinished">Mova-o, e o Polyglotic abre de novo a partir de Aplicativos.</translation>
+    </message>
+</context>
+<context>
+    <name>OneCopy</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/one_copy.py"/>
+        <source>Polyglotic is already open, but it isn&apos;t responding. Wait a moment, then open it again. If it still doesn&apos;t come up, end Polyglotic in Task Manager, then open it again.</source>
+        <translation type="unfinished">O Polyglotic já está aberto, mas não está respondendo. Aguarde um momento e abra-o novamente. Se ele ainda não aparecer, finalize o Polyglotic no Gerenciador de Tarefas e abra-o novamente.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/one_copy.py"/>
+        <source>Polyglotic is already open, but it isn&apos;t responding. Wait a moment, then open it again. If it still doesn&apos;t come up, force quit Polyglotic (⌥⌘Esc), then open it again.</source>
+        <translation type="unfinished">O Polyglotic já está aberto, mas não está respondendo. Aguarde um momento e abra-o novamente. Se ele ainda não aparecer, force o encerramento do Polyglotic (⌥⌘Esc) e abra-o novamente.</translation>
+    </message>
+</context>
+<context>
     <name>Pages</name>
     <message>
         <location filename="../src/polyglotic_desktop/ui/widgets.py"/>
@@ -3666,6 +5310,21 @@
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>{seconds}s</source>
         <translation type="unfinished">{seconds} s</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Never</source>
+        <translation type="unfinished">Nunca</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>{hours} h</source>
+        <translation type="unfinished">{hours} h</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>{minutes} min</source>
+        <translation type="unfinished">{minutes} min</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -3689,38 +5348,38 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Detect</source>
-        <translation type="unfinished">Detectar</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>English</source>
-        <translation type="unfinished">Inglês</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Mandarin</source>
-        <translation type="unfinished">Mandarim</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Cantonese</source>
-        <translation type="unfinished">Cantonês</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>Spoken language</source>
         <translation type="unfinished">Idioma falado</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Detect handles mixed conversations. Choosing one language stops short or mumbled speech being heard as another - but anything said in a different language is then shown untranslated.</source>
-        <translation type="unfinished">Detectar lida com conversas misturadas. Escolher um idioma evita que fala curta ou murmurada seja tomada por outro, mas o que for dito em outro idioma aparece sem tradução.</translation>
+        <source>Detect finds the language each time someone speaks, and handles mixed talk. Name it and every caption is heard as that language: steadier for an app that speaks one, but a line in another may come out wrong.</source>
+        <translation type="unfinished">Detectar reconhece o idioma cada vez que alguém fala e lida com conversas misturadas. Escolha um e cada legenda será ouvida nesse idioma: mais estável para um app que fala um só idioma, mas uma frase em outro pode sair errada.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Second language</source>
-        <translation type="unfinished">Segundo idioma</translation>
+        <source>Simplified ({sample})</source>
+        <translation type="unfinished">Simplificado ({sample})</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Traditional ({sample})</source>
+        <translation type="unfinished">Tradicional ({sample})</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Show Mandarin in</source>
+        <translation type="unfinished">Mostrar o mandarim em</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>The characters Mandarin&apos;s captions are written in, Detect included. Lookups, the transcript, copy and Anki use the same; translations into Chinese keep the language you picked.</source>
+        <translation type="unfinished">Os caracteres em que as legendas em mandarim são escritas, inclusive com Detectar. Buscas, a transcrição, copiar e o Anki usam os mesmos; as traduções para o chinês mantêm o idioma que você escolheu.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>When they already speak the window&apos;s language</source>
+        <translation type="unfinished">Quando já falam o idioma da janela</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -3789,8 +5448,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Lines already in {language} are translated into</source>
-        <translation type="unfinished">Linhas já em {language} são traduzidas para</translation>
+        <source>Caption windows translating into {language} - when someone already speaks {language}, also translate into</source>
+        <translation type="unfinished">Janelas de legendas que traduzem para {language} – quando alguém já fala {language}, traduzir também para</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -3799,8 +5458,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Lines already in {language} are translated into:</source>
-        <translation type="unfinished">Linhas já em {language} são traduzidas para:</translation>
+        <source>Caption windows translating into {language} - when someone already speaks {language}, also translate into:</source>
+        <translation type="unfinished">Janelas de legendas que traduzem para {language} – quando alguém já fala {language}, traduzir também para:</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -3877,6 +5536,16 @@
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>Shorter: text sooner while someone talks on, more half sentences - the same in every timing.</source>
         <translation type="unfinished">Mais curto: texto antes quando alguém segue falando, mais frases pela metade; igual em todos os ritmos.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Text can still change for</source>
+        <translation type="unfinished">O texto ainda pode mudar por</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>How long words on screen may still be corrected as more is heard. Shorter: fewer words change while you read, and more mistakes stay as first heard - most of all when Live updates come faster than every second.</source>
+        <translation type="unfinished">Por quanto tempo as palavras na tela ainda podem ser corrigidas à medida que se ouve mais. Mais curto: menos palavras mudam enquanto você lê, e mais erros ficam como foram ouvidos primeiro - principalmente quando Ao vivo atualiza mais de uma vez por segundo.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -3972,6 +5641,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>Any font on this PC. Chinese and Japanese fall back to a font that has them if yours doesn&apos;t.</source>
         <translation type="unfinished">Qualquer fonte deste PC. Chinês e japonês usam outra fonte que os tenha se a sua não tiver.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Any font on this Mac. Chinese and Japanese fall back to a font that has them if yours doesn&apos;t.</source>
+        <translation type="unfinished">Qualquer fonte deste Mac. Chinês e japonês usam outra fonte que os tenha se a sua não tiver.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -4100,6 +5774,26 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Colour linked words in what was said</source>
+        <translation type="unfinished">Colorir as palavras ligadas no que foi dito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Each word a link joins takes its colour, as its underline has.</source>
+        <translation type="unfinished">Cada palavra que uma ligação une fica com a cor dela, como o sublinhado.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Colour linked words in the translation</source>
+        <translation type="unfinished">Colorir as palavras ligadas na tradução</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Each word a link joins takes its colour. With both on, and pinyin in its word link&apos;s colour, a word, its pinyin and its translation all match.</source>
+        <translation type="unfinished">Cada palavra que uma ligação une fica com a cor dela. Com os dois ligados e o pinyin na cor da ligação da palavra, uma palavra, seu pinyin e sua tradução combinam.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>Which words are pointed out as new is on {learning}.</source>
         <translation type="unfinished">Quais palavras são destacadas como novas fica em {learning}.</translation>
     </message>
@@ -4107,6 +5801,122 @@
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>Learning</source>
         <translation type="unfinished">Aprendizado</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Readings</source>
+        <extracomment>Settings &gt; Readings: the card of reading lines over captions - pinyin above Chinese, Jyutping above Cantonese</extracomment>
+        <translation type="unfinished">Leituras</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Pinyin above Chinese</source>
+        <translation type="unfinished">Pinyin sobre o chinês</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>A small syllable over each Chinese character, in what was said and in translations into Chinese. It isn&apos;t part of the text: copying and looking up words work as before.</source>
+        <translation type="unfinished">Uma pequena sílaba sobre cada caractere chinês, no que foi dito e nas traduções para o chinês. Não faz parte do texto: copiar e consultar palavras funcionam como antes.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Pinyin</source>
+        <translation type="unfinished">Pinyin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Zhuyin</source>
+        <translation type="unfinished">Zhuyin</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Readings above Chinese</source>
+        <translation type="unfinished">Leituras sobre o chinês</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Zhuyin (bopomofo, ㄅㄆㄇㄈ) is how readers in Taiwan learn the sounds: the same readings as pinyin, in its symbols and tone marks.</source>
+        <translation type="unfinished">O zhuyin (bopomofo, ㄅㄆㄇㄈ) é como os leitores de Taiwan aprendem os sons: as mesmas leituras do pinyin, com seus símbolos e marcas de tom.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Jyutping above Cantonese</source>
+        <translation type="unfinished">Jyutping sobre o cantonês</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>A small syllable over each Cantonese character, its tone as a raised number (hai⁶), from the Cantonese dictionary - once you learn Cantonese and its dictionary is here.</source>
+        <translation type="unfinished">Uma pequena sílaba sobre cada caractere cantonês, com o tom como número sobrescrito (hai⁶), do dicionário de cantonês - quando você aprende cantonês e o dicionário dele está aqui.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Every word</source>
+        <translation type="unfinished">Todas as palavras</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Past what you know</source>
+        <translation type="unfinished">Além do que você conhece</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Readings over</source>
+        <translation type="unfinished">Leituras sobre</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Past what you know: only over the words past your known line on Learning, the ones word links point out. Less to read as you learn.</source>
+        <translation type="unfinished">Além do que você conhece: só sobre as palavras além da sua linha de conhecidas em Aprendizado, as que os vínculos de palavras apontam. Menos para ler à medida que você aprende.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Small</source>
+        <translation type="unfinished">Pequeno</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Reading size</source>
+        <translation type="unfinished">Tamanho das leituras</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Beside the characters&apos; own size. Medium reads better in a small window.</source>
+        <translation type="unfinished">Em relação ao tamanho dos caracteres. Médio é mais fácil de ler numa janela pequena.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Same as its line</source>
+        <translation type="unfinished">Igual à sua linha</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Its word link&apos;s colour</source>
+        <translation type="unfinished">A cor da ligação da palavra</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Custom</source>
+        <translation type="unfinished">Personalizada</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Reading colour</source>
+        <translation type="unfinished">Cor das leituras</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Its word link&apos;s colour: a reading takes the colour of its word&apos;s link, where one joins it. Word links can colour the linked words too.</source>
+        <translation type="unfinished">A cor da ligação da palavra: uma leitura fica com a cor da ligação da sua palavra, onde houver uma. As ligações de palavras também podem colorir as palavras ligadas.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Custom reading colour</source>
+        <translation type="unfinished">Cor personalizada das leituras</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>The one colour readings are drawn in, over any line.</source>
+        <translation type="unfinished">A única cor em que as leituras são desenhadas, sobre qualquer linha.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -4135,8 +5945,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Never</source>
-        <translation type="unfinished">Nunca</translation>
+        <source>Slide in: a new caption rises into place from below - not while the Mac&apos;s animation effects are off. Appear: nothing moves.</source>
+        <translation type="unfinished">Deslizar: uma legenda nova sobe para o lugar vindo de baixo, exceto com os efeitos de animação do Mac desligados. Aparecer: nada se mexe.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -4147,6 +5957,31 @@
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>Captions disappear after this long with nobody talking. Never: they stay until the next line.</source>
         <translation type="unfinished">As legendas somem depois deste tempo sem ninguém falar. Nunca: ficam até a próxima linha.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Stop listening when hidden</source>
+        <translation type="unfinished">Parar de ouvir quando oculta</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>A hidden caption window stops listening after this long, so nothing more of its app is sent. Showing it starts it again.</source>
+        <translation type="unfinished">Uma janela de legendas oculta para de ouvir depois desse tempo, e nada mais do app dela é enviado. Mostrá-la começa de novo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Show a hidden caption window when speech starts</source>
+        <translation type="unfinished">Mostrar uma janela de legendas oculta quando a fala começar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Off: it stays hidden, and the tray says it&apos;s still captioning.</source>
+        <translation type="unfinished">Desativado: ela continua oculta, e a bandeja avisa que ainda está legendando.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Off: it stays hidden, and the menu bar&apos;s icon says it&apos;s still captioning.</source>
+        <translation type="unfinished">Desativado: ela continua oculta, e o ícone na barra de menus avisa que ainda está legendando.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -4303,6 +6138,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/problem_report.py"/>
+        <source>About this Mac: the app, the system and the audio devices</source>
+        <translation type="unfinished">Sobre este Mac: o app, o sistema e os dispositivos de áudio</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/problem_report.py"/>
         <source>Captions from the last few minutes, as shown</source>
         <translation type="unfinished">Legendas dos últimos minutos, como apareceram</translation>
     </message>
@@ -4336,6 +6176,108 @@
         <source>your mic</source>
         <extracomment>the user&apos;s own mic, as a source in &quot;Audio from {source}&quot;</extracomment>
         <translation type="unfinished">seu microfone</translation>
+    </message>
+</context>
+<context>
+    <name>SavedSentences</name>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>{found} of %Ln saved sentence(s)</source>
+        <translation type="unfinished">
+            <numerusform>{found} de %Ln frase salva</numerusform>
+            <numerusform>{found} de %Ln frases salvas</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>%Ln saved sentence(s)</source>
+        <translation type="unfinished">
+            <numerusform>%Ln frase salva</numerusform>
+            <numerusform>%Ln frases salvas</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Move to…</source>
+        <translation type="unfinished">Mover para…</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Remove</source>
+        <translation type="unfinished">Remover</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Saved sentences</source>
+        <translation type="unfinished">Frases salvas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>What you selected in captions and saved, with its translation. Search in either language: a sentence with most of your words is found.</source>
+        <translation type="unfinished">O que você selecionou nas legendas e salvou, com a tradução. Pesquise em qualquer um dos idiomas: a frase com a maioria das suas palavras é encontrada.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Search - words in either language</source>
+        <translation type="unfinished">Pesquisar - palavras em qualquer idioma</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Search your sentences</source>
+        <translation type="unfinished">Pesquisar suas frases</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Clear the search</source>
+        <translation type="unfinished">Limpar a pesquisa</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Show sentences in this category</source>
+        <translation type="unfinished">Mostrar frases desta categoria</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Show sentences with this saved word</source>
+        <translation type="unfinished">Mostrar frases com esta palavra salva</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Show more</source>
+        <translation type="unfinished">Mostrar mais</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>None yet - drag across more than a word in a caption window, then pick a category to save it.</source>
+        <translation type="unfinished">Nenhuma ainda - arraste sobre mais de uma palavra em uma janela de legendas e escolha uma categoria.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>All categories</source>
+        <translation type="unfinished">Todas as categorias</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>Any saved word</source>
+        <translation type="unfinished">Qualquer palavra salva</translation>
+    </message>
+</context>
+<context>
+    <name>SentenceCard</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sentence_card.py"/>
+        <source>Save sentence to</source>
+        <translation type="unfinished">Salvar frase em</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sentence_card.py"/>
+        <source>Saved to {category}</source>
+        <translation type="unfinished">Salva em {category}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sentence_card.py"/>
+        <source>Couldn&apos;t save it</source>
+        <translation type="unfinished">Não foi possível salvar</translation>
     </message>
 </context>
 <context>
@@ -4392,6 +6334,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Like this Mac</source>
+        <translation type="unfinished">Como este Mac</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>Light</source>
         <translation type="unfinished">Claro</translation>
     </message>
@@ -4409,21 +6356,6 @@
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>A few parts change at the next start.</source>
         <translation type="unfinished">Algumas partes mudam na próxima abertura.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
-        <source>Language</source>
-        <translation type="unfinished">Idioma</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
-        <source>The app&apos;s language</source>
-        <translation type="unfinished">Idioma do app</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
-        <source>Menus, buttons and help - not your captions. It changes the next time Polyglotic starts.</source>
-        <translation type="unfinished">Menus, botões e ajuda, não suas legendas. Muda na próxima vez que o Polyglotic abrir.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
@@ -4502,6 +6434,47 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Transcripts</source>
+        <translation type="unfinished">Transcrições</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>How far back a transcript window scrolls and searches. Copy all and Save always have the whole session.</source>
+        <translation type="unfinished">Até onde uma janela de transcrição rola e pesquisa para trás. Copiar tudo e Salvar sempre têm a sessão inteira.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Newest {count} lines</source>
+        <extracomment>{count} is always 1,000</extracomment>
+        <translation type="unfinished">Últimas {count} linhas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Last 3 hours</source>
+        <translation type="unfinished">Últimas 3 horas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Whole session</source>
+        <translation type="unfinished">Sessão inteira</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>How far back transcripts go</source>
+        <translation type="unfinished">Até onde as transcrições voltam</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Ask to save before quitting</source>
+        <translation type="unfinished">Perguntar se quer salvar antes de sair</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>With Last 3 hours or Whole session: Quit asks about a transcript of more than 300 lines that isn&apos;t saved.</source>
+        <translation type="unfinished">Com Últimas 3 horas ou Sessão inteira: Sair pergunta sobre uma transcrição não salva com mais de 300 linhas.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>Dictation (preview)</source>
         <translation type="unfinished">Ditado (prévia)</translation>
     </message>
@@ -4537,18 +6510,28 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Click, then press the key or combination you want to hold: Right ⌘, F9, ⌃⌘E… A key on its own, or with ⌃, ⌥ or ⌘, is Polyglotic&apos;s while dictation is on; Right ⌘ alone still works in other apps.</source>
+        <translation type="unfinished">Clique e pressione a tecla ou combinação que quer segurar: ⌘ direito, F9, ⌃⌘E… Uma tecla sozinha, ou com ⌃, ⌥ ou ⌘, fica com o Polyglotic enquanto o ditado está ligado; ⌘ direito sozinho continua funcionando em outros programas.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>Dictation&apos;s language</source>
         <translation type="unfinished">Idioma do ditado</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
-        <source>Detect the language</source>
-        <translation type="unfinished">Detectar o idioma</translation>
+        <source>Language</source>
+        <translation type="unfinished">Idioma</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>Detect types whatever language you speak, each time you hold the key. Set one - English, Mandarin… - and it&apos;s always heard as that: a short phrase is never taken for another. The tray&apos;s menu switches it too.</source>
         <translation type="unfinished">Detectar digita qualquer idioma que você falar, a cada vez que segura a tecla. Defina um (inglês, mandarim…) e ele sempre será ouvido assim: uma frase curta nunca é tomada por outra. O menu da bandeja também troca isso.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Detect types whatever language you speak, each time you hold the key. Set one - English, Mandarin… - and it&apos;s always heard as that: a short phrase is never taken for another. The menu bar&apos;s menu switches it too.</source>
+        <translation type="unfinished">Detectar digita qualquer idioma que você falar, a cada vez que segura a tecla. Defina um (inglês, mandarim…) e ele sempre será ouvido assim: uma frase curta nunca é tomada por outra. O menu da barra de menus também troca isso.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
@@ -4559,6 +6542,17 @@
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>English comes out as colour, centre and organise.</source>
         <translation type="unfinished">O inglês sai como colour, centre e organise.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Polyglotic isn&apos;t allowed to type into other apps, so nothing you say is typed. In System Settings, open Privacy &amp; Security, then Accessibility, and turn on Polyglotic.</source>
+        <extracomment>macOS System Settings&apos; own names: keep them as the Mac shows them</extracomment>
+        <translation type="unfinished">O Polyglotic não tem permissão para digitar em outros apps, então nada do que você fala é digitado. Em Ajustes do Sistema, abra &quot;Privacidade e Segurança&quot;, depois &quot;Acessibilidade&quot;, e ative o Polyglotic.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Open System Settings</source>
+        <translation type="unfinished">Abrir Ajustes do Sistema</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
@@ -4577,18 +6571,39 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
-        <source>Captions</source>
-        <translation type="unfinished">Legendas</translation>
+        <source>Look</source>
+        <translation type="unfinished">Aparência</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
-        <source>Learning</source>
-        <translation type="unfinished">Aprendizado</translation>
+        <source>Word links</source>
+        <translation type="unfinished">Ligações de palavras</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Readings</source>
+        <extracomment>Settings&apos; section of reading lines over captions - pinyin above Chinese, Jyutping above Cantonese</extracomment>
+        <translation type="unfinished">Leituras</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Timing</source>
+        <translation type="unfinished">Ritmo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Speech</source>
+        <translation type="unfinished">Fala</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>App</source>
         <translation type="unfinished">App</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Lab</source>
+        <translation type="unfinished">Laboratório</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
@@ -4599,6 +6614,16 @@
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>App language</source>
         <translation type="unfinished">Idioma do app</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>The app&apos;s language</source>
+        <translation type="unfinished">Idioma do app</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Menus, buttons and help - not your captions. It changes the next time Polyglotic starts.</source>
+        <translation type="unfinished">Menus, botões e ajuda, não suas legendas. Muda na próxima vez que o Polyglotic abrir.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
@@ -4619,16 +6644,6 @@
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>Tell us what reads wrong</source>
         <translation type="unfinished">Conte o que soa errado</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
-        <source>The languages you&apos;re learning, your level and which words are pointed out as new have a page of their own.</source>
-        <translation type="unfinished">Os idiomas que você aprende, seu nível e quais palavras são destacadas como novas têm uma página própria.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
-        <source>Open Learning</source>
-        <translation type="unfinished">Abrir Aprendizado</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
@@ -4672,12 +6687,38 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
+        <source>Version {version} is available. Your connection is metered, so it waits: Home offers to download it anyway.</source>
+        <translation type="unfinished">A versão {version} está disponível. Sua conexão é limitada, então ela espera: o Início oferece baixá-la mesmo assim.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_page.py"/>
         <source>This copy wasn&apos;t installed by the installer, so it can&apos;t update itself.</source>
         <translation type="unfinished">Esta cópia não foi instalada pelo instalador, então não consegue se atualizar sozinha.</translation>
     </message>
 </context>
 <context>
     <name>SettingsPopover</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
+        <source>When they already speak {language}</source>
+        <extracomment>A caption window&apos;s row: what to do with lines already spoken in {language}, the language this window translates into</extracomment>
+        <translation type="unfinished">Quando já falam {language}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
+        <source>{language} is this window&apos;s language, so those lines get no translation. Translate them into a second language too, or leave them as they are.</source>
+        <translation type="unfinished">{language} é o idioma desta janela, então essas linhas não têm tradução. Traduza-as também para um segundo idioma, ou deixe como estão.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
+        <source>Leave as they are</source>
+        <translation type="unfinished">Deixar como estão</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
+        <source>Also translate into {language}</source>
+        <translation type="unfinished">Traduzir também para {language}</translation>
+    </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
         <source>{app} - playing</source>
@@ -4710,18 +6751,13 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
-        <source>Spoken language</source>
-        <translation type="unfinished">Idioma falado</translation>
+        <source>They speak</source>
+        <translation type="unfinished">Falam</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
-        <source>What this app&apos;s speech is in. Detect handles mixed talk; naming one language stops short words being heard as another.</source>
-        <translation type="unfinished">Em que idioma este app fala. Detectar lida com conversas misturadas; nomear um idioma evita que palavras curtas sejam tomadas por outro.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
-        <source>Detect</source>
-        <translation type="unfinished">Detectar</translation>
+        <source>What this app&apos;s speech is in. Detect finds the language each time someone speaks, and handles mixed talk. Name it and every caption is heard as that language: short or mumbled speech is never taken for another.</source>
+        <translation type="unfinished">O idioma falado neste app. Detectar reconhece o idioma cada vez que alguém fala e lida com conversas misturadas. Escolha um e cada legenda será ouvida nesse idioma: uma fala curta ou murmurada nunca é tomada por outro idioma.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
@@ -4735,13 +6771,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
-        <source>A line spoken in this window&apos;s language gets no translation. Show it in another language instead, or leave it.</source>
-        <translation type="unfinished">Uma linha falada no idioma desta janela não é traduzida. Mostre-a em outro idioma, ou deixe assim.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
-        <source>Lines already in this window&apos;s language</source>
-        <translation type="unfinished">Linhas já no idioma desta janela</translation>
+        <source>When they already speak this window&apos;s language</source>
+        <translation type="unfinished">Quando já falam o idioma desta janela</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
@@ -4795,6 +6826,21 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
+        <source>Translation size</source>
+        <translation type="unfinished">Tamanho da tradução</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
+        <source>Smaller translation</source>
+        <translation type="unfinished">Tradução menor</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
+        <source>Bigger translation</source>
+        <translation type="unfinished">Tradução maior</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
         <source>Original only</source>
         <translation type="unfinished">Só o original</translation>
     </message>
@@ -4802,16 +6848,6 @@
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
         <source>{percent}%</source>
         <translation type="unfinished">{percent}%</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
-        <source>Lines already in {language}</source>
-        <translation type="unfinished">Linhas já em {language}</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
-        <source>Leave as they are</source>
-        <translation type="unfinished">Deixar como estão</translation>
     </message>
 </context>
 <context>
@@ -4838,6 +6874,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
+        <source>This Mac has signed in before: the invite code you used then works again here.</source>
+        <translation type="unfinished">Este Mac já entrou antes: o código de convite usado naquela vez funciona aqui de novo.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
         <source>Signing in…</source>
         <translation type="unfinished">Entrando…</translation>
     </message>
@@ -4858,6 +6899,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
+        <source>This code doesn&apos;t work: it may be mistyped, used on another computer or no longer valid. Check it, or write to us and we&apos;ll sort it out.</source>
+        <translation type="unfinished">Este código não funciona: pode ter erro de digitação, ter sido usado em outro computador ou não ser mais válido. Confira, ou escreva para nós e resolvemos.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
         <source>This code&apos;s subscription was cancelled before the code was used, so it gives no Plus. To get Plus, subscribe again on our site - or write to us if you didn&apos;t cancel it.</source>
         <translation type="unfinished">A assinatura deste código foi cancelada antes de o código ser usado, então ele não dá Plus. Para ter Plus, assine de novo no nosso site, ou escreva para nós se você não cancelou.</translation>
     </message>
@@ -4870,6 +6916,11 @@
         <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
         <source>This PC&apos;s sign-in has run out. Sign out on Account, then sign in with this code.</source>
         <translation type="unfinished">O acesso deste PC expirou. Saia da conta em Conta e entre de novo com este código.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
+        <source>This Mac&apos;s sign-in has run out. Sign out on Account, then sign in with this code.</source>
+        <translation type="unfinished">O acesso deste Mac expirou. Saia da conta em Conta e entre de novo com este código.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
@@ -4886,8 +6937,20 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
-        <source>Check this PC&apos;s date and time: a secure connection needs them right. Set them in Windows&apos; Settings, Time &amp; language.</source>
-        <translation type="unfinished">Confira a data e a hora deste PC: uma conexão segura precisa delas certas. Ajuste em Configurações do Windows, Hora e idioma.</translation>
+        <source>This PC says it&apos;s {date}, which can&apos;t be right, and a secure connection needs the right date. Turn on Set time automatically in Windows&apos; Settings, Time &amp; language, Date &amp; time, then choose Sync now.</source>
+        <extracomment>{date}: the date this PC&apos;s clock says, in its regional format</extracomment>
+        <translation type="unfinished">Este PC diz que hoje é {date}, o que não pode estar certo, e uma conexão segura precisa da data certa. Ative Definir horário automaticamente em Configurações do Windows, Hora e idioma, Data e hora, e depois escolha Sincronizar agora.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
+        <source>This Mac says it&apos;s {date}, which can&apos;t be right, and a secure connection needs the right date. Turn on Set time and date automatically in System Settings, General, Date &amp; Time.</source>
+        <extracomment>{date}: the date this Mac&apos;s clock says, in its regional format</extracomment>
+        <translation type="unfinished">Este Mac diz que hoje é {date}, o que não pode estar certo, e uma conexão segura precisa da data certa. Ative Definir data e hora automaticamente em Ajustes do Sistema, Geral, Data e Hora.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
+        <source>Something on this network is in the way with an out-of-date certificate - most often an antivirus&apos;s HTTPS scanning, or a VPN. Turn it off for Polyglotic, or try another network.</source>
+        <translation type="unfinished">Algo nesta rede está atrapalhando com um certificado vencido: quase sempre a verificação HTTPS de um antivírus, ou uma VPN. Desative isso para o Polyglotic, ou tente outra rede.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
@@ -4921,13 +6984,142 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
+        <source>Sign out of Polyglotic on this Mac?</source>
+        <translation type="unfinished">Sair do Polyglotic neste Mac?</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
         <source>Captions stop until you sign in again - with the same invite code: it works again on this PC. Your saved words and learning data stay, on this PC and on our server.</source>
         <translation type="unfinished">As legendas param até você entrar de novo, com o mesmo código de convite: ele funciona de novo neste PC. Suas palavras salvas e seus dados de aprendizado ficam, neste PC e no nosso servidor.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
+        <source>Captions stop until you sign in again - with the same invite code: it works again on this Mac. Your saved words and learning data stay, on this Mac and on our server.</source>
+        <translation type="unfinished">As legendas param até você entrar de novo, com o mesmo código de convite: ele funciona de novo neste Mac. Suas palavras salvas e seus dados de aprendizado ficam, neste Mac e no nosso servidor.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
         <source>Changes this PC hasn&apos;t sent to our server yet are dropped, so none of them reach whoever signs in next.</source>
         <translation type="unfinished">As mudanças que este PC ainda não enviou ao nosso servidor são descartadas, para que nenhuma chegue a quem entrar em seguida.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui/sign_in.py"/>
+        <source>Changes this Mac hasn&apos;t sent to our server yet are dropped, so none of them reach whoever signs in next.</source>
+        <translation type="unfinished">As mudanças que este Mac ainda não enviou ao nosso servidor são descartadas, para que nenhuma chegue a quem entrar em seguida.</translation>
+    </message>
+</context>
+<context>
+    <name>SoundCard</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>This PC&apos;s default</source>
+        <translation type="unfinished">Padrão deste PC</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>This Mac&apos;s default</source>
+        <translation type="unfinished">Padrão deste Mac</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>This PC&apos;s default ({device})</source>
+        <translation type="unfinished">Padrão deste PC ({device})</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>This Mac&apos;s default ({device})</source>
+        <translation type="unfinished">Padrão deste Mac ({device})</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Microphone level</source>
+        <translation type="unfinished">Nível do microfone</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Sound</source>
+        <translation type="unfinished">Som</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>What you hear</source>
+        <translation type="unfinished">O que você ouve</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Speakers</source>
+        <translation type="unfinished">Alto-falantes</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>For Everything the PC plays. Apps you add are heard on any speakers.</source>
+        <translation type="unfinished">Para Tudo o que o PC toca. Os apps que você adiciona são ouvidos em quaisquer alto-falantes.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>For Everything the Mac plays. Apps you add are heard on any speakers.</source>
+        <translation type="unfinished">Para Tudo o que o Mac toca. Os apps que você adiciona são ouvidos em quaisquer alto-falantes.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>What you say</source>
+        <translation type="unfinished">O que você diz</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Caption what I say</source>
+        <translation type="unfinished">Legendar o que eu digo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>In every window. Your microphone is sent to the server only while this is on.</source>
+        <translation type="unfinished">Em todas as janelas. Seu microfone só é enviado ao servidor enquanto isto está ligado.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Microphone</source>
+        <translation type="unfinished">Microfone</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Your microphone&apos;s level now</source>
+        <translation type="unfinished">O nível do seu microfone agora</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Shown while what you say is captioned</source>
+        <translation type="unfinished">Mostrado enquanto o que você diz é legendado</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Not plugged in - this PC&apos;s default is used</source>
+        <translation type="unfinished">Não conectado - o padrão deste PC está em uso</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sound_card.py"/>
+        <source>Not plugged in - this Mac&apos;s default is used</source>
+        <translation type="unfinished">Não conectado - o padrão deste Mac está em uso</translation>
+    </message>
+</context>
+<context>
+    <name>SpokenList</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/spoken_list.py"/>
+        <source>Spoken language</source>
+        <translation type="unfinished">Idioma falado</translation>
+    </message>
+</context>
+<context>
+    <name>SpokenNudge</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/spoken_nudge.py"/>
+        <source>Yes</source>
+        <translation type="unfinished">Sim</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/spoken_nudge.py"/>
+        <source>Not now</source>
+        <translation type="unfinished">Agora não</translation>
     </message>
 </context>
 <context>
@@ -4944,11 +7136,6 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/transcript_window.py"/>
-        <source>Looks wrong?</source>
-        <translation type="unfinished">Algo errado?</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/transcript_window.py"/>
         <source>No matches.</source>
         <translation type="unfinished">Nenhum resultado.</translation>
     </message>
@@ -4959,13 +7146,18 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/transcript_window.py"/>
-        <source>Check this line with our best model</source>
-        <translation type="unfinished">Conferir esta linha com nosso melhor modelo</translation>
+        <source>Copy</source>
+        <translation type="unfinished">Copiar</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/transcript_window.py"/>
-        <source>Copy</source>
-        <translation type="unfinished">Copiar</translation>
+        <source>Copy what was said</source>
+        <translation type="unfinished">Copiar o que foi dito</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/transcript_window.py"/>
+        <source>Copy the translation</source>
+        <translation type="unfinished">Copiar a tradução</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/transcript_window.py"/>
@@ -5121,8 +7313,59 @@
     <name>Transcripts</name>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
+        <source>Save the transcript?</source>
+        <translation type="unfinished">Salvar a transcrição?</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
+        <source>Save the transcript of {app} before quitting?</source>
+        <translation type="unfinished">Salvar a transcrição de {app} antes de sair?</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
+        <source>It has %Ln line(s), and it&apos;s gone when Polyglotic quits.</source>
+        <translation type="unfinished">
+            <numerusform>Ela tem %Ln linha e some quando o Polyglotic fecha.</numerusform>
+            <numerusform>Ela tem %Ln linhas e some quando o Polyglotic fecha.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
+        <source>Save…</source>
+        <translation type="unfinished">Salvar…</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
+        <source>Quit without saving</source>
+        <translation type="unfinished">Sair sem salvar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
+        <source>Cancel</source>
+        <translation type="unfinished">Cancelar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
+        <source>Don&apos;t ask again</source>
+        <translation type="unfinished">Não perguntar de novo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
         <source>Transcript</source>
         <translation type="unfinished">Transcrição</translation>
+    </message>
+</context>
+<context>
+    <name>UnlockSpot</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/unlock_spot.py"/>
+        <source>Unlock</source>
+        <translation type="unfinished">Destravar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/unlock_spot.py"/>
+        <source>Unlock every caption window</source>
+        <translation type="unfinished">Destravar todas as janelas de legendas</translation>
     </message>
 </context>
 <context>
@@ -5204,6 +7447,11 @@
         <source>Time captions were on, counted on this PC.</source>
         <translation type="unfinished">Tempo com legendas ligadas, contado neste PC.</translation>
     </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/heard_card.py"/>
+        <source>Time captions were on, counted on this Mac.</source>
+        <translation type="unfinished">Tempo com legendas ligadas, contado neste Mac.</translation>
+    </message>
     <message numerus="yes">
         <location filename="../src/polyglotic_desktop/ui_next/heard_card.py"/>
         <source>+%Ln new in the last 7 days</source>
@@ -5239,6 +7487,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/heard_card.py"/>
+        <source>Counted on this Mac from finished captions, and kept here.</source>
+        <translation type="unfinished">Contado neste Mac a partir das legendas finais, e guardado aqui.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/heard_card.py"/>
         <source>Words met</source>
         <translation type="unfinished">Palavras encontradas</translation>
     </message>
@@ -5256,6 +7509,16 @@
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
         <source>Not set yet - words count as known up to a middle level.</source>
         <translation type="unfinished">Ainda não definido: as palavras contam como conhecidas até um nível médio.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>Just starting - no words known yet</source>
+        <translation type="unfinished">Começando: ainda sem palavras conhecidas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>About {count} of the most common words</source>
+        <translation type="unfinished">Cerca de {count} das palavras mais comuns</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
@@ -5344,7 +7607,7 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/word_bands.py"/>
-        <source>Words met, by how common they are</source>
+        <source>Words met, by frequency</source>
         <translation type="unfinished">Palavras encontradas, por frequência</translation>
     </message>
     <message>
@@ -5409,6 +7672,19 @@
         <translation type="unfinished">Remover das suas palavras salvas</translation>
     </message>
     <message>
+        <location filename="../src/polyglotic_desktop/ui_next/word_table.py"/>
+        <source>Clear</source>
+        <translation type="unfinished">Limpar seleção</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/word_table.py"/>
+        <source>%Ln word(s) picked</source>
+        <translation type="unfinished">
+            <numerusform>%Ln palavra escolhida</numerusform>
+            <numerusform>%Ln palavras escolhidas</numerusform>
+        </translation>
+    </message>
+    <message>
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
         <source>HSK 3.0 (2025 exam syllabus)</source>
         <translation type="unfinished">HSK 3.0 (conteúdo do exame de 2025)</translation>
@@ -5428,6 +7704,14 @@
         <source>Couldn&apos;t write {name}. It may be open in another program, or the folder may be read-only - close it or pick another folder, and try again.</source>
         <translation type="unfinished">Não foi possível gravar {name}. Ele pode estar aberto em outro programa, ou a pasta pode ser somente leitura: feche-o ou escolha outra pasta e tente de novo.</translation>
     </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>%Ln saved sentence(s) written to {name}.</source>
+        <translation type="unfinished">
+            <numerusform>%Ln frase salva gravada em {name}.</numerusform>
+            <numerusform>%Ln frases salvas gravadas em {name}.</numerusform>
+        </translation>
+    </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
         <source>No new words since the last export - {name} is empty.</source>
@@ -5444,6 +7728,15 @@
         <translation type="unfinished">
             <numerusform>%Ln palavra gravada em {name}.</numerusform>
             <numerusform>%Ln palavras gravadas em {name}.</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>And %Ln saved sentence(s).</source>
+        <extracomment>after &quot;12 words written to polyglotic-words.apkg.&quot;</extracomment>
+        <translation type="unfinished">
+            <numerusform>E %Ln frase salva.</numerusform>
+            <numerusform>E %Ln frases salvas.</numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -5527,6 +7820,11 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>I know these</source>
+        <translation type="unfinished">Eu sei estas</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
         <source>Nothing yet - words new to you show here once you&apos;ve heard them a few times.</source>
         <translation type="unfinished">Nada ainda: palavras novas para você aparecem aqui depois de ouvi-las algumas vezes.</translation>
     </message>
@@ -5577,6 +7875,16 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>New again</source>
+        <translation type="unfinished">Nova de novo</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>Ignore</source>
+        <translation type="unfinished">Ignorar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
         <source>Saved words</source>
         <translation type="unfinished">Palavras salvas</translation>
     </message>
@@ -5594,6 +7902,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
         <source>Add</source>
         <translation type="unfinished">Adicionar</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>Move to…</source>
+        <translation type="unfinished">Mover para…</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
@@ -5654,6 +7967,19 @@
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
         <source>Heard in: {sentence}</source>
         <translation type="unfinished">Ouvida em: {sentence}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>Remove saved words</source>
+        <translation type="unfinished">Remover palavras salvas</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>Remove %Ln saved word(s)? The lines they were saved from go with them.</source>
+        <translation type="unfinished">
+            <numerusform>Remover %Ln palavra salva? A frase de onde ela foi salva vai junto.</numerusform>
+            <numerusform>Remover %Ln palavras salvas? As frases de onde elas foram salvas vão junto.</numerusform>
+        </translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>

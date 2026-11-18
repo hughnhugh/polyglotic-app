@@ -48,6 +48,7 @@ from polyglotic_desktop.core.listening.captions import (
 )
 from polyglotic_desktop.core.listening.history import is_cjk, join_text
 from polyglotic_desktop.core.listening.sources import DICTATION, Source
+from polyglotic_desktop.core.listening.spoken import SPOKEN_LANGUAGES
 from polyglotic_desktop.core.listening.timing import (
     CaptionId,
     SpeechKind,
@@ -81,17 +82,10 @@ whose release was missed) never leaves the mic open."""
 ENGLISH = Language("en")
 _FILLERS = re.compile(r"\b(?:um+|uh+|erm|er|hmm+)\b[,.]?\s*", re.IGNORECASE)
 
-DICTATION_LANGUAGES: tuple[Language, ...] = tuple(
-    Language(code)
-    for code in (
-        "en", "zh", "yue", "ar", "de", "fr", "es", "pt", "id", "it", "ko", "ru",
-        "th", "vi", "ja", "tr", "hi", "ms", "nl", "sv", "da", "fi", "pl", "cs",
-        "tl", "fa", "el", "hu", "mk", "ro",
-    )
-)  # fmt: skip
-"""Every language dictation can be set to: the speech model's own list
-(Qwen3-ASR's 30 - polyglotic-server's `adapters/qwen_asr.py`,
-`LANGUAGE_CODES`, read 2026-11-11). Set to one, the model is told the
+DICTATION_LANGUAGES: tuple[Language, ...] = SPOKEN_LANGUAGES
+"""Every language dictation can be set to: the spoken languages, the
+speech model's own list (`core.listening.spoken`; polyglotic-hq 317 made
+it every caption window's too). Set to one, the model is told the
 language and never detects another; Mandarin comes back in Simplified
 characters and Cantonese in Hong Kong Traditional (the server's
 `core/translation/scripts.py`)."""
@@ -109,6 +103,7 @@ class Said(StrEnum):
     NO_SERVER = "no_server"  # the session can't be answered now (299)
     WINDOW_CHANGED = "window_changed"
     NOT_TYPED = "not_typed"  # the OS took none of it
+    NOT_ALLOWED = "not_allowed"  # the OS hasn't given the app leave to type (438)
     SIGN_IN = "sign_in"
 
 

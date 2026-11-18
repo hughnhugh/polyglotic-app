@@ -131,6 +131,15 @@ class UnansweredSpeech:
             self._forget(caption_id)
         return given_up
 
+    def give_up_all(self) -> list[str]:
+        """Every frame still unanswered, forgotten: a planned maintenance
+        window has begun, and none is worth sending after it (polyglotic-hq
+        319). Their captions' ids, oldest first."""
+        ids = list(self._kept)
+        self._kept.clear()
+        self._bytes = 0
+        return ids
+
     def hand_over(self) -> list[Handed]:
         """Every frame still unanswered and recent enough, oldest first,
         for another session to send - and forgotten here: this session

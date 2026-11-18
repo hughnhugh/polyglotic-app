@@ -9,12 +9,23 @@ From the proof of concept's `ui/overlay.py` (`caption_lines`,
   (white - left out if the overlay hides originals and there's a
   translation), then its translation (yellow) into the overlay's target
   language - or, for a clause already in it, into the overlay's **second
-  language**. A live caption's last row trails off.
+  language**. A live caption's last row trails off. The server keeps a
+  second-language line under its target (`translation_shown`), so the row
+  says the language it is written in, for its font and reading line
+  (polyglotic-hq 427).
 - **Word links** are drawn only on settled clauses, never on a live
   caption's last (its words are still changing); one link - one colour -
   per counterpart, so a word said twice for the same thing shares it;
   "key words" leaves out minor links; if a cap is set, the surest stay,
-  key links first; numbered in reading order.
+  key links first; numbered in reading order **across the whole
+  caption** - each clause's after the ones before it - so no two links
+  of a caption share a number, whichever of its clauses share a line
+  (polyglotic-hq 340, decision 0132: numbered from 0 in each clause, two
+  clauses on one line of a caption that fills the width shared a colour).
+  A clause that comes later renumbers none before it.
+- **A word's counterpart** (polyglotic-hq 328): the words of the other
+  row its links join it to, for the lookup card's "Here:" line - from
+  every link, drawn or not; finished captions only.
 - **Crossfade from the first rewritten row:** rows above it are unchanged
   and stay as they are.
 - **One-way layout:** following the live end, no placed caption moves
@@ -35,11 +46,17 @@ The overlay draws what these return; nothing here knows Qt.
 """
 
 import math
+import unicodedata
 from collections.abc import Collection, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import StrEnum
 
-from polyglotic_desktop.core.listening.captions import Language, WordLink
+from polyglotic_desktop.core.listening.captions import (
+    Clause,
+    Language,
+    WordLink,
+    written_in,
+)
 from polyglotic_desktop.core.listening.history import Caption
 from polyglotic_desktop.core.listening.sources import SourceId
 
@@ -86,6 +103,45 @@ class LinkGap(StrEnum):
     FAR = "far"
 
 
+class ReadingSize(StrEnum):
+    """How big a reading line's text is beside the text it reads - pinyin
+    above Chinese (a setting; polyglotic-hq 369, decision 0155)."""
+
+    SMALL = "small"
+    MEDIUM = "medium"
+
+
+class ReadingColour(StrEnum):
+    """What colour a reading line is drawn in (a setting; polyglotic-hq
+    395, the user's preview-1 feedback, 2026-11-16: "pinyin should have
+    the option of matching the word link colour ... There should be option
+    to customise pinyin colour")."""
+
+    SAME = "same"
+    """Its line's: what was said's colour, or the translation's."""
+    LINK = "link"
+    """Its word's link colour, where a link joins it; elsewhere its line's."""
+    CUSTOM = "custom"
+    """One colour the learner picks."""
+
+
+class ReadingSystem(StrEnum):
+    """How a Chinese reading line is written (a setting; polyglotic-hq 395:
+    Taiwan's readers learn zhuyin, not pinyin). Cantonese's is Jyutping
+    whichever is chosen."""
+
+    PINYIN = "pinyin"
+    ZHUYIN = "zhuyin"
+    """Bopomofo (注音), from the same pinyin (`core.lexicon.zhuyin`)."""
+
+
+READING_LANGUAGES = ("zh", "yue")
+"""The languages a reading line can be put over (decision 0155): Chinese,
+read in pinyin (or zhuyin), and Cantonese, read in Jyutping (decision 0160;
+the user, 2026-11-17: "the same level as pinyin and zhuyin"). Furigana for
+Japanese would come next."""
+
+
 @dataclass(frozen=True, slots=True)
 class DisplayOptions:
     """The settings that change what an overlay's rows say."""
@@ -100,19 +156,25 @@ class DisplayOptions:
 @dataclass(frozen=True, slots=True)
 class LinkedWords:
     """Words of a row - `text[start:end]` - linked to words of the other
-    row of its clause. `link` numbers the link within the clause, in
-    reading order; the overlay colours it by number."""
+    row of its clause. `link` numbers the link within the caption, in
+    reading order (within the clause, as `numbered_links` gives it); the
+    overlay colours it by number. `key`: a key link (content words), not a
+    minor one."""
 
     start: int
     end: int
     link: int
+    key: bool = True
 
 
 @dataclass(frozen=True, slots=True)
 class CaptionRow:
     """One row an overlay shows for a caption. `clause` is the clause it
     shows; `starts_clause` is true for the first row of the clause's pair.
-    `language` is the row's language (for its font), None if unknown."""
+    `language` is the row's language (for its font and reading line), None
+    if unknown. `target`: a translation row's target - what its clause
+    keeps its line and links under (`translation_shown`); None: its
+    `language`."""
 
     text: str
     kind: RowKind
@@ -120,6 +182,41 @@ class CaptionRow:
     clause: int
     starts_clause: bool
     links: tuple[LinkedWords, ...] = ()
+    target: Language | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class TranslationShown:
+    """A clause's translation as a window shows it: its `text`, the
+    `language` it is written in, and the `target` its clause keeps it and
+    its links under (`Clause.translations`, `.links`)."""
+
+    text: str
+    language: Language
+    target: Language
+
+
+def translation_shown(
+    clause: Clause,
+    said_in: Language | None,
+    target: Language,
+    second: Language | None,
+) -> TranslationShown | None:
+    """The translation a window into `target` shows for `clause`, of a
+    caption said in `said_in` - None for none. A caption already in the
+    target is translated into its `second` language, kept under the target
+    - so its language is the second's (`written_in`; polyglotic-hq 427:
+    read as English, an English caption's Chinese line had no pinyin over
+    it). A line kept under the second language itself (a second target
+    too) is shown where the target has none."""
+    text = clause.translations.get(target)
+    if text:
+        return TranslationShown(text, written_in(target, said_in, second), target)
+    if second is not None and second != target:
+        text = clause.translations.get(second)
+        if text:
+            return TranslationShown(text, second, second)
+    return None
 
 
 def caption_rows(
@@ -138,23 +235,25 @@ def caption_rows(
     )
     rows: list[CaptionRow] = []
     last = len(caption.clauses) - 1
+    numbered = 0  # links numbered in the clauses before: the next one's first
     for n, clause in enumerate(caption.clauses):
-        language = target
-        translation = clause.translations.get(target) or None
-        if translation is None and second is not None and second != target:
-            translation = clause.translations.get(second) or None
-            language = second
+        shown = translation_shown(clause, caption.language, target, second)
+        translation = shown.text if shown is not None else None
         settled = not (caption.live and n == last)
         original_links: tuple[LinkedWords, ...] = ()
         translation_links: tuple[LinkedWords, ...] = ()
-        if linking and translation is not None and settled:
+        if linking and shown is not None and settled:
             original_links, translation_links = numbered_links(
-                clause.links.get(language, ()),
+                clause.links.get(shown.target, ()),
                 options.link_detail,
                 options.max_links,
                 len(clause.original),
-                len(translation),
+                len(shown.text),
             )
+            if numbered:
+                original_links = _from(original_links, numbered)
+                translation_links = _from(translation_links, numbered)
+            numbered += len({words.link for words in translation_links})
         starts = True
         if translation is None or options.show_original:
             rows.append(
@@ -168,28 +267,27 @@ def caption_rows(
                 )
             )
             starts = False
-        if translation is not None:
+        if shown is not None:
             rows.append(
                 CaptionRow(
-                    translation,
+                    shown.text,
                     RowKind.TRANSLATION,
-                    language,
+                    shown.language,
                     n,
                     starts,
                     translation_links,
+                    shown.target,
                 )
             )
     if caption.live and rows:
         end = rows[-1]
-        rows[-1] = CaptionRow(
-            end.text + LIVE_TRAIL,
-            end.kind,
-            end.language,
-            end.clause,
-            end.starts_clause,
-            end.links,
-        )
+        rows[-1] = replace(end, text=end.text + LIVE_TRAIL)
     return rows
+
+
+def _from(links: tuple[LinkedWords, ...], first: int) -> tuple[LinkedWords, ...]:
+    """A clause's `links`, numbered from `first` on."""
+    return tuple(replace(words, link=words.link + first) for words in links)
 
 
 def numbered_links(
@@ -200,7 +298,8 @@ def numbered_links(
     translation_length: int | None = None,
 ) -> tuple[tuple[LinkedWords, ...], tuple[LinkedWords, ...]]:
     """A clause's word links as (words in the original, words in the
-    translation), each numbered by link. One link per counterpart in the
+    translation), each numbered by link - from 0: `caption_rows` numbers
+    them on across the caption. One link per counterpart in the
     translation: original words that say the same thing share it (a word
     said twice). "Key words" leaves out minor links. With `cap`, the
     surest stay - key links first. Numbered in reading order of the
@@ -227,14 +326,17 @@ def numbered_links(
     kept.sort(key=lambda g: min(g[1][0]))
     original = sorted(
         (
-            LinkedWords(a, b, number)
-            for number, (_, (spans, _, _)) in enumerate(kept)
+            LinkedWords(a, b, number, key)
+            for number, (_, (spans, key, _)) in enumerate(kept)
             for a, b in spans
         ),
         key=lambda w: (w.start, w.end),
     )
     translation = sorted(
-        (LinkedWords(c, d, number) for number, ((c, d), _) in enumerate(kept)),
+        (
+            LinkedWords(c, d, number, key)
+            for number, ((c, d), (_, key, _)) in enumerate(kept)
+        ),
         key=lambda w: (w.start, w.end),
     )
     return tuple(original), tuple(translation)
@@ -243,6 +345,109 @@ def numbered_links(
 def _fits(span: tuple[int, int], length: int | None) -> bool:
     start, end = span
     return 0 <= start < end and (length is None or end <= length)
+
+
+COUNTERPART_GAP = " … "
+"""Between the pieces of a counterpart that aren't side by side in their
+row ("turn … off")."""
+
+
+@dataclass(frozen=True, slots=True)
+class Counterpart:
+    """What words of a row say in the other row of their clause: `words`,
+    in `language` (None if unknown) - a lookup card's "Here:" line."""
+
+    words: str
+    language: Language | None
+
+
+def counterpart(
+    caption: Caption, rows: Sequence[CaptionRow], index: int, span: tuple[int, int]
+) -> Counterpart | None:
+    """The counterpart of the words at `span` in `rows[index]` (`caption`'s
+    rows, as `caption_rows` gave them): the words of the other row of their
+    clause - the translation shown with it, or, for a translation row, what
+    was said - that the clause's word links join to them (polyglotic-hq
+    328, from 326's design).
+
+    Every link counts, key or minor, drawn or not: the Look's settings and
+    which links the learner sees change only what's drawn. Several pieces
+    come in that row's own order, joined where only spaces lie between
+    them, else with `COUNTERPART_GAP`; punctuation at a piece's ends is
+    left out, and a piece that is nothing but punctuation goes.
+
+    None for none: no link (a particle, a word the translation dropped), no
+    other row (captions only), or a caption still being spoken - its words
+    and links can still change, and an open card doesn't follow them (the
+    marks' rule: finished captions only)."""
+    if caption.live or not 0 <= index < len(rows):
+        return None
+    row = rows[index]
+    if not 0 <= row.clause < len(caption.clauses):
+        return None
+    clause = caption.clauses[row.clause]
+    if row.kind is RowKind.ORIGINAL:
+        partner = next(
+            (
+                r
+                for r in rows
+                if r.clause == row.clause and r.kind is RowKind.TRANSLATION
+            ),
+            None,
+        )
+        if partner is None or partner.language is None:
+            return None
+        language: Language | None = partner.language
+        kept = partner.target or partner.language
+        mine, other = clause.original, clause.translations.get(kept, "")
+        pairs = [(k.original, k.translation) for k in clause.links.get(kept, ())]
+    else:
+        if row.language is None:
+            return None
+        language = caption.language
+        kept = row.target or row.language
+        mine, other = clause.translations.get(kept, ""), clause.original
+        pairs = [(k.translation, k.original) for k in clause.links.get(kept, ())]
+    start, end = span
+    found = sorted(
+        {
+            theirs
+            for ours, theirs in pairs
+            if _fits(ours, len(mine))
+            and _fits(theirs, len(other))
+            and ours[0] < end
+            and start < ours[1]
+        }
+    )
+    words = _pieces(other, found)
+    return Counterpart(words, language) if words else None
+
+
+def _pieces(text: str, spans: Sequence[tuple[int, int]]) -> str:
+    """`text`'s `spans` (in order) as words: side by side or with only
+    spaces between, one piece; trimmed of punctuation; then joined."""
+    merged: list[list[int]] = []
+    for start, end in spans:
+        if merged and not text[merged[-1][1] : start].strip():
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    pieces = (_trimmed(text[start:end]) for start, end in merged)
+    return COUNTERPART_GAP.join(p for p in pieces if p)
+
+
+def _trimmed(text: str) -> str:
+    """`text` without spaces or punctuation at either end."""
+
+    def edge(c: str) -> bool:
+        return c.isspace() or unicodedata.category(c).startswith("P")
+
+    start, end = 0, len(text)
+    while start < end and edge(text[start]):
+        start += 1
+    while end > start and edge(text[end - 1]):
+        end -= 1
+    return text[start:end]
 
 
 def clause_versions(caption: Caption, clause: int) -> dict[str, str]:

@@ -1,26 +1,34 @@
 """Home and the new main window as widgets, offscreen (project 109's
 sections 5, 7 and 10.5)."""
 
+from dataclasses import replace
+
 from PySide6.QtCore import QPoint, QRect, Qt
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QLabel, QWidgetAction
 
+from polyglotic_desktop.core.listening.hidden import Sight
 from polyglotic_desktop.core.releases.updates import UpdateNow
 from polyglotic_desktop.ui_next import style
 from polyglotic_desktop.ui_next.controls import label
 from polyglotic_desktop.ui_next.home import HomePage, StateCard
 from polyglotic_desktop.ui_next.languages import not_offered_note
 from polyglotic_desktop.ui_next.main_window import FLOOR, FRAME, MINIMUM, MainWindow
+from polyglotic_desktop.ui_next.os_words import hotkeys_here as keys
+from polyglotic_desktop.ui_next.os_words import pc_or_mac
 from polyglotic_desktop.ui_next.views.home import (
     AddableApp,
     AppRow,
     AppStatus,
+    Detail,
     HomeState,
     ListeningState,
     Picker,
     PickerView,
+    Title,
     Tone,
+    every_window_paused,
     state_line,
 )
 
@@ -47,6 +55,8 @@ def home(picker: Picker) -> tuple[HomePage, Commands]:
     actions = [QAction(name) for name in ("Pause captions", "Lock", "Hide")]
     for action in actions[1:]:
         action.setCheckable(True)
+    for action, key in zip(actions, "PLH", strict=True):  # as `DesktopApp`'s
+        action.setShortcut(QKeySequence(f"Ctrl+Alt+{key}"))
     pause, lock, hide = actions
     page = HomePage(
         view,
@@ -82,6 +92,52 @@ def test_a_row_per_captioned_app_and_the_add_list(qapp: QApplication) -> None:
         "open_transcript",
         "set_show_mic",
     ]
+
+
+def _shows_whole(found: QLabel) -> bool:
+    """Whether a label shows all its text: on its line, or wrapped onto
+    as many as it needs."""
+    metrics = found.fontMetrics()
+    if found.wordWrap():
+        needed = metrics.boundingRect(
+            QRect(0, 0, found.contentsRect().width(), 10_000),
+            int(Qt.TextFlag.TextWordWrap),
+            found.text(),
+        )
+        return needed.height() <= found.contentsRect().height()
+    return metrics.horizontalAdvance(found.text()) <= found.contentsRect().width()
+
+
+def test_a_paused_rows_line_shows_whole_in_a_narrow_window(
+    qapp: QApplication,
+) -> None:
+    """A hidden window's row says it was paused and how to carry on, all of
+    it, in the main window at its smallest (760 px, its page about 560):
+    the line wraps rather than running under the row's buttons (polyglotic-
+    hq 336: "einblenden, um fortzufahre" cut at the usual 1,000 px in
+    German, and the English line at the smallest)."""
+    paused = AppRow(
+        "discord",
+        "Discord",
+        "#4dd0e1",
+        AppStatus.PLAYING,
+        sight=Sight.PAUSED,
+        paused_after=15,
+    )
+    captioning = AppRow(
+        "player", "Player", "#a5d66f", AppStatus.PLAYING, sight=Sight.CAPTIONING
+    )
+    page, _ = home(Picker(captioned=(paused, captioning)))
+    page.resize(FLOOR[0] - 200, 700)
+    page.show()
+    qapp.processEvents()
+    row = page.picker_card.rows["discord"]
+    assert row.status.text() == "paused after 15 minutes hidden - show it to carry on"
+    assert _shows_whole(row.status)
+    assert _shows_whole(page.picker_card.rows["player"].status)
+    assert row.status.geometry().bottom() <= row.contentsRect().bottom()
+    page.close()
+    page.deleteLater()
 
 
 def test_a_double_click_on_plus_or_x_does_it_once(qapp: QApplication) -> None:
@@ -253,15 +309,56 @@ def test_rename_inline(qapp: QApplication) -> None:
 
 
 def test_everything_the_pc_plays_replaces_the_rows(qapp: QApplication) -> None:
-    page, _ = home(
+    """A new learner's first launch (polyglotic-hq 484): its row, what it
+    takes in - a call's voices too, said plainly - and one click on an app
+    playing captions that app instead."""
+    everything = pc_or_mac("Everything the PC plays", "Everything the Mac plays")
+    page, commands = home(
         Picker(
-            captioned=(AppRow("system", "This PC", "#fff", AppStatus.EVERYTHING),),
+            captioned=(AppRow("system", everything, "#fff", AppStatus.EVERYTHING),),
+            available=(AddableApp("Zoom", "Zoom", True),),
             whole_system=True,
         )
     )
     card = page.picker_card
-    assert card.count.text() == "This PC" and card.adding.isHidden()
+    page.show()
+    assert card.count.text() == ""  # its row says it
     assert card.rows["system"].stop.isHidden()  # Apps | Everything switches it
+    said = card.everything_said
+    assert said.isVisible() and "a call's voices too" in said.text()
+    assert "one app instead" in said.text()
+    assert card.adding.isVisible()
+    assert card.add_title.text() == "Caption one app instead"
+    card.add_rows["Zoom"].add.click()
+    assert commands.asked == [("add", ("Zoom",))]
+    page.close()
+
+
+def test_with_apps_alone_the_line_goes(qapp: QApplication) -> None:
+    page, _ = home(Picker(captioned=(_row("discord"),)))
+    card = page.picker_card
+    page.show()
+    assert not card.everything_said.isVisible()
+    assert card.add_title.text() == "Add an app"
+    page.close()
+
+
+def test_where_apps_cant_be_alone_it_says_only_what_is_captioned(
+    qapp: QApplication,
+) -> None:
+    page, _ = home(
+        Picker(
+            captioned=(AppRow("system", "x", "#fff", AppStatus.EVERYTHING),),
+            whole_system=True,
+            per_app=False,
+        )
+    )
+    card = page.picker_card
+    page.show()
+    assert "a call's voices too" in card.everything_said.text()
+    assert "instead" not in card.everything_said.text()
+    assert card.adding.isHidden()
+    page.close()
 
 
 def test_nothing_captioned_says_so(qapp: QApplication) -> None:
@@ -319,6 +416,28 @@ def test_reconnecting_counts_down_to_the_next_try(qapp: QApplication) -> None:
     assert not card._tick.isActive()
 
 
+def test_every_window_paused_reads_paused_not_listening() -> None:
+    """368 (336's Q2): every captioned app's window paused after being
+    hidden - nothing sent - read "Listening". Paused, and how to go on,
+    only while every one is; a bad connection state still comes first."""
+    paused = AppRow("A", "A", "#fff", AppStatus.PLAYING, sight=Sight.PAUSED)
+    rows = [replace(paused, paused_after=15), replace(paused, key="B", paused_after=30)]
+    assert every_window_paused(rows) == 30
+    assert every_window_paused([*rows, replace(paused, sight=Sight.CAPTIONING)]) is None
+    assert every_window_paused([]) is None
+    listening = HomeState(
+        ListeningState.LISTENING, chosen=True, windows_paused_after=30
+    )
+    line = state_line(listening)
+    assert (line.title, line.tone) == (Title.PAUSED, Tone.WAIT)
+    assert line.details == ((Detail.WINDOWS_PAUSED, 30),)
+    signed_out = replace(listening, connection=ListeningState.SIGN_IN_NEEDED)
+    assert state_line(signed_out).title is Title.NOT_SIGNED_IN
+    assert state_line(replace(listening, windows_paused_after=None)).title is (
+        Title.LISTENING
+    )
+
+
 def test_a_full_server_says_so_on_homes_state_line(qapp: QApplication) -> None:
     """203's item 4: the server full read "Reconnecting", like the learner's
     own connection. Now "The server is busy", counting down (208)."""
@@ -340,7 +459,7 @@ def test_paused_home_says_how_to_resume(qapp: QApplication) -> None:
     page, _ = home(Picker())
     page.show_state(HomeState(ListeningState.LISTENING, chosen=True, paused=True))
     assert page.state.title_label.text() == "Paused"
-    assert page.state.detail.text() == "resume with Ctrl+Alt+P, or from the tray"
+    assert page.state.detail.text() == keys("resume with Ctrl+Alt+P, or from the tray")
 
 
 def test_the_banner_in_the_windows_words(qapp: QApplication) -> None:
@@ -471,7 +590,7 @@ def test_the_theme_is_the_windows_alone(qapp: QApplication) -> None:
     light = style.Theme({"BG": "#ffffff", "TEXT": "#111111"}, "Literata", dark=False)
     window.set_theme(light)
     assert style.current() == light
-    assert "#ffffff" in window.styleSheet() and qapp.styleSheet() == before
+    assert "#ffffff" in window.sidebar.styleSheet() and qapp.styleSheet() == before
     style.use(style.Theme())
 
 
@@ -605,3 +724,35 @@ def test_failing_never_turns_a_worse_state_better() -> None:
     assert reconnecting.tone is Tone.WAIT
     signed_out = state_line(HomeState(ListeningState.SIGN_IN_NEEDED, failing=True))
     assert signed_out.tone is Tone.BAD
+
+
+def test_home_names_only_the_hotkeys_that_work(qapp: QApplication) -> None:
+    """polyglotic-hq 400 (found by 398): a hotkey another app has, or that was
+    never registered - 398's preview build registers none - is cleared from
+    its action (`DesktopApp.hotkeys_not_working`), and Home still said
+    "Ctrl+Alt+L" on Lock all, "Ctrl+Alt+H" on Hide all and a hidden window,
+    and "resume with Ctrl+Alt+P" - keys that did nothing."""
+    page, _ = home(Picker(captioned=(_row("discord"),), hidden=True))
+    page.show_state(HomeState(ListeningState.LISTENING, chosen=True, paused=True))
+    row = page.picker_card.rows["discord"]
+    assert page.lock.toolTip() == keys("Ctrl+Alt+L")
+    assert page.hide_all.toolTip() == keys("Ctrl+Alt+H")
+    assert row.captions.toolTip() == keys("Hidden - Ctrl+Alt+H")
+
+    pause, lock, hide = page._actions  # type: ignore[attr-defined]
+    for action in (pause, lock, hide):
+        action.setShortcut(QKeySequence())  # as `hotkeys_not_working` does
+    shown = [
+        page.lock.toolTip(),
+        page.hide_all.toolTip(),
+        row.captions.toolTip(),
+        page.state.detail.text(),
+    ]
+    assert not any(keys("Ctrl+Alt+L")[:-1] in text for text in shown), shown
+    assert page.state.detail.text() == "resume here or from the tray"
+    assert row.captions.toolTip() == "Hidden - turn off Hide all to show it"
+
+    lock.setShortcut(QKeySequence("Ctrl+Alt+L"))  # one that works is named
+    assert page.lock.toolTip() == keys("Ctrl+Alt+L") and not page.hide_all.toolTip()
+    page.close()
+    page.deleteLater()

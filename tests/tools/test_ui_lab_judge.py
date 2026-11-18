@@ -5,10 +5,11 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
-from PySide6.QtGui import QImage
+from PySide6.QtGui import QColor, QImage
 from PySide6.QtWidgets import QApplication, QLabel, QToolButton, QWidget
 from tools.ui_lab import __main__ as cli
 from tools.ui_lab import goldens, judge, lab, new_parts
+from tools.ui_lab.checks import Finding
 
 
 @pytest.fixture
@@ -74,6 +75,54 @@ def test_the_judge_writes_its_kit(
     assert "'Overlay' says \"overlay\"" in written
     assert "# The checklist" in written
     assert "accessible_name" in (out / "findings.md").read_text(encoding="utf-8")
+    drawn = QImage(str(out / "annotated" / "ui_next.w1_one.png"))
+    assert drawn.height() > 50  # the picture and its findings, listed under it
+
+
+def _marked(picture: QImage, x: int, y: int) -> bool:
+    return picture.pixelColor(x, y) == QColor(judge.MARK)
+
+
+def test_a_states_findings_are_drawn_on_its_picture() -> None:
+    """Each finding with a place is a numbered box on the state's picture,
+    and every finding is listed under it (polyglotic-hq 376)."""
+    photo = QImage(300, 120, QImage.Format.Format_RGB32)
+    photo.fill(QColor("#101010"))
+    result = lab.Result("ui_next.w1_one", gated=True, photo=photo)
+    result.design = [
+        Finding("type_scale", "one (QLabel)", "19 px", box=(100, 40, 60, 20)),
+        Finding("accent_count", "one (QLabel)", "4 accent hues"),  # no place
+    ]
+    result.findings = [
+        Finding("accessible_name", "QToolButton", "no name", box=(200, 80, 24, 24)),
+        Finding("contrast", "one", "2:1", waived="the bare surface", box=(0, 0, 9, 9)),
+    ]
+    picture = judge.annotated(result)
+    assert picture is not None
+    assert picture.width() == judge.LEGEND_WIDTH  # room for the legend's lines
+    assert picture.height() > photo.height() + 3 * judge.LEGEND_LINE  # three listed
+    assert picture.pixelColor(150, 50) == QColor("#101010")  # the picture, untouched
+    assert _marked(picture, 130, 38) and _marked(picture, 130, 60)  # the first's box
+    assert _marked(picture, 98, 50) and _marked(picture, 160, 50)
+    assert _marked(picture, 210, 78)  # the code check's box
+    assert not _marked(picture, 4, 10)  # a waived finding isn't drawn
+
+
+def test_a_state_with_no_findings_has_no_annotated_picture() -> None:
+    photo = QImage(300, 120, QImage.Format.Format_RGB32)
+    clean = lab.Result("ui_next.w1_one", gated=True, photo=photo)
+    assert judge.annotated(clean) is None
+    assert judge.annotated(lab.Result("ui_next.w1_two", gated=True)) is None
+
+
+def test_a_box_at_the_pictures_edge_keeps_its_number_inside() -> None:
+    photo = QImage(200, 100, QImage.Format.Format_RGB32)
+    photo.fill(QColor("#101010"))
+    result = lab.Result("ui_next.w1_one", gated=True, photo=photo)
+    result.design = [Finding("cramped", "one", "1 px", box=(180, 0, 30, 30))]
+    picture = judge.annotated(result)
+    assert picture is not None
+    assert _marked(picture, 190, 5)  # the tag: inside the top right corner
 
 
 def test_the_joined_window_is_a_surface_of_its_own() -> None:

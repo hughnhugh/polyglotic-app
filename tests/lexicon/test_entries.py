@@ -48,3 +48,16 @@ def test_the_level_picker_offers_each_scheme_with_its_labels() -> None:
     assert DEFAULT_CHINESE_SCHEME is HSK_2025  # the user's choice, 2026-11-04
     assert HSK_2025.levels[-1] == "7-9"
     assert len(ENGLISH_FREQUENCY.levels) == len(ENGLISH_FREQUENCY.cutoffs)
+
+
+def test_a_syllabus_entry_says_how_many_words_its_level_holds() -> None:
+    """What places a word beside its rank (polyglotic-hq 323): HSK 2025's
+    level 3 is about 1,000 words. A frequency band says nothing more than
+    the rank does; the 2021 standard has no sizes kept."""
+    hobby = entry(6000, hsk_2025=3, hsk_2021=2)
+    assert hobby.facts("hsk-2025").level_words == 1000
+    assert hobby.facts("hsk-2025").level == 3
+    assert hobby.facts("hsk-2021").level_words is None
+    assert hobby.facts("en-frequency").level_words is None
+    assert entry(6000).facts("hsk-2025").level_words is None  # not listed
+    assert entry(40, hsk_2025=7).facts("hsk-2025").level_words == 11000

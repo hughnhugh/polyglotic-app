@@ -34,8 +34,9 @@ from polyglotic_desktop.core.shared.papers import (
     PRIVACY_NOTICE,
     TESTER_AGREEMENT,
 )
-from polyglotic_desktop.ui_next.controls import Card, label, page_button
+from polyglotic_desktop.ui_next.controls import Card, label, page_button, right_row
 from polyglotic_desktop.ui_next.home import Page, sign_in_needed
+from polyglotic_desktop.ui_next.os_words import pc_or_mac
 from polyglotic_desktop.ui_next.plan import get_plus_text, plan_text
 from polyglotic_desktop.ui_next.views.plan import PlanLine
 
@@ -63,15 +64,6 @@ def _button(action: QAction) -> QPushButton:
     return button
 
 
-def _right(*buttons: QPushButton) -> QHBoxLayout:
-    row = QHBoxLayout()
-    row.setSpacing(8)
-    row.addStretch(1)
-    for button in buttons:
-        row.addWidget(button)
-    return row
-
-
 class AccountPage(Page):
     """Signing in and out, what's shared, deleting learning data, feedback."""
 
@@ -87,7 +79,7 @@ class AccountPage(Page):
             "account.delete_learning", _tr("Delete learning data…")
         )
 
-        this_pc = Card(_tr("This PC"))
+        this_pc = Card(pc_or_mac(_tr("This PC"), _tr("This Mac")))
         row = QHBoxLayout()
         row.setSpacing(8)
         self.state = label("", wrap=True)
@@ -101,9 +93,6 @@ class AccountPage(Page):
         row.addWidget(self.sign_out_button)
         this_pc.add(row)
         self.account_id = label("", "Dim", wrap=True)
-        self.account_id.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-        )
         this_pc.add(self.account_id)
         self.content.addWidget(this_pc)
 
@@ -126,20 +115,29 @@ class AccountPage(Page):
                 "share: usage statistics, crash reports, how often you hear words."
             ),
         )
-        shared.add(_right(_button(self.your_data)))
+        shared.add(right_row(_button(self.your_data)))
         self.content.addWidget(shared)
 
         learning = Card(
             _tr("Your learning data"),
-            _tr(
-                "The words you look up, save and mark are kept on our server as "
-                "dictionary words and times: saved words and statuses follow you "
-                "to another PC, and lookups show us how people learn. You can "
-                "delete them there, in every language you learn - and on this PC "
-                "too, if you choose."
+            pc_or_mac(
+                _tr(
+                    "The words you look up, save and mark are kept on our server as "
+                    "dictionary words and times: saved words and statuses follow you "
+                    "to another PC, and lookups show us how people learn. You can "
+                    "delete them there, in every language you learn - and on this PC "
+                    "too, if you choose."
+                ),
+                _tr(
+                    "The words you look up, save and mark are kept on our server as "
+                    "dictionary words and times: saved words and statuses follow you "
+                    "to another computer, and lookups show us how people learn. You "
+                    "can delete them there, in every language you learn - and on this "
+                    "Mac too, if you choose."
+                ),
             ),
         )
-        learning.add(_right(_button(self.delete_learning)))
+        learning.add(right_row(_button(self.delete_learning)))
         self.content.addWidget(learning)
 
         papers = Card(
@@ -147,7 +145,7 @@ class AccountPage(Page):
             _tr("What we keep and why, and what you agreed to as a tester."),
         )
         papers.add(
-            _right(
+            right_row(
                 page_button(
                     _tr("Privacy notice"), PRIVACY_NOTICE, "account.privacy_notice"
                 ),
@@ -184,12 +182,12 @@ class AccountPage(Page):
             button.setCursor(Qt.CursorShape.PointingHandCursor)
             button.clicked.connect(action.trigger)
             buttons.append(button)
-        card.add(_right(*buttons))
+        card.add(right_row(*buttons))
         self.content.insertWidget(self.content.count() - 1, card)
 
     def set_signed_in(self, signed_in: bool) -> None:
         self.state.setText(
-            _tr("Signed in on this PC.")
+            pc_or_mac(_tr("Signed in on this PC."), _tr("Signed in on this Mac."))
             if signed_in
             else _tr("Not signed in - {needed}.").format(needed=sign_in_needed())
         )

@@ -182,14 +182,18 @@ class _Together(QWidget):
         self.box = window.geometry().united(popover.geometry())
         self.resize(self.box.size())
 
+    def places(self) -> list[tuple[QWidget, QPoint, float]]:
+        """Each window and where it's drawn (`checks.place_in`)."""
+        return [
+            (shown, shown.geometry().topLeft() - self.box.topLeft(), 1.0)
+            for shown in (self.window_, self.popover)
+        ]
+
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.fillRect(self.rect(), SCENE)
-        for shown in (self.window_, self.popover):
-            offset = shown.geometry().topLeft() - self.box.topLeft()
-            shown.render(
-                painter, QPoint(offset), QRegion(), QWidget.RenderFlag.DrawChildren
-            )
+        for shown, at, _scale in self.places():
+            shown.render(painter, at, QRegion(), QWidget.RenderFlag.DrawChildren)
         painter.end()
 
 

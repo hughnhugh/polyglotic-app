@@ -2,12 +2,13 @@
 
 The learner's level, the word statuses they set (and those Learning
 estimated from a lookup), saved words with their categories and source
-sentences, exposure counts, and each day's coverage and listening time.
+sentences, saved sentences, exposure counts, each day's coverage and listening time, and
+the learning load's words.
 Core's Learning reads it all once at start
 and writes each change through this port; it gives the values their
-meaning (statuses, sources, the level curve).
+meaning (statuses, sources, the known line).
 
-Privacy (DOMAIN.md, "Data and privacy"): a saved word's source sentence,
+Privacy (DOMAIN.md, "Data and privacy"): a saved word's source sentence, saved sentences,
 the exposure counts and the days' coverage and listening stay on this PC. What goes to the server - entry
 IDs and times - is sent by the connection, not read from here.
 """
@@ -17,13 +18,15 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Protocol
+from typing import NamedTuple, Protocol
 
 
 @dataclass(frozen=True)
 class StoredLevel:
-    """The learner's level as a curve: a level scheme (`hsk-2025`) and the
-    point on its scale where they know about half the words."""
+    """The learner's level, as two values (from when it was a curve):
+    `words` and how many of the most common words they know; or a level
+    scheme (`hsk-2025`) and the point half a level above the level picked
+    (`core.learning.levels.KnownLine.stored`)."""
 
     scheme: str
     midpoint: float
@@ -70,6 +73,35 @@ class StoredSavedWord:
 
 
 @dataclass(frozen=True)
+class StoredSentencePart:
+    """A clause of a saved sentence: what was said (as much as was
+    selected), its translation, the word links between them - each
+    `(original start, end, translation start, end, key)` - and the
+    speaker's label."""
+
+    original: str
+    translation: str
+    links: tuple[tuple[int, int, int, int, bool], ...]
+    speaker: str
+
+
+@dataclass(frozen=True)
+class StoredSentence:
+    """A saved sentence (polyglotic-hq 459, version 9): each side's text,
+    its parts, the language of its translation ("" for none), its
+    category, and when it was saved (the user's own data, kept on this
+    PC)."""
+
+    id: str
+    original: str
+    translation: str
+    parts: tuple[StoredSentencePart, ...]
+    translation_language: str
+    category_id: str
+    saved_at: datetime
+
+
+@dataclass(frozen=True)
 class StoredDeckWord:
     """A word the learner put in the deck, with the line it was in when they
     did (`sentence`, `translation`: the user's own data, kept on this PC)
@@ -88,17 +120,37 @@ class StoredDeckWord:
 
 @dataclass(frozen=True)
 class StoredAnkiExport:
-    """When a word was last written to an Anki file."""
+    """When a word was last written to an Anki file of a kind (`kind`:
+    "deck" or "csv" - each remembers its own, polyglotic-hq 368)."""
 
     entry_id: str
     exported_at: datetime
+    kind: str = "deck"
 
 
 @dataclass(frozen=True)
-class StoredExposures:
+class StoredLookups:
+    """How often a word was looked up on this PC and when last
+    (polyglotic-hq 373, version 8): pinned (a click) and on hover;
+    `pinned_since_known`: pinned lookups since the learner last said they
+    know it."""
+
+    entry_id: str
+    pinned: int
+    hovered: int
+    last_at: datetime
+    pinned_since_known: int = 0
+
+
+class StoredExposures(NamedTuple):
     """How many finished captions an entry was heard in: from what the PC
     played (`heard`), from the user's own mic (`heard_by_you`), and from
-    the PC since it last went into the deck (`heard_in_deck`)."""
+    the PC since it last went into the deck (`heard_in_deck`).
+
+    A named tuple, not a dataclass like the rest: there's one for every
+    word met, all read at start - 30,000 for a long-time learner - and a
+    frozen dataclass takes about three times as long to make
+    (polyglotic-hq 314)."""
 
     entry_id: str
     heard: int
@@ -133,6 +185,28 @@ class StoredListening:
     seconds: float
 
 
+class StoredLoadWord(NamedTuple):
+    """A word the learning load keeps (polyglotic-hq 324;
+    `core.learning.load`): whether it is in the load (`standing`: `in`,
+    `waiting`, `set_aside`, `graduated`), its stage (0 red, 1 orange, 2
+    yellow, 3 green, 4 ready to check), the meetings in that stage,
+    whether the learner added it by hand, its place on the words scale
+    when it entered, and when it entered, last counted a meeting and graduated
+    (UTC). Never sent anywhere.
+
+    A named tuple: a load is 500 of them, read at start."""
+
+    entry_id: str
+    standing: str
+    stage: int
+    meetings: int
+    by_hand: bool
+    place: int | None
+    entered_at: datetime
+    last_met: datetime | None = None
+    graduated_at: datetime | None = None
+
+
 @dataclass(frozen=True)
 class LearningSnapshot:
     """Everything stored, as read at start. `level` is None until the
@@ -147,6 +221,8 @@ class LearningSnapshot:
     anki_exports: Sequence[StoredAnkiExport] = ()
     coverage: Sequence[StoredCoverage] = ()
     listening: Sequence[StoredListening] = ()
+    load_words: Sequence[StoredLoadWord] = ()
+    lookups: Sequence[StoredLookups] = ()
 
 
 class LearningDataProblem(StrEnum):
@@ -188,6 +264,12 @@ class LearningStore(Protocol):
 
     def save_level(self, level: StoredLevel) -> None: ...
 
+    def clear_level(self) -> None:
+        """No level kept any more - the learner took back a quick mark
+        made before they set one (polyglotic-hq 342): `load` reads None,
+        and so does a store started again."""
+        ...
+
     def save_status(self, status: StoredStatus) -> None:
         """Adds or replaces the entry's status."""
         ...
@@ -197,7 +279,7 @@ class LearningStore(Protocol):
         ...
 
     def delete_category(self, category_id: str) -> None:
-        """Deletes the category and every word saved in it."""
+        """Deletes the category and every word and sentence saved in it."""
         ...
 
     def save_word(self, word: StoredSavedWord) -> None:
@@ -205,6 +287,19 @@ class LearningStore(Protocol):
         ...
 
     def delete_word(self, entry_id: str) -> None: ...
+
+    def saved_sentences(self) -> Sequence[StoredSentence]:
+        """The saved sentences that can be read - read when they're first
+        wanted, not at the start (`load`): a learner's thousands of them
+        would slow every start (polyglotic-hq 459). One that can't be read
+        is left out and kept, as `load` leaves a row out."""
+        ...
+
+    def save_sentence(self, sentence: StoredSentence) -> None:
+        """Adds or replaces the saved sentence."""
+        ...
+
+    def delete_sentence(self, sentence_id: str) -> None: ...
 
     def save_deck_word(self, word: StoredDeckWord) -> None:
         """Adds or replaces the entry's deck word."""
@@ -216,9 +311,21 @@ class LearningStore(Protocol):
         """Adds or replaces these entries' export times."""
         ...
 
+    def save_load_words(self, words: Sequence[StoredLoadWord]) -> None:
+        """Adds or replaces these words of the learning load, together."""
+        ...
+
+    def delete_load_words(self, entry_ids: Sequence[str]) -> None:
+        """Deletes these words of the learning load."""
+        ...
+
+    def save_lookups(self, lookups: StoredLookups) -> None:
+        """Adds or replaces a word's lookups (polyglotic-hq 373)."""
+        ...
+
     def forget_entry(self, entry_id: str) -> None:
-        """Deletes the entry's status, saved word, deck word, export time and
-        exposure counts (not
+        """Deletes the entry's status, saved word, deck word, export time,
+        exposure counts, lookups and its place in the learning load (not
         its daily counts) - for an entry merged into another, once its data
         has been saved under the new ID."""
         ...
@@ -265,8 +372,9 @@ class LearningStore(Protocol):
         ...
 
     def delete_learning_data(self) -> None:
-        """Deletes every status, saved word, deck word, export time, exposure
-        count, daily count, day's coverage and listening - the learner
+        """Deletes every status, saved word, saved sentence, deck word,
+        export time, exposure count, daily count, day's coverage and
+        listening, lookup count, and the learning load's words - the learner
         deleted their learning data. The level and the categories stay.
         None of what's deleted stays readable in the store's files, and any
         copy of the store set aside after damage (`SetAsideLearningData`) is

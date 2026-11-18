@@ -30,6 +30,10 @@ from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import datetime
 
+from polyglotic_desktop.core.listening.caption_model import (
+    CaptionModel,
+    caption_model,
+)
 from polyglotic_desktop.core.listening.captions import (
     CaptionUpdate,
     Clause,
@@ -39,11 +43,13 @@ from polyglotic_desktop.core.listening.delays import CaptionDelay, delay
 from polyglotic_desktop.core.listening.display import (
     CaptionRow,
     DisplayOptions,
+    RowKind,
     caption_rows,
 )
 from polyglotic_desktop.core.listening.history import Caption, CaptionHistory
 from polyglotic_desktop.core.listening.sources import SourceId, SourceLabel
 from polyglotic_desktop.core.listening.timing import CaptionId
+from polyglotic_desktop.ui_next.views.pour import matching_cuts
 from polyglotic_desktop.ui_next.views.scroll import Scroll
 
 DELAYS_KEPT = 512
@@ -57,6 +63,14 @@ TRANSCRIPT_LINES = 1_000
 """Lines a transcript lists - laid out, searched and scrolled through; the
 surfaces' budgets hold at this many."""
 
+TRANSCRIPT_MOST_LINES = 10_000
+"""The most lines a transcript lists when the learner keeps three hours or
+the whole session in it (polyglotic-hq 334): about eight hours of a
+lecture's constant speech, at 20 captions a minute. Each caption update
+costs a transcript about 0.15 ms per 1,000 lines it lists (measured,
+2026-11-14): 1.5 ms at this many, inside a new caption's budget; past it
+the oldest lines are in Copy all and Save only (`SESSION_LINES`)."""
+
 SESSION_LINES = 50_000
 """Lines a transcript keeps for Copy all and Save: the whole session (a
 film, a long call) - about two days of constant speech - kept as text
@@ -65,7 +79,16 @@ keeps an app left captioning for days from growing without end."""
 
 TEXT_SIZES = (0.7, 2.0)
 """The smallest and largest text size, as a scale of the base size (as
-today's setting)."""
+today's setting): a transcript's."""
+CAPTION_TEXT_SIZES = (0.6, 4.0)
+"""A caption window's (the user, 2026-11-14: "maximal logical
+customisation for caption and translation text sizes"; polyglotic-hq 305).
+60 %: 12.6 px at the base 21 px - the 12 px the app's smallest text keeps
+(the lookup card's floor), Windows' 9 pt. 400 %: the largest at which a
+caption of two short lines (a 37-character English sentence and its
+12 Chinese characters, label and all) still fits a full-width 1080p window
+at its default height, 300 px - each line on one row (measured with real
+fonts: 299 px tall at 400 %, one row each up to 530 %)."""
 
 
 _NO_TRANSLATION = Language("")
@@ -100,6 +123,13 @@ class Line:
     label_color: str = ""
     heard: tuple[Language, ...] = ()
     checked: bool = False
+    model: CaptionModel | None = None
+    """The caption's model (polyglotic-hq 340, `CaptionLines.set_models`):
+    what the one layout composes."""
+    cuts: tuple[tuple[tuple[int, int], ...], ...] = ()
+    """By clause: where its original and its translation can both be
+    cut (`views.pour.matching_cuts`) - only when the surface pours
+    line by line (`CaptionLines.set_cuts`); empty otherwise."""
 
 
 @dataclass(frozen=True)
@@ -156,7 +186,9 @@ class CaptionLines:
         text_size: float = 1.0,
         labels: Labels | None = None,
         finished_only: bool = False,
+        cuts: bool = False,
         clock: Callable[[], datetime] | None = None,
+        sizes: tuple[float, float] = TEXT_SIZES,
     ) -> None:
         """`sources`: whose captions show. `target`: the one translation
         shown, None for captions only. `keep`: lines kept, oldest dropped
@@ -167,11 +199,16 @@ class CaptionLines:
         sources that are the user's own mic. `finished_only`: no line for a
         caption still being spoken (a transcript's). `clock`: when captions
         arrive - by default now (the lab's made-up times are the same every
-        run)."""
+        run). `sizes`: the text size's range (a caption window's is
+        CAPTION_TEXT_SIZES)."""
         self.sources = frozenset(sources)
+        self.sizes = sizes
         self.keep = keep
         """Lines kept: no surface shows more of this view's than these."""
         self._finished_only = finished_only
+        self._cuts = cuts
+        self._models = False
+        self._modelled: tuple[Language | None, Language | None] = (None, None)
         self.scroll = Scroll()
         self.revision = 0
         self._history = (
@@ -183,7 +220,7 @@ class CaptionLines:
         self._second = second
         self._options = options or DisplayOptions()
         self._labels = labels or Labels()
-        self._text_size = _clamped(text_size)
+        self._text_size = _clamped(text_size, sizes)
         self._lines: tuple[Line, ...] = ()
         self._built: dict[int, tuple[Caption, Line]] = {}
         self._delays: dict[CaptionId, CaptionDelay] = {}
@@ -208,6 +245,13 @@ class CaptionLines:
     def target(self) -> Language | None:
         """The one translation shown; None: captions only."""
         return self._target
+
+    @property
+    def fallbacks(self) -> tuple[Language, ...]:
+        """The translation target and the second language - in that order,
+        those set: the dictionaries a lookup tries after its row's
+        (polyglotic-hq 337)."""
+        return tuple(x for x in (self._target, self._second) if x is not None)
 
     @property
     def text_size(self) -> float:
@@ -259,6 +303,16 @@ class CaptionLines:
 
     # -- the learner's choices -----------------------------------------------------
 
+    @property
+    def settle_after(self) -> float:
+        """How long shown text may still change, in seconds."""
+        return self._history.settle_after
+
+    def set_settle_after(self, seconds: float) -> None:
+        """How long shown text may still change (the caption history's;
+        polyglotic-hq 309). Nothing shown changes for it."""
+        self._history.set_settle_after(seconds)
+
     def set_language(
         self, target: Language | None, second: Language | None = None
     ) -> None:
@@ -275,6 +329,23 @@ class CaptionLines:
         self._options = options
         self._rebuild(everything=True)
 
+    def set_cuts(self, on: bool) -> None:
+        """Whether each line says where its clauses and their translations
+        can both be cut (`Line.cuts`): for a surface that pours them line
+        by line (the Lab's, polyglotic-hq 309)."""
+        if on == self._cuts:
+            return
+        self._cuts = on
+        self._rebuild(everything=True)
+
+    def set_models(self, on: bool) -> None:
+        """Whether each line carries its caption's model, for a surface
+        laid out by the one layout (polyglotic-hq 340)."""
+        if on == self._models:
+            return
+        self._models = on
+        self._rebuild(everything=True)
+
     def set_labels(self, labels: Labels) -> None:
         """What the line above each caption says."""
         if labels == self._labels:
@@ -282,15 +353,25 @@ class CaptionLines:
         self._labels = labels
         self._rebuild(everything=True)
 
+    def set_limits(self, keep: int, keep_for: float | None = None) -> None:
+        """Lines kept from now on: at most `keep`, and with `keep_for` only
+        those whose caption first appeared in that many seconds - what's
+        past them goes at once (into `earlier`, if it keeps any), and lines
+        dropped before come back from it under a raised limit (a
+        transcript's length, polyglotic-hq 334)."""
+        self.keep = keep
+        self._history.set_limits(keep, keep_for)
+        self._history_changed()
+
     def show_sources(self, sources: Collection[SourceId]) -> None:
         """Whose captions show from now on (the user's own mic shown or
         not). Lines already kept stay."""
         self.sources = frozenset(sources)
 
     def set_text_size(self, size: float) -> None:
-        """The text size, as a scale of the base size, kept in TEXT_SIZES.
+        """The text size, as a scale of the base size, kept in `sizes`.
         No line changes; the widget lays out what shows again."""
-        size = _clamped(size)
+        size = _clamped(size, self.sizes)
         if size != self._text_size:
             self._text_size = size
             self.revision += 1
@@ -319,6 +400,7 @@ class CaptionLines:
                 line = self._line(caption)
             built[caption.key] = (caption, line)
             lines.append(line)
+        self._modelled = (self._target, self._second)
         self._history_version = self._history.version
         kept = tuple(lines)
         if not everything and _same(kept, self._lines):
@@ -334,6 +416,19 @@ class CaptionLines:
             rows = caption_rows(caption, _NO_TRANSLATION, None, options)
         else:
             rows = caption_rows(caption, self._target, self._second, self._options)
+        model = None
+        if self._models:
+            before = self._built.get(caption.key)
+            old = before[1].model if before is not None else None
+            if (
+                before is not None
+                and before[0] is caption
+                and old is not None
+                and self._modelled == (self._target, self._second)
+            ):
+                model = old  # the same caption: a label or an option changed
+            else:
+                model = caption_model(caption, self._target, self._second, old)
         label, color = self._labels.of(caption, self._delays.get(caption.caption_id))
         return Line(
             key=caption.key,
@@ -349,7 +444,36 @@ class CaptionLines:
             heard=caption.languages_heard
             or ((caption.language,) if caption.language else ()),
             checked=caption.checked,
+            model=model,
+            cuts=_cuts(caption, rows) if self._cuts else (),
         )
+
+
+def _cuts(
+    caption: Caption, rows: Sequence[CaptionRow]
+) -> tuple[tuple[tuple[int, int], ...], ...]:
+    """By clause, where a settled clause shown with its translation can be
+    cut in both (`matching_cuts`, from its word links - whether or not
+    they're drawn)."""
+    originals = {row.clause for row in rows if row.kind is RowKind.ORIGINAL}
+    found: list[tuple[tuple[int, int], ...]] = [()] * len(caption.clauses)
+    last = len(caption.clauses) - 1
+    for row in rows:
+        n = row.clause
+        if (
+            row.kind is not RowKind.TRANSLATION
+            or n not in originals
+            or row.language is None
+            or (caption.live and n == last)
+        ):
+            continue
+        clause = caption.clauses[n]
+        links = [
+            (link.original, link.translation)
+            for link in clause.links.get(row.language, ())
+        ]
+        found[n] = matching_cuts(clause.original, row.text, links)
+    return tuple(found)
 
 
 def _same(a: tuple[Line, ...], b: tuple[Line, ...]) -> bool:
@@ -357,6 +481,6 @@ def _same(a: tuple[Line, ...], b: tuple[Line, ...]) -> bool:
     return len(a) == len(b) and all(x is y for x, y in zip(a, b, strict=True))
 
 
-def _clamped(size: float) -> float:
-    low, high = TEXT_SIZES
+def _clamped(size: float, sizes: tuple[float, float]) -> float:
+    low, high = sizes
     return round(min(high, max(low, size)), 2)

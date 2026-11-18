@@ -5,7 +5,8 @@ and stops at the first broken link, naming its likely fix:
 
 1. signed in and connected;
 2. something is ticked to caption (an app, everything the PC plays, the mic);
-3. sound from it in the last 30 seconds;
+3. sound from it in the last 30 seconds - or, at once, that the OS doesn't
+   allow the app to hear it (macOS' permissions: polyglotic-hq 411);
 4. speech heard in that sound;
 5. captions drawn - and not failing on the server (`failing`: several
    finished captions in a row answered `processing_failed`, as the caption
@@ -68,6 +69,8 @@ class Problem(StrEnum):
     APP_QUIET = "app_quiet"
     SYSTEM_QUIET = "system_quiet"
     MIC_QUIET = "mic_quiet"
+    SOUND_NOT_ALLOWED = "sound_not_allowed"  # the Mac's permission (411)
+    MIC_NOT_ALLOWED = "mic_not_allowed"
     NO_SPEECH = "no_speech"
     PAUSED = "paused"
     OVERLAYS_HIDDEN = "overlays_hidden"
@@ -88,12 +91,16 @@ class Ticked:
 @dataclass(frozen=True)
 class SourceActivity:
     """What a source being captured has done, in monotonic seconds: when it
-    started, and when sound and speech were first and last heard."""
+    started, and when sound and speech were first and last heard.
+    `not_allowed`: its capture gets only silence because the learner hasn't
+    allowed the app to hear it (`ports.capture.NOT_ALLOWED`: macOS'
+    permissions, polyglotic-hq 411)."""
 
     started: float
     first_sound: float | None = None
     last_sound: float | None = None
     last_speech: float | None = None
+    not_allowed: bool = False
 
 
 @dataclass(frozen=True)
@@ -195,6 +202,15 @@ def _sound(facts: Facts) -> Link:
     heard = _heard(facts, speech=False)
     if heard:
         return Link(Step.SOUND, Status.OK, source=heard[0][0].name)
+    for source in facts.ticked:  # no waiting: it won't hear anything until allowed
+        act = facts.activity.get(source.id)
+        if act is not None and act.not_allowed:
+            problem = (
+                Problem.MIC_NOT_ALLOWED
+                if source.kind == "mic"
+                else Problem.SOUND_NOT_ALLOWED
+            )
+            return Link(Step.SOUND, Status.BROKEN, problem, source.name)
     for source in facts.ticked:
         act = facts.activity.get(source.id)
         if act is not None and facts.now - act.started < SOUND_WINDOW:

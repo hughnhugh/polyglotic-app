@@ -11,7 +11,10 @@ on):
   catch-all - our server is down, and the learner's internet works;
 - **something else answered**: a 403, a 407, a page instead of the
   WebSocket, a proxy refusing to connect - a proxy or firewall is blocking;
-- **TLS failed**: on the certificate's dates, this PC's clock; otherwise
+- **TLS failed**: on the certificate's dates - still, after the try that
+  checks the leaf's dates itself (connection.tls, decision 0104) - this
+  PC's clock when it's before the app was built, else something in the way
+  with an out-of-date certificate of its own; otherwise
   something on the network is in the way (an antivirus, a Wi-Fi sign-in
   page, a plain-HTTP answer);
 - **nothing answered in time**, or the connection was cut before an
@@ -35,14 +38,9 @@ from websockets.exceptions import (
     ProxyError,
 )
 
-from polyglotic_desktop.connection import protocol
+from polyglotic_desktop.connection import protocol, tls
 from polyglotic_desktop.connection.reconnect import GOING_AWAY, SERVER_ERROR, Refusal
 from polyglotic_desktop.core.listening.unreachable import Unreachable
-
-CERT_NOT_YET_VALID = 9
-CERT_HAS_EXPIRED = 10
-"""OpenSSL's verify codes for a certificate outside its dates
-(X509_V_ERR_CERT_NOT_YET_VALID, X509_V_ERR_CERT_HAS_EXPIRED)."""
 
 NO_ROUTE = {errno.ENETUNREACH, errno.EHOSTUNREACH, errno.ENETDOWN}
 """No network, or no way to it (Windows' WSAENETUNREACH, WSAEHOSTUNREACH
@@ -55,10 +53,9 @@ a rate limit - besides every 5xx."""
 
 def why_not_opened(error: BaseException) -> Unreachable:
     """Why `error`, raised while opening a session, kept it from opening."""
-    if isinstance(error, ssl.SSLCertVerificationError) and error.verify_code in (
-        CERT_NOT_YET_VALID,
-        CERT_HAS_EXPIRED,
-    ):
+    if isinstance(error, tls.LeafRefused):  # tried again (tls): still refused
+        return Unreachable.CLOCK if error.clock_wrong else Unreachable.OUT_OF_DATE
+    if tls.on_dates(error) is not None:  # not tried again: none since 313
         return Unreachable.CLOCK
     if isinstance(error, ssl.SSLError):
         return Unreachable.NOT_SECURE
@@ -93,7 +90,10 @@ def why_answered(status: int) -> Unreachable:
 def why_refused(refusal: Refusal | None) -> Unreachable | None:
     """Why the server, answering `hello`, won't serve this PC for now - for
     the refusals the app waits out without the learner (None: any other,
-    or none; a full server is `server_busy`, said as it was - 208)."""
+    or none; a full server is `server_busy`, said as it was - 208). A
+    refusal for a planned maintenance window is the maintenance (319)."""
+    if isinstance(refusal, protocol.ServerBusy) and refusal.reason == "maintenance":
+        return Unreachable.MAINTENANCE
     if isinstance(refusal, protocol.TooManySessions):
         return Unreachable.TOO_MANY_SESSIONS
     if (
@@ -104,12 +104,21 @@ def why_refused(refusal: Refusal | None) -> Unreachable | None:
     return None
 
 
-def why_closed(close_code: int | None) -> Unreachable | None:
+ANNOUNCED_GOING_AWAY = ("server_restarting", "maintenance_started")
+"""The `notice` codes our server sends just before its close 1001
+(protocol.md): a restart, or a planned maintenance window's start."""
+
+
+def why_closed(close_code: int | None, announced: bool = False) -> Unreachable | None:
     """Why our server ended a session, by its close code - None when the
     code doesn't say it's the server's doing (a dropped connection is
-    tried again before anything is said)."""
+    tried again before anything is said). A close 1001 is the restart only
+    when the server announced it (`announced`: an `ANNOUNCED_GOING_AWAY`
+    notice came first): ours always does, so one without came from
+    something else on the way - a proxy, the tunnel - and isn't said as a
+    restart (polyglotic-hq 368)."""
     if close_code == GOING_AWAY:
-        return Unreachable.RESTARTING
+        return Unreachable.RESTARTING if announced else None
     if close_code == SERVER_ERROR:
         return Unreachable.SERVER_ERROR
     return None

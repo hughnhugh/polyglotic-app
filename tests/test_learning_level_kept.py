@@ -18,7 +18,7 @@ from polyglotic_desktop.adapters.sqlite_learning import (
     open_learning_store,
     read_level_file,
 )
-from polyglotic_desktop.core.learning.levels import LevelCurve
+from polyglotic_desktop.core.learning.levels import KnownLine
 from polyglotic_desktop.core.learning.vocabulary import Vocabulary
 from polyglotic_desktop.core.shared import Level
 from polyglotic_desktop.ports.learning import StoredLevel
@@ -49,7 +49,7 @@ def test_a_store_set_aside_keeps_the_level(tmp_path: Path, damage: str) -> None:
 
     assert store.set_aside is not None and store.created
     vocabulary = Vocabulary(store, lookup, "hsk-2025")
-    assert vocabulary.curve == LevelCurve("hsk-2025", 3.5)  # not asked again
+    assert vocabulary.line == KnownLine("hsk-2025", 3)  # not asked again
     store.close()
     again = SqliteLearningStore(path)  # and in the new store itself
     assert again.load().level == LEVEL
@@ -104,7 +104,7 @@ def test_a_copy_that_cant_be_read_is_left_out_and_the_level_asked(
     level_file(path).write_text('{"scheme": "hsk-2025", "midp', "utf-8")
     with caplog.at_level(logging.INFO):
         store = SqliteLearningStore(path)
-    assert Vocabulary(store, lookup, "hsk-2025").curve is None  # asked, as before
+    assert Vocabulary(store, lookup, "hsk-2025").line is None  # asked, as before
     store.close()
     assert "the level's copy couldn't be read (JSONDecodeError)" in caplog.text
     assert "hsk-2025" not in caplog.text
@@ -133,3 +133,18 @@ def test_a_store_in_memory_keeps_no_copy(
     assert store.load().level == LEVEL
     store.close()
     assert files(tmp_path) == []
+
+
+def test_a_line_in_words_is_kept_in_the_same_two_values(tmp_path: Path) -> None:
+    """polyglotic-hq 323: no new table or column - a version before it
+    still opens the file, and reads a scheme it doesn't know."""
+    path = tmp_path / "learning.sqlite"
+    store = SqliteLearningStore(path)
+    vocabulary = Vocabulary(store, lookup, "hsk-2025")
+    vocabulary.set_known_words(3000)
+    assert read_level_file(path) == StoredLevel("words", 3000.0)
+    store.close()
+    again = SqliteLearningStore(path)
+    assert again.load().level == StoredLevel("words", 3000.0)
+    assert Vocabulary(again, lookup, "hsk-2025").line == KnownLine.words(3000)
+    again.close()

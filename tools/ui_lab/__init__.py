@@ -19,6 +19,14 @@ project 108's design, built from its `tour.py` in project 110).
   scrollbars, squashed layouts. With `--gate`, any
   finding on a new part fails the run, unless `checks.WAIVERS` accepts it
   with a reason.
+- **The design detector** (`design.py`, decision 0140): Impeccable's
+  design rules translated for Qt - the type scale, font families, text
+  over text, target sizes, accent hues, corner radii, near-miss alignment,
+  the spacing grid, line length, leading, capitals, tracking, cards in
+  cards, grey on colour, cramped controls - on what each window draws and
+  its pixels. With `--gate` (English, 100 %), a finding not in
+  `design_baseline.json` fails the run; `design` writes `design.md` and
+  `design --accept` rewrites the baseline.
 - **The golden images** (`goldens.py`, `goldens/`): each new part's
   picture against the one approved for it. With `--gate`, an unapproved
   difference fails the run; `approve` makes the new pictures the goldens

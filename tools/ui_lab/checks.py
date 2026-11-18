@@ -172,6 +172,10 @@ CONTROLS = (
 )
 
 
+Box = tuple[int, int, int, int]
+"""A place on a state's picture, in px: x, y, width, height."""
+
+
 @dataclass(frozen=True)
 class Finding:
     """Something a check found: which check, on what, in plain words."""
@@ -181,11 +185,21 @@ class Finding:
     detail: str
     waived: str = ""
     """Why it's accepted, if it is (`WAIVERS`); a waived finding never fails."""
+    box: Box | None = field(default=None, compare=False)
+    """Where it is on the state's picture, when the check knows (the design
+    detector's do): the judge's kit draws it there (`judge.annotated`). Not
+    part of what the finding is: two findings that differ only here are one."""
 
-    def to_json(self) -> dict[str, str]:
-        found = {"check": self.check, "where": self.where, "detail": self.detail}
+    def to_json(self) -> dict[str, object]:
+        found: dict[str, object] = {
+            "check": self.check,
+            "where": self.where,
+            "detail": self.detail,
+        }
         if self.waived:
             found["waived"] = self.waived
+        if self.box is not None:
+            found["box"] = list(self.box)
         return found
 
 
@@ -201,6 +215,22 @@ class Waiver:
 
 
 WAIVERS: tuple[Waiver, ...] = (
+    Waiver(
+        "clipped_text",
+        "ui_next.w1_pinyin_in_link_colours*",
+        "caption_window.0 > Canvas",
+        "the linked words drawn again in their link's colour (polyglotic-hq 395):"
+        " Qt redraws the line clipped to each word, and in the newest caption"
+        " those copies don't share a spot with the line drawn whole; the picture"
+        " shows nothing cut",
+    ),
+    Waiver(
+        "clipped_text",
+        "ui_next.w1_translation_in_link_colours",
+        "caption_window.0 > Canvas",
+        "the same as 395's: the translation's linked words drawn again in their"
+        " link's colour (polyglotic-hq 431)",
+    ),
     Waiver(
         "contrast",
         "ui_next.*",
@@ -232,6 +262,15 @@ WAIVERS: tuple[Waiver, ...] = (
         " text a button's words reach its frame, which the check reads as their"
         " background. The app draws it in Windows' own style; the state is here"
         " for its fonts (polyglotic-hq 215)",
+    ),
+    Waiver(
+        "keyboard",
+        "ui_next.first_run_level_*",
+        "level.* (QRadioButton)",
+        "the level picker's choices are one group of radio buttons: Tab reaches"
+        " the group and the arrow keys move within it, as in Windows' own"
+        " dialogs (Qt's way for buttons that exclude each other; polyglotic-hq"
+        " 425 added the state)",
     ),
 )
 """Findings on the new interface accepted on purpose. Keep it short: each
@@ -286,6 +325,32 @@ def shown_windows(widget: QWidget) -> list[QWidget]:
     return sorted(windows, key=lambda w: w.objectName()) or [widget]
 
 
+Place = tuple[QPoint, float]
+"""Where a window is drawn on a state's picture: its top left corner there,
+and how much smaller it's drawn (1.0: as it is)."""
+
+
+def place_in(pictured: QWidget, window: QWidget) -> Place | None:
+    """Where `window` is on the picture of `pictured`, the widget a state
+    photographs: `pictured` itself, a widget in it, or a window that a
+    picture of windows drawn together says it draws (its `places()`: each
+    window, where, how much smaller). None for a window the picture doesn't
+    show, such as a menu."""
+    if window is pictured:
+        return QPoint(0, 0), 1.0
+    if pictured.isAncestorOf(window):
+        return window.mapTo(pictured, QPoint(0, 0)), 1.0
+    places: Callable[[], list[tuple[QWidget, QPoint, float]]] | None = getattr(
+        pictured, "places", None
+    )
+    for drawn, at, scale in places() if places is not None else []:
+        if drawn is window:
+            return at, scale
+        if drawn.isAncestorOf(window):
+            return at + window.mapTo(drawn, QPoint(0, 0)) * scale, scale
+    return None
+
+
 def _unique(findings: list[Finding]) -> list[Finding]:
     return list(dict.fromkeys(findings))
 
@@ -297,7 +362,7 @@ def _waive(state: str, finding: Finding) -> Finding:
             and fnmatch.fnmatchcase(state, waiver.state)
             and fnmatch.fnmatchcase(finding.where, waiver.where)
         ):
-            return Finding(finding.check, finding.where, finding.detail, waiver.reason)
+            return replace(finding, waived=waiver.reason)
     return finding
 
 
@@ -536,25 +601,27 @@ def chinese_face(text: str, font: QFont) -> str:
     none, or it isn't Japanese. Only kanji a Japanese face has: a
     Simplified-only character (这) in a Japanese sentence - a Chinese
     example in a Japanese interface (polyglotic-hq 294) - has no Japanese
-    shape to be drawn in."""
+    shape to be drawn in.
+
+    Each kanji's face is asked of its own runs (`glyphRuns(at, length)`):
+    a run's `stringIndexes` can name the wrong character - in "聞いた文：
+    日风天水" the YaHei run drawing only 风 gave index 3, 文 (Qt 6.12;
+    polyglotic-hq 472)."""
     if not has_han(text) or not any(_is_kana(c) for c in text):
         return ""
     layout = QTextLayout(text, font)
     layout.beginLayout()
     layout.createLine()
     layout.endLayout()
-    flags = QTextLayout.GlyphRunRetrievalFlag
-    for run in layout.glyphRuns(
-        -1, -1, flags.RetrieveString | flags.RetrieveStringIndexes
-    ):
-        face = run.rawFont().familyName()
-        source = run.sourceString()
-        if face.startswith(CHINESE_FONTS) and any(
-            is_han(source[i]) and _japanese_has(source[i])
-            for i in run.stringIndexes()
-            if 0 <= i < len(source)
-        ):
-            return face
+    at = 0  # in UTF-16 code units, as Qt counts
+    for character in text:
+        length = 2 if ord(character) > 0xFFFF else 1
+        if is_han(character) and _japanese_has(character):
+            for run in layout.glyphRuns(at, length):
+                face = run.rawFont().familyName()
+                if face.startswith(CHINESE_FONTS):
+                    return face
+        at += length
     return ""
 
 

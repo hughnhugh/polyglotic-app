@@ -50,7 +50,10 @@ from polyglotic_desktop.ui_next.views.caption_window import (
     Notice,
     WindowChoices,
 )
-from polyglotic_desktop.ui_next.views.captions import CAPTION_WINDOW_LINES
+from polyglotic_desktop.ui_next.views.captions import (
+    CAPTION_TEXT_SIZES,
+    CAPTION_WINDOW_LINES,
+)
 from polyglotic_desktop.ui_next.views.placement import Edge, Preset, Rect
 
 AREA = Rect(0, 0, 1920, 1040)
@@ -257,11 +260,16 @@ def test_the_strip_is_the_label_and_four_buttons_at_every_width(
     # each its own width: its words', or an icon's as wide as its glyph was (179)
     hints = [max(b.sizeHint().width(), b.minimumWidth()) for b in shown]
     assert [b.width() for b in shown] == hints
-    wide = window.tag.width()
+    # the language chip right after the label (465)
+    assert window.chip.isVisible()
+    assert window.chip.x() >= window.tag.geometry().right()
+    assert window.chip.x() - window.tag.geometry().right() <= 8
     window.resize(MIN_PANEL.width, 180)
     qapp.processEvents()
     assert all(not b.isHidden() and b.width() > 0 for b in shown)
-    assert window.tag.width() < wide  # the label gave up the room
+    # too narrow for the chip and a readable label: the chip goes first
+    assert window.chip.isHidden()
+    assert window.tag.width() > 0
 
 
 def test_an_alpha_testers_strip_reports_a_problem_at_every_width(
@@ -478,9 +486,12 @@ def test_text_size_is_live_and_the_window_keeps_its_size(window: CaptionWindow) 
     assert window.view.text_size == 1.3 == window.choices.text_size
     assert place(window) == before
     assert window.canvas.placed[-1][0].key == newest  # still at the bottom
-    for _ in range(20):
+    for _ in range(40):
         window.step_text(1)
-    assert window.view.text_size == 2.0
+    assert window.view.text_size == CAPTION_TEXT_SIZES[1] == 4.0  # 305
+    for _ in range(40):
+        window.step_text(-1)
+    assert window.view.text_size == CAPTION_TEXT_SIZES[0] == 0.6
 
 
 def test_ctrl_wheel_steps_the_text_size(window: CaptionWindow) -> None:
@@ -531,16 +542,15 @@ def test_scrolled_back_says_how_many_are_new(window: CaptionWindow) -> None:
     assert window.view.scroll.following and window.pill.isHidden()
 
 
-def test_looks_wrong_on_a_hovered_finished_caption(window: CaptionWindow) -> None:
-    asked: list[str] = []
-    window.looks_wrong.connect(asked.append)
-    line, _, rect = window.canvas.placed[-1]
+def test_no_looks_wrong_on_a_hovered_finished_caption(window: CaptionWindow) -> None:
+    """ "Looks wrong?" left the interface (polyglotic-hq 339; the user,
+    2026-11-15: "get rid of the looks wrong report button")."""
+    _, _, rect = window.canvas.placed[-1]
     window._hover(QPointF(rect.center().x(), rect.center().y()))
     window.canvas.repaint()
-    flag = window.canvas.flag_rect
-    assert flag is not None and window.canvas.flagged is line
-    _mouse(window, "press", flag.center())
-    assert asked == [str(line.caption_id)]
+    assert not hasattr(window, "looks_wrong")
+    assert not hasattr(window.canvas, "flag_rect")
+    assert not hasattr(window.canvas, "flagged")
 
 
 def test_locked_no_band_no_hover_and_it_follows_live(window: CaptionWindow) -> None:
@@ -1204,8 +1214,15 @@ def test_the_band_covers_whole_rows_never_half_a_label(window: CaptionWindow) ->
 
 
 def test_original_only_says_so_on_the_strip(window: CaptionWindow) -> None:
+    """On the language chip (465) - or, where the strip is too narrow for
+    the chip, beside the label."""
+    window.resize(960, 180)
     assert window.tag.note == ""
     window.set_language("")
+    assert window.chip.text().startswith("Detect → Original only")
+    assert window.tag.note == ""  # the chip says it
+    window.resize(MIN_PANEL.width, 180)
+    assert window.chip.isHidden()
     assert window.tag.note == "Original only"
     assert "Original only" in window.tag.toolTip()
     window.set_language("en")
@@ -1241,6 +1258,8 @@ def test_the_strips_buttons_have_names_a_screen_reader_can_say(
     }
     assert said == {
         "links": "Word links",
+        "fill": "Fill the width",
+        "aligned": "Line up the parts",
         "lock": "Lock all windows",
         "report": "Report a problem",
         "settings": "Settings",
@@ -1298,16 +1317,17 @@ LONG_EN = (
 )
 
 
+@pytest.mark.parametrize("translation_size", [1.0, 0.5, 2.0])
 @pytest.mark.parametrize("text_size", [1.0, 1.3])
 def test_a_long_caption_in_a_small_window_shows_its_last_lines(
-    qapp: QApplication, text_size: float
+    qapp: QApplication, text_size: float, translation_size: float
 ) -> None:
     """polyglotic-hq 278: a long sentence in a small window - its translation
     wrapped taller than the window - left the window blank. Only whole rows
     show at the top (151's W3), and a row taller than the window was never
     whole. Now the newest caption's wrapped lines that fit show, whole -
     still none cut through its glyphs."""
-    window = window_of(qapp, captions=1)
+    window = window_of(qapp, captions=1, translation_size=translation_size)
     try:
         window.always_shown = True  # at rest at once, as the lab sees it
         window.resize(MIN_PANEL.width, MIN_PANEL.height)
@@ -1405,3 +1425,18 @@ def test_reduced_motion_is_windows_animation_effects_off(
     fake = SimpleNamespace(styleHints=lambda: hints)
     monkeypatch.setattr(caption_window_module, "QGuiApplication", fake)
     assert caption_window_module.reduced_motion()
+
+
+def test_a_look_change_that_leaves_the_labels_keeps_every_line(
+    window: CaptionWindow,
+) -> None:
+    """Polyglotic-hq 367: the labels were made again on each look change
+    with a new function naming the language spoken, so they never compared
+    equal and every caption's line was rebuilt - on each step of a drag of
+    the panel's opacity, half the step's time. A change that leaves the
+    labels as they were keeps the lines; one that changes them doesn't."""
+    lines = window.view.lines
+    window.set_look(replace(window.look, opacity=0.33))
+    assert all(a is b for a, b in zip(window.view.lines, lines, strict=True))
+    window.set_look(replace(window.look, show_source=not window.look.show_source))
+    assert not any(a is b for a, b in zip(window.view.lines, lines, strict=True))

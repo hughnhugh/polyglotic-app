@@ -14,10 +14,13 @@ import pytest
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QColor, QKeyEvent, QMouseEvent
 from PySide6.QtWidgets import QApplication, QWidget
-from tests.ui.fakes import MemorySettingsStore, chinese_tools
+from tests.lexicon.sample import english_sample
+from tests.ui.fakes import MemorySettingsStore, chinese_tools, tools_for
 from tests.ui_next.made_up import finished_updates
 from tests.ui_next.test_lookup_view import learner
 
+from polyglotic_desktop.core.lexicon.english import EnglishDictionary
+from polyglotic_desktop.core.lexicon.entries import ENGLISH_FREQUENCY
 from polyglotic_desktop.core.listening.display import WordLinks
 from polyglotic_desktop.core.listening.sources import SourceId, SourceLabel
 from polyglotic_desktop.core.shared import WordStatus
@@ -94,6 +97,9 @@ def windows(
     for update in finished_updates(40):
         found.apply(update)
     shown = found.windows["app"]
+    # Detect, kept: the spoken-language question these captions raise would
+    # take the top rows the cards' tests click (polyglotic-hq 350)
+    shown.set_spoken_language(None)
     shown.setGeometry(480, 600, 960, 360)
     qapp.processEvents()
     shown.canvas.repaint()
@@ -199,21 +205,34 @@ def test_hover_shows_after_the_mouse_rests_and_lets_the_mouse_through(
     assert not shared.isVisible()
 
 
-def test_the_hover_delay_starts_again_on_another_word(windows: CaptionWindows) -> None:
+def test_the_hover_delay_starts_again_on_another_word(
+    windows: CaptionWindows, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Shown 100 ms after the mouse rests on a word - not on the first
-    word it crossed."""
-    import time
-
+    word it crossed: the delay starts again on another word, and is kept
+    on the same one. Counted, not timed: a real 60 ms sleep against the
+    100 ms delay, then its time left read, let a busy PC decide (polyglotic-hq
+    312: it failed on 3 of 3 Linux runs of two branches on 2026-11-13). Each
+    word is found as the window draws it with the mouse over it."""
     shown, shared = window(windows), card(windows)
+    started: list[str] = []
+    start = shared._hover.start
+
+    def counted(*args: int) -> None:
+        assert shared._pending is not None
+        started.append(shared._pending.word)
+        start(*args)
+
+    monkeypatch.setattr(shared._hover, "start", counted)
     _, first = find(shown, "电脑")
-    _, second = find(shown, "游戏")
     mouse(shown, "move", first, held=False)
-    time.sleep(0.06)
+    shown.canvas.repaint()
+    _, second = find(shown, "游戏")
     mouse(shown, "move", second, held=False)
     assert shared._pending is not None and shared._pending.word == "游戏"
-    assert shared._hover.remainingTime() > HOVER_MS - 30  # started again
+    assert shared._hover.isActive() and shared._hover.interval() == HOVER_MS
     mouse(shown, "move", QPointF(second.x() + 1, second.y()), held=False)
-    assert shared._hover.remainingTime() > HOVER_MS - 30  # the same word: kept
+    assert started == ["电脑", "游戏"]  # started again on another; the same: kept
 
 
 def test_a_click_on_a_word_pins_it_with_the_actions_above_its_row(
@@ -228,9 +247,13 @@ def test_a_click_on_a_word_pins_it_with_the_actions_above_its_row(
     assert request is not None and request.word == "电脑"
     assert request.context.translation  # the row's translation, for the line
     assert shared.above and shared.geometry().bottom() < request.row.y
-    centre = shared.geometry().center().x()
+    # its centre, as a width's half: QRect.center() rounds down half a pixel
+    # more, which with a word half a pixel off a whole one (a Mac's font) was
+    # 1.5 px off (polyglotic-hq 420: the first Mac run of the suite)
+    placed = shared.geometry()
+    centre = placed.left() + placed.width() / 2
     word_centre = request.rect.x + request.rect.width / 2
-    assert abs(centre - word_centre) <= 1 or shared.geometry().left() == 8
+    assert abs(centre - word_centre) <= 1 or placed.left() == 8
     assert shown._drag is None  # a press on a word doesn't move the window
 
 
@@ -427,6 +450,7 @@ def test_click_any_word_until_the_first_lookup_then_never_again(
     shown.set_connection(Notice.RECONNECTING, None)  # the state comes first
     assert shown.notices.showing(now)[0] is Notice.RECONNECTING
     shown.set_connection(None, None)
+    shown.set_spoken_language(None)  # no question over the top rows (350)
     shown.setGeometry(480, 600, 960, 360)
     qapp.processEvents()
     shown.canvas.repaint()
@@ -441,7 +465,8 @@ def test_click_any_word_until_the_first_lookup_then_never_again(
     again.set_captioned([("app", APP)])
     for update in finished_updates(6):
         again.apply(update)
-    assert again.windows["app"].notices.showing(now) == (None, None)
+    # never again - the line may say pinyin can go above Chinese, once (369)
+    assert again.windows["app"].notices.showing(now)[1] != word_hint()
     again.close()
 
 
@@ -452,6 +477,38 @@ def test_no_hint_where_words_cant_be_looked_up(qapp: QApplication) -> None:
         plain.apply(update)
     assert plain.windows["app"].notices.showing(time.monotonic()) == (None, None)
     plain.close()
+
+
+def test_the_hint_only_where_the_captions_words_can_be_looked_up(
+    qapp: QApplication,
+) -> None:
+    """368: with nothing learned, a German PC's tools were English's alone,
+    so a Chinese caption's words could be looked up nowhere - yet it said
+    "Click any word". No hint then; with Chinese's dictionary open beside
+    (as nothing learned now opens it), the hint and a lookup."""
+    english = tools_for(EnglishDictionary(english_sample()), ENGLISH_FREQUENCY.id)
+    alone = CaptionWindows(None, MIC, lambda: [AREA], keys=Keys(), learner=english)
+    alone.set_captioned([("app", APP)])
+    for update in finished_updates(6):  # Chinese captions
+        alone.apply(update)
+    assert alone.windows["app"].notices.showing(time.monotonic()) == (None, None)
+    alone.close()
+
+    english.learn_beside(chinese_tools())
+    both = CaptionWindows(None, MIC, lambda: [AREA], keys=Keys(), learner=english)
+    both.set_captioned([("app", APP)])
+    for update in finished_updates(40):
+        both.apply(update)
+    shown = both.windows["app"]
+    assert shown.notices.showing(time.monotonic()) == (None, word_hint())
+    shown.set_spoken_language(None)  # no question over the top rows (350)
+    shown.setGeometry(480, 600, 960, 360)
+    qapp.processEvents()
+    shown.canvas.repaint()
+    _, point = find(shown, "电脑")
+    click(shown, point)
+    assert card(both).pinned
+    both.close()
 
 
 def test_an_english_word_with_no_phonetic_shows_no_lone_dash(
@@ -536,6 +593,29 @@ def test_the_dictionary_out_card_says_whats_wrong_and_how_to_fix_it(
     assert not shared.model.card().actions and shared._hits == [
         (shared._hits[0][0], "close")
     ]
+
+
+def test_a_language_added_from_the_card_says_its_dictionarys_download(
+    windows: CaptionWindows,
+) -> None:
+    """Learn it too for a language with a pack to download: the card says
+    it's on Learning with its dictionary, and how big (polyglotic-hq 327)."""
+
+    class WithAPack(LearningOffer):
+        def pack_size(self, code: str) -> int:
+            return 13_131_253 if code == "en" else 0
+
+    settings = Settings(MemorySettingsStore({"learning": "zh"}))
+    shown, shared = window(windows), card(windows)
+    shared.model.offer = WithAPack(settings)
+    _, point = find(shown, "computer")
+    click(shown, point)
+    shared.do("learn_too")
+    texts = [block.layout.text() for block in shared._painted.blocks]
+    assert (
+        "English is on your Learning page now, with its dictionary to download "
+        "there (13.1 MB)." in texts
+    )
 
 
 def test_a_word_in_a_language_not_learned_asks_to_learn_it_too(

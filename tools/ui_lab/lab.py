@@ -17,7 +17,10 @@ the gate judges the last run, and the first is reported with it
 real slowdown is over in every run. An action that happens once in a
 widget's life, timed once, has no median to steady it: Words' first show
 for a big learner is timed on five fresh pages and judged on their median
-(`Lab.time_fresh`, decision 0047).
+(`Lab.time_fresh`, decision 0047). Before each gated state, the lab times
+a fixed reference step (`reference.py`): how slow the PC is right then,
+for comparing a pull request's timings with main's at like load (decision
+0169).
 """
 
 import gc
@@ -25,7 +28,8 @@ import json
 import os
 import statistics
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
@@ -47,17 +51,40 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QApplication, QWidget
 
+from polyglotic_desktop.core.listening.spoken import SteadyLanguage
 from polyglotic_desktop.perf import budgets, spans
 from polyglotic_desktop.perf.budgets import Budget
 from polyglotic_desktop.ui import interface_language
-from polyglotic_desktop.ui_next import style
+from polyglotic_desktop.ui_next import caption_windows, style
 from polyglotic_desktop.ui_next.caption_layout import LATIN_FAMILIES
 from polyglotic_desktop.ui_next.caption_window import CaptionWindow
 from polyglotic_desktop.ui_next.views.arrivals import SLIDE_MAX_SEC
 from tools import busy_pc
-from tools.ui_lab import checks, goldens
+from tools.ui_lab import checks, design, goldens, reference
 from tools.ui_lab.checks import Finding
 from tools.ui_lab.goldens import Golden
+
+
+class _NeverSteady(SteadyLanguage):
+    """The lab's caption windows never ask "Always hear it as ...?"
+    (polyglotic-hq 317, decision 0109): its recorded sessions are steady
+    Mandarin, so the question would sit over every state's captions. It
+    has a state of its own (`caption_window.spoken_question`)."""
+
+    def heard(self, language: str | None, languages_heard: Iterable[str]) -> None:
+        return None
+
+
+@contextmanager
+def _windows_never_ask() -> Iterator[None]:
+    """While the lab runs, and only then (the tests import the lab too)."""
+    real = caption_windows.SteadyLanguage
+    caption_windows.SteadyLanguage = _NeverSteady  # type: ignore[misc]
+    try:
+        yield
+    finally:
+        caption_windows.SteadyLanguage = real  # type: ignore[misc]
+
 
 SCENE = QColor("#4a5a6a")
 """What a caption window is photographed over: a stand-in for a video."""
@@ -119,6 +146,8 @@ class Result:
     actions: dict[str, Timed] = field(default_factory=dict)
     spans: dict[str, dict[str, float]] = field(default_factory=dict)
     findings: list[Finding] = field(default_factory=list)
+    design: list[Finding] = field(default_factory=list)
+    """The design detector's findings (`design.py`): gated against its baseline."""
     notes: list[str] = field(default_factory=list)
     words: list[str] = field(default_factory=list)
     golden: Golden | None = None
@@ -129,6 +158,9 @@ class Result:
     tries: int = 1
     busy: list[float | None] = field(default_factory=list)
     """The PC's load, read after each run from the second that was over."""
+    reference_ms: float | None = None
+    """A gated state's reference step (`reference.py`), timed just before
+    its actions: what main's timings are scaled by (decision 0169)."""
 
     def over_budget(self) -> list[str]:
         return [name for name, timed in self.actions.items() if not timed.within()]
@@ -159,6 +191,7 @@ class Result:
             "actions": {name: t.summary() for name, t in self.actions.items()},
             "spans": self.spans,
             "findings": [f.to_json() for f in self.findings],
+            "design": [f.to_json() for f in self.design],
             "notes": self.notes,
             "words": self.words,
             "golden": (
@@ -169,6 +202,9 @@ class Result:
             "first_try": {name: t.summary() for name, t in self.first_try.items()},
             "tries": self.tries,
             "busy": self.busy,
+            "reference_ms": (
+                None if self.reference_ms is None else round(self.reference_ms, 2)
+            ),
         }
 
 
@@ -388,6 +424,19 @@ def run(
         interface_language.install(app, language)
         style.use_interface_language(language)
     warm_fonts()
+    with _windows_never_ask():
+        return _run_states(app, states, out, failed, golden_store, shown)
+
+
+def _run_states(
+    app: QApplication,
+    states: list[State],
+    out: Path,
+    failed: Path,
+    golden_store: Path | None,
+    shown: Callable[[str, QWidget], None] | None,
+) -> list[Result]:
+    """`run`'s states, one by one (`run` says what each gets)."""
     results = []
     for state in states:
         lab, widget = _run_state(app, state, out)
@@ -421,6 +470,9 @@ def run(
         lab.result.findings = inspected.findings
         lab.result.notes = inspected.notes
         lab.result.words = inspected.words
+        lab.result.design = design.inspect(
+            widget, partial(_as_seen, widget if state.scene else None)
+        )
         if shown is not None:
             shown(state.name, widget)
         _close(app, lab, widget)
@@ -448,6 +500,8 @@ def _run_state(app: QApplication, state: State, out: Path) -> tuple[Lab, QWidget
     photograph."""
     lab = Lab(app, out)
     lab.result = Result(state.name, state.gated)
+    if state.gated:  # the PC's speed now, for comparing with main's (0169)
+        lab.result.reference_ms = reference.time_step(app)
     with spans.recorded() as timings:
         widget = state.run(lab)
         lab.pump()

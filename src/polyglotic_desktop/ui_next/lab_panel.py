@@ -10,9 +10,7 @@ as the look is (`main.Panels`). A card of its own, in a file of its own,
 so other sections of the page don't meet it.
 """
 
-from dataclasses import replace
-
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QApplication,
     QHBoxLayout,
@@ -24,26 +22,34 @@ from PySide6.QtWidgets import (
 from polyglotic_desktop.ui_next import style
 from polyglotic_desktop.ui_next.caption_layout import LINK_PX
 from polyglotic_desktop.ui_next.caption_preview import CaptionPreview
-from polyglotic_desktop.ui_next.controls import INSET, Row, Segmented, label
+from polyglotic_desktop.ui_next.controls import INSET, Row, Segmented, SwitchRow, label
 from polyglotic_desktop.ui_next.panels import Panel
 from polyglotic_desktop.ui_next.views.lab import (
     ARRIVAL_GAP_RANGE,
     ARRIVAL_GAP_STEP,
     CAPTION_GAP_RANGE,
+    LINE_GAP_RANGE,
+    LINE_GAP_STEP,
     LINK_PX_RANGE,
     LINK_PX_STEP,
     NEW_FOR_RANGE,
     NEW_FOR_STEP,
     OLDER_RANGE,
     OLDER_STEP,
+    OLDER_STEPS_RANGE,
     ROW_GAP_RANGE,
     SPACING_STEP,
     CaptionLab,
+    Fill,
+    Join,
     Loading,
+    LoadRare,
     NewFade,
+    OwnLabel,
+    Placing,
     Unfinished,
 )
-from polyglotic_desktop.ui_next.views.panels import LookView
+from polyglotic_desktop.ui_next.views.panels import LanguagesView, LookView
 
 DEFAULT = CaptionLab()
 """The Lab untouched: each slider's own value, a notch on its scale."""
@@ -51,6 +57,11 @@ DEFAULT = CaptionLab()
 
 def _tr(text: str) -> str:
     return QApplication.translate("Lab", text)
+
+
+def _trn(text: str, n: int) -> str:
+    """A count's text in the language's form for `n` (decision 0034)."""
+    return QApplication.translate("Lab", text, None, n)
 
 
 class Slider(QWidget):
@@ -78,7 +89,7 @@ class Slider(QWidget):
         self.slider.setObjectName(name)
         self.slider.setAccessibleName(title)
         self.slider.setRange(0, round((high - low) / step))
-        self.slider.setMinimumWidth(style.px(160))
+        self.slider.setMinimumWidth(160)  # its handle doesn't grow with the text
         self.shown = label("", "Dim")
         self.shown.setMinimumWidth(style.px(96))
         line.addWidget(self.slider, 1)
@@ -126,7 +137,18 @@ def _percent(value: float) -> str:
 class LabPanel(Panel):
     """The Lab's controls, bound to the look's view."""
 
-    def __init__(self, view: LookView, parent: QWidget | None = None) -> None:
+    load_wanted = Signal()
+    """ "Open it on Learning", under Learning load: Learning's page, at the
+    load's card for the language in use (polyglotic-hq 342)."""
+
+    def __init__(
+        self,
+        view: LookView,
+        parent: QWidget | None = None,
+        languages: LanguagesView | None = None,
+    ) -> None:
+        """`languages`: the session's - its preview shows Mandarin in their
+        characters (polyglotic-hq 400)."""
         super().__init__(
             _tr("Lab - experimental"),
             _tr(
@@ -137,7 +159,7 @@ class LabPanel(Panel):
         )
         self.setObjectName("Card")
         self.view = view
-        self.preview = CaptionPreview(view, unfinished=True)
+        self.preview = CaptionPreview(view, unfinished=True, languages=languages)
         self.preview.setObjectName("lab.preview")
         self.add(self.preview)
 
@@ -191,6 +213,26 @@ class LabPanel(Panel):
                     "bright as the newest. The translation dims a little less."
                 ),
                 self.older,
+            )
+        )
+        self.older_steps = Slider(
+            "lab.older_steps",
+            _tr("Older captions dim"),
+            *OLDER_STEPS_RANGE,
+            1,
+            DEFAULT.older_steps,
+        )
+        self.older_steps.slider.valueChanged.connect(
+            lambda _: self._set(older_steps=round(self.older_steps.value()))
+        )
+        self.add(
+            Row(
+                _tr("Older captions dim"),
+                _tr(
+                    "All at once to Older captions' brightness, or step by step: "
+                    "each caption back a little dimmer, over this many captions."
+                ),
+                self.older_steps,
             )
         )
         self.unfinished = Segmented(
@@ -300,6 +342,31 @@ class LabPanel(Panel):
                 self.arrival_gap,
             )
         )
+        self.line_gap = Slider(
+            "lab.line_gap",
+            _tr("Gap between new lines"),
+            *LINE_GAP_RANGE,
+            LINE_GAP_STEP,
+            DEFAULT.line_gap,
+        )
+        self.line_gap.slider.valueChanged.connect(
+            lambda _: self._set(line_gap=self.line_gap.value())
+        )
+        self.add(
+            Row(
+                _tr("Gap between new lines"),
+                _tr(
+                    "A new caption's lines show one at a time, this far apart, "
+                    "instead of all together. 0 s: together, as now. None waits "
+                    "longer than the longest wait for text."
+                ),
+                self.line_gap,
+            )
+        )
+
+        self._own_speech()
+        self._fill()
+        self._learning_load()
 
         self.reset = QPushButton(_tr("Reset the lab"))
         self.reset.setObjectName("lab.reset")
@@ -313,8 +380,211 @@ class LabPanel(Panel):
         self.bind(view)
         self.refresh()
 
+    def _own_speech(self) -> None:
+        """Your own speech's look, to try (305): on the right, tinted, a bar
+        at its side, its "You" label - each off, or as now, by default."""
+        self.own: dict[str, SwitchRow] = {}
+        for name, title, detail in (
+            (
+                "own_right",
+                _tr("Your speech on the right"),
+                _tr("What you say lines up on the right, as in a chat."),
+            ),
+            (
+                "own_tint",
+                _tr("A tint behind your speech"),
+                _tr("A soft panel of your label's colour behind what you say."),
+            ),
+            (
+                "own_bar",
+                _tr("A bar beside your speech"),
+                _tr("A line of your label's colour at the side of what you say."),
+            ),
+        ):
+            row = SwitchRow(title, detail, f"lab.{name}")
+            row.switch.toggled.connect(
+                lambda on, name=name: self._set(**{name: bool(on)})
+            )
+            self.own[name] = row
+            self.add(row)
+        self.own_label = Segmented(
+            [
+                (OwnLabel.AS_NOW, _tr("As now")),
+                (OwnLabel.BADGE, _tr("Badge")),
+                (OwnLabel.NONE, _tr("None")),
+            ]
+        )
+        self.own_label.setObjectName("lab.own_label")
+        self.own_label.changed.connect(lambda v: self._set(own_label=OwnLabel(v)))
+        self.add(
+            Row(
+                _tr("Your speech's label"),
+                _tr('"You" over what you say: as now, in a badge, or not shown.'),
+                _left(self.own_label),
+            )
+        )
+
+    def _fill(self) -> None:
+        """Captions fill the width, to try (309): a clause a row as now, or
+        each caption poured into lines as wide as the window - and what
+        stands between its clauses then."""
+        self.fill = Segmented(
+            [
+                (Fill.CLAUSES, _tr("Off")),
+                (Fill.STACKED, _tr("Translation below")),
+                (Fill.PAIRED, _tr("Line by line")),
+            ]
+        )
+        self.fill.setObjectName("lab.fill")
+        self.fill.setToolTip(
+            _tr(
+                "Line by line: a line of what was said, then the line of its "
+                "translation, both cut where their words match. A long clause "
+                "that can't be cut so wraps as it does now."
+            )
+        )
+        self.fill.changed.connect(lambda v: self._set(fill=Fill(v)))
+        self.add(
+            Row(
+                _tr("Captions fill the width"),
+                _tr(
+                    "Off: each clause on a row of its own, as now. Translation "
+                    "below: a caption's clauses run on in lines as wide as the "
+                    "window, and its translation fills the lines under them. No "
+                    "Arrows while captions fill the width."
+                ),
+                _left(self.fill),
+            )
+        )
+        self.join = Segmented(
+            [
+                (Join.ELLIPSIS, _tr("Ellipsis")),
+                (Join.LINE_ENDS, _tr("At line ends too")),
+                (Join.SPACE, _tr("Space")),
+            ]
+        )
+        self.join.setObjectName("lab.join")
+        self.join.changed.connect(lambda v: self._set(join=Join(v)))
+        self.join_row = Row(
+            _tr("Between clauses"),
+            _tr(
+                "When captions fill the width: an ellipsis where one clause "
+                "ends and the next begins, one at the end of every line that "
+                "runs on as well, or only a space. Choosing one while Captions "
+                "fill the width is Off sets it to Translation below."
+            ),
+            _left(self.join),
+        )
+        self.add(self.join_row)
+        # the one layout (340, decision 0132): off by default, to try
+        self.flow = SwitchRow(
+            _tr("New layout"),
+            _tr(
+                "Captions are laid out a new way, however they fill the width: "
+                "Arrows and word links work in all of them and in Learning "
+                "load, and Line by line always fills its lines."
+            ),
+            "lab.flow",
+        )
+        self.flow.switch.toggled.connect(lambda on: self._set(flow=bool(on)))
+        self.add(self.flow)
+        self.run_on = SwitchRow(
+            _tr("Captions run on"),
+            _tr(
+                "A caption carries on in the line the one before ended in, "
+                "instead of starting a line of its own. Turning it on also turns "
+                "on New layout and Line by line."
+            ),
+            "lab.run_on",
+        )
+        self.run_on.switch.toggled.connect(lambda on: self._set(run_on=bool(on)))
+        self.add(self.run_on)
+        self.aligned = SwitchRow(
+            _tr("Parts lined up"),
+            _tr(
+                "Each part of what was said starts at the same place as its "
+                "translation, so a word's translation is under it - however "
+                "captions fill the width. Turning it on also turns on New layout."
+            ),
+            "lab.aligned",
+        )
+        self.aligned.switch.toggled.connect(lambda on: self._set(aligned=bool(on)))
+        self.add(self.aligned)
+        # where a line's parts go in its room (458): packed, as now, by default
+        self.placing = Segmented(
+            [
+                (Placing.PACKED, _tr("Packed")),
+                (Placing.NEAREST, _tr("Nearest their links")),
+                (Placing.EVENLY, _tr("Evenly")),
+            ]
+        )
+        self.placing.setObjectName("lab.placing")
+        self.placing.changed.connect(lambda v: self._set(placing=Placing(v)))
+        self.add(
+            Row(
+                _tr("Parts placed"),
+                _tr(
+                    "Where the parts of a line go in the room the line has. "
+                    "Packed: each straight after the one before, as now. Nearest "
+                    "their links: each part moves over its translation's words, "
+                    "so the word links are as short as they can be. Evenly: a "
+                    "full line's parts are spread over the width. "
+                    "Choosing one also turns on New layout."
+                ),
+                _left(self.placing),
+            )
+        )
+
+    def _learning_load(self) -> None:
+        """The learning load's viewing mode (324): on or off, and how the
+        words outside the load look. Its words and its rules are on
+        Learning."""
+        self.load = SwitchRow(
+            _tr("Learning load"),
+            _tr(
+                "A set number of the next words past what you know, each "
+                "coloured by how often you have heard it since: red, orange, "
+                "yellow, green, then ready to check. In place of the marks under "
+                "new words. Its words and settings are on Learning."
+            ),
+            "lab.load",
+        )
+        self.load.switch.toggled.connect(lambda on: self._set(load=bool(on)))
+        self.add(self.load)
+        # where its words are: a link to them while it's on (342)
+        self.to_load = label(
+            _tr("{open} - its words, the check and its settings.").format(
+                open=f"<a href='load'>{_tr('Open it on Learning')}</a>"
+            ),
+            "Faint",
+            wrap=True,
+        )
+        self.to_load.setContentsMargins(INSET, 0, 0, 0)
+        self.to_load.linkActivated.connect(lambda _: self.load_wanted.emit())
+        self.add(self.to_load)
+        self.load_rare = Segmented(
+            [
+                (LoadRare.NORMAL, _tr("As now")),
+                (LoadRare.DIMMED, _tr("Dimmed")),
+            ]
+        )
+        self.load_rare.setObjectName("lab.load_rare")
+        self.load_rare.changed.connect(lambda v: self._set(load_rare=LoadRare(v)))
+        self.add(
+            Row(
+                _tr("Words outside the load"),
+                _tr(
+                    "Rarer words you don't know yet, in Learning load: as now, or "
+                    "dimmed so the load's words stand out. Dimmed turns Learning "
+                    "load on."
+                ),
+                _left(self.load_rare),
+            )
+        )
+
     def _set(self, **changes: object) -> None:
-        self.view.set_lab(replace(self.view.value.lab, **changes))  # type: ignore[arg-type]
+        # a choice brings what it needs with it (`CaptionLab.choose`, 365)
+        self.view.set_lab(self.view.value.lab.choose(**changes))
 
     def refresh(self) -> None:
         lab: CaptionLab = self.view.value.lab
@@ -324,6 +594,12 @@ class LabPanel(Panel):
         )
         self.new_fade.set_value(lab.new_fade)
         self.unfinished.set_value(lab.unfinished)
+        self.older_steps.show_value(
+            lab.older_steps,
+            _tr("All at once")
+            if lab.older_steps <= 1
+            else _trn("Over %n caption(s)", lab.older_steps),
+        )
         self.loading.set_value(lab.loading)
         thickness = (
             LINK_PX[self.view.value.link_line] if lab.link_px is None else lab.link_px
@@ -335,7 +611,27 @@ class LabPanel(Panel):
         self.older.show_value(
             lab.older, _tr("No dimming") if lab.older >= 1.0 else _percent(lab.older)
         )
+        for name, row in self.own.items():
+            row.switch.set_quietly(bool(getattr(lab, name)))
+        self.own_label.set_value(lab.own_label)
+        self.fill.set_value(lab.fill)
+        # never greyed: a choice there brings Translation below with it (368)
+        self.join.set_value(lab.join)
+        self.flow.switch.set_quietly(lab.flow)
+        # each shows what the captions do: off where it has no effect (its
+        # value kept for when it does), and a click there makes it work (365)
+        self.run_on.switch.set_quietly(lab.run_on and lab.line_by_line)
+        self.aligned.switch.set_quietly(lab.lined_up)
+        # as the switches above: Packed where New layout is off (its value kept)
+        self.placing.set_value(lab.placing if lab.flow else Placing.PACKED)
+        self.load.switch.set_quietly(lab.load)
+        self.load_rare.set_value(lab.load_rare if lab.load else LoadRare.NORMAL)
+        self.to_load.setVisible(lab.load)
         self.arrival_gap.show_value(
             lab.arrival_gap,
             _tr("As they come") if lab.arrival_gap <= 0 else _seconds(lab.arrival_gap),
+        )
+        self.line_gap.show_value(
+            lab.line_gap,
+            _tr("Together") if lab.line_gap <= 0 else _seconds(lab.line_gap),
         )

@@ -21,14 +21,29 @@ couldn't read.
 
 import json
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    ValidationError,
+)
 
 PROTOCOL = 1
 
-Channel = Literal["win-x64-alpha", "win-x64-beta", "win-x64-stable"]
-Os = Literal["windows-10", "windows-11"]
+Channel = Literal[
+    "win-x64-alpha",
+    "win-x64-beta",
+    "win-x64-stable",
+    "macos-arm64-alpha",
+    "macos-arm64-beta",
+    "macos-arm64-stable",
+]
+MacOs = Annotated[str, StringConstraints(pattern=r"^macos-[1-9][0-9]{0,2}$")]
+"""`macos-<major version>` (`macos-26`), as protocol.md's `os` allows."""
+Os = Literal["windows-10", "windows-11"] | MacOs
 Purpose = Literal["listen", "sync"]
 Category = Literal[
     "browser", "video", "call", "game", "music", "system", "other", "mic"
@@ -394,6 +409,22 @@ class Plan(PlanState):
     type: Literal["plan"] = "plan"
 
 
+class MaintenanceWindow(Message):
+    """A planned maintenance window (server decision 0066): listening is
+    refused from `starts_at` until `ends_at` - protocol.md's times, UTC."""
+
+    starts_at: str
+    ends_at: str
+
+
+class Maintenance(Message):
+    """The planned maintenance window was set, moved or cleared (None)
+    while the session is open (servers of 2026-11-14 on; polyglotic-hq 319)."""
+
+    type: Literal["maintenance"] = "maintenance"
+    window: MaintenanceWindow | None = None
+
+
 class Welcome(Message):
     type: Literal["welcome"] = "welcome"
     protocol: int
@@ -413,6 +444,10 @@ class Welcome(Message):
     # the optional `source` fields of a speech header the server uses (its
     # decision 0051); from servers of 2026-11-09 on (263) - none before
     source_fields: tuple[str, ...] = ()
+    # the server's time, and the planned maintenance window that stands (its
+    # decision 0066); from servers of 2026-11-14 on (319) - neither before
+    server_time: str | None = None
+    maintenance: MaintenanceWindow | None = None
 
 
 class UpdateRequired(Message):
@@ -429,6 +464,10 @@ class AuthFailed(Message):
 class ServerBusy(Message):
     type: Literal["server_busy"] = "server_busy"
     retry_after: int
+    # "maintenance": a planned window, ending at `until` - not a full server
+    # (servers of 2026-11-14 on; polyglotic-hq 319)
+    reason: str | None = None
+    until: str | None = None
 
 
 class TooManySessions(Message):
@@ -601,6 +640,7 @@ FROM_SERVER: dict[str, type[Message]] = {
     "learning_deleted": LearningDeleted,
     "plan": Plan,
     "limit_reached": LimitReached,
+    "maintenance": Maintenance,
 }
 """The server's messages this app reads; others are ignored (versioning
 rule 1)."""

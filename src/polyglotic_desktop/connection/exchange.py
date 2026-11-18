@@ -98,6 +98,16 @@ session after signing out: the install id outlives signing out now
 (polyglotic-hq 288, decision 0080), yet whoever signs in next may be
 another account.
 
+**A new consent choice is dated after the one it replaces, and goes again
+at most once a day** (polyglotic-hq 311, decision 0102). The server takes
+the choice with the latest `at` as the latest; two choices one clock tick
+apart (an alpha tester's first run, then "diagnostics on") had the same
+millisecond, and the server kept the first. So a new choice is dated at
+least a millisecond after the one it replaces, whatever the clock says.
+And `consent_missing` sends the choice again only if it allows what was
+refused, once a day for the install: sent every session, it grew one
+install's history on the server by two choices a sync session.
+
 **Another account, however it came, gets nothing of the last one's**
 (polyglotic-hq 208). Signing out drops what waits (`drop_waiting`), but an
 account can change without it: the server refusing this PC's token
@@ -161,11 +171,18 @@ _INSTALLED = "install_started"  # when this PC became this install (its clock)
 _OUT = "learning_dictionaries_out"  # JSON: dictionaries out since their last sync
 _ACCOUNT = "account_id"  # the account what waits belongs to, from `welcome`
 _SIGNED_OUT = "signed_out"  # signed out since this install last had a session
+_AGAIN = "consent_sent_again"  # JSON: the install, and when, after consent_missing
 
 RAISED = timedelta(milliseconds=1)
 """How far past the deletion (or the last event so raised) an event this
 PC made after it is stamped, when its clock put it at or before: the
-protocol's times are to the millisecond."""
+protocol's times are to the millisecond. A new consent choice is dated at
+least this far past the one it replaces, too."""
+
+AGAIN_EVERY = timedelta(days=1)
+"""The consent goes again after `consent_missing` at most once in this long
+for an install (polyglotic-hq 311): 24 hours by this PC's clock, not a
+calendar day, so no time zone enters."""
 
 
 def _now() -> datetime:
@@ -271,12 +288,16 @@ class DataExchange:
         server, and followed at once - a "no" drops what's waiting.
         `agreement`: the tester agreement just accepted; None keeps the one
         accepted before, so every choice says which agreement this PC is
-        under (polyglotic-hq 185)."""
+        under (polyglotic-hq 185). Dated after the choice it replaces,
+        whatever the clock says (`_dated_after`)."""
         with self._lock:
-            if agreement is None and self._consent is not None:
-                agreement = self._consent.agreement
+            at = self._clock()
+            if self._consent is not None:
+                at = _dated_after(self._consent.at, at)
+                if agreement is None:
+                    agreement = self._consent.agreement
             choice = ConsentChoice(
-                self._new_id(), self._clock(), usage, crashes, exposures, agreement
+                self._new_id(), at, usage, crashes, exposures, agreement
             )
             self._consents.save_consent(choice)
             self._consent = choice
@@ -547,7 +568,10 @@ class DataExchange:
 
     def _consent_missing(self, batch: str | None) -> None:
         """The server has no consent for this install that allows what was
-        sent (its record lost, say): the latest choice goes again. The
+        sent (its record lost, say): the latest choice goes again, if it
+        allows what was refused - at most once a day for the install
+        (`AGAIN_EVERY`; polyglotic-hq 311: an app sending it every session
+        grew one install's history by two choices a sync session). The
         refused batch, named since S2b, stops awaiting an answer - it would
         hold one of AWAITING_MAX places until the session ended - and its
         items are held back until the server has a consent, then sent once
@@ -557,10 +581,31 @@ class DataExchange:
         ids = self._awaiting.pop(batch, None) if batch else None
         if ids:
             self._refused.extend(ids)  # still in _sent: not sent again yet
-        if self._consent is not None and not any(
-            w.kind == CONSENT for w in self._outbox.waiting()
-        ):
-            self._send_consent_again(self._consent)
+        waiting = self._outbox.waiting()
+        if self._consent is None or any(w.kind == CONSENT for w in waiting):
+            return
+        refused = {w.kind for w in waiting if w.id in ids} if ids else None
+        if not _allows(self._consent, refused) or not self._may_send_again():
+            return
+        self._send_consent_again(self._consent)
+        log.info(
+            "the server has no consent allowing what was sent: the choice goes"
+            " again (at most once a day)"
+        )
+
+    def _may_send_again(self) -> bool:
+        """Whether the consent may go again for `consent_missing` now - not
+        within `AGAIN_EVERY` of the last time, for this install - noting it
+        if so. A last time ahead of this PC's clock (the clock set back)
+        doesn't hold it back."""
+        install = self._outbox.note(_INSTALL)
+        now = self._clock()
+        last = _sent_again(self._outbox.note(_AGAIN), install)
+        if last is not None and last <= now < last + AGAIN_EVERY:
+            return False
+        noted = {"install": install, "at": now.isoformat()}
+        self._outbox.save_note(_AGAIN, json.dumps(noted))
+        return True
 
     def _consent_in(self) -> None:
         """The server has a consent: what it refused for want of one goes
@@ -898,6 +943,45 @@ def _after(kept: str | None) -> _After | None:
     except (ValueError, TypeError, KeyError):
         return None
     return _After(since, floor) if since and floor else None
+
+
+def _dated_after(replaced: datetime, now: datetime) -> datetime:
+    """A new consent choice's time: `now`, unless that is at or before the
+    millisecond of the choice it replaces - then a millisecond after that
+    (polyglotic-hq 311, decision 0102). The server takes the latest `at`
+    as the latest choice, and the protocol's times are to the millisecond:
+    on Windows, Python 3.12's clock moves in ticks of about 15.6 ms, so the
+    first run's choice and an alpha tester's "diagnostics on" straight
+    after it were dated the same, and the server kept the "off"."""
+    floor = _to_the_millisecond(replaced) + RAISED
+    return now if _to_the_millisecond(now) >= floor else floor
+
+
+def _to_the_millisecond(moment: datetime) -> datetime:
+    """`moment` as the protocol sends it (`protocol.at` cuts, not rounds)."""
+    return moment.replace(microsecond=moment.microsecond // 1000 * 1000)
+
+
+def _allows(choice: ConsentChoice, refused: set[str] | None) -> bool:
+    """Whether `choice` allows any of the kinds the server refused (None:
+    it didn't say which - an older server)."""
+    allowed = {USAGE} if choice.usage else set()
+    allowed |= {EXPOSURES} if choice.exposures else set()
+    return bool(allowed if refused is None else allowed & refused)
+
+
+def _sent_again(kept: str | None, install: str | None) -> datetime | None:
+    """When the consent last went again for `consent_missing` on `install`,
+    as kept; None for another install's, none, or one that can't be read."""
+    if not kept:
+        return None
+    try:
+        found = json.loads(kept)
+        if found["install"] != install:
+            return None
+        return _moment(found["at"])
+    except (ValueError, TypeError, KeyError):
+        return None
 
 
 def _consent_message(choice: ConsentChoice) -> protocol.Consent:

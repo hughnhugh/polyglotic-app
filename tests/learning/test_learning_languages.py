@@ -1,12 +1,14 @@
 """The languages a learner learns (`core.learning.languages`; polyglotic-hq
 262, 248's section 3, DECISIONS.md #65): every caption language in a tier,
-one full dictionary in use at a time, the others in the order added, and
-a lookup's "Learn Japanese too?" asked once."""
+every full dictionary learned open at once (306, DECISIONS.md #110), the
+others in the order added, and a lookup's "Learn Japanese too?" asked
+once."""
 
 from polyglotic_desktop.core.learning.languages import (
     LearningLanguages,
     Tier,
     learned_code,
+    open_beside,
     starting_language,
     tier_of,
 )
@@ -15,7 +17,9 @@ from polyglotic_desktop.core.learning.languages import (
 def test_each_language_is_in_one_tier() -> None:
     assert [tier_of(c) for c in ("zh", "en")] == [Tier.FULL, Tier.FULL]
     assert tier_of("ja") is tier_of("es") is Tier.BASIC
-    assert tier_of("th") is tier_of("yue") is Tier.NONE
+    # Cantonese has a pack of its own (decision 0160), not Chinese's
+    assert tier_of("yue") is Tier.BASIC
+    assert tier_of("th") is tier_of("xx") is Tier.NONE
 
 
 def test_chinese_in_either_script_is_one_language_and_cantonese_its_own() -> None:
@@ -88,3 +92,29 @@ def test_learning_data_kept_for_the_other_keeps_it_running() -> None:
     assert starting_language(None, "ja", lambda c: c == "zh") == "zh"
     assert starting_language(None, "ja", lambda c: True) == "en"  # both: the guess
     assert starting_language(None, "en", lambda c: c == "en") == "en"
+
+
+def test_every_other_full_language_learned_opens_beside_the_starting_one() -> None:
+    """306 (DECISIONS #110): Chinese and English both learned - main or
+    added - both open; a basic or no-dictionary language opens nothing."""
+    assert open_beside(LearningLanguages("zh", ("ja", "en", "th")), "zh") == ("en",)
+    assert open_beside(LearningLanguages("en", ("zh",)), "en") == ("zh",)
+    # none chosen yet, English guessed from Windows (293): Chinese added opens
+    assert open_beside(LearningLanguages(None, ("zh",)), "en") == ("zh",)
+    # the main one made English this run, before it opened: both open next
+    assert open_beside(LearningLanguages("en", ("zh",)), "zh") == ("en",)
+    assert open_beside(LearningLanguages("zh", ("ja",)), "zh") == ()
+
+
+def test_until_a_full_language_is_learned_the_other_opens_too() -> None:
+    """368: nothing learned, a German PC's guess is English - and its first
+    Chinese caption could be looked up nowhere. Until one is learned, a
+    caption's words are looked up in its own language's dictionary: the
+    other full one opens beside the guess - never the learner's own."""
+    assert open_beside(LearningLanguages(), "en", own="de") == ("zh",)
+    assert open_beside(LearningLanguages(None, ("ja",)), "en", own="de") == ("zh",)
+    assert open_beside(LearningLanguages(), "en", own=None) == ("zh",)
+    # an English PC's guess is Chinese: English, their own, stays closed
+    assert open_beside(LearningLanguages(), "zh", own="en") == ()
+    # one learned: only what's learned, as before
+    assert open_beside(LearningLanguages("en"), "en", own="de") == ()

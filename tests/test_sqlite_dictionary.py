@@ -16,6 +16,7 @@ from polyglotic_desktop.adapters.sqlite_dictionary import (
     SqliteDictionary,
     write_dictionary,
 )
+from polyglotic_desktop.core.learning.levels import place
 from polyglotic_desktop.core.lexicon.chinese import ChineseDictionary
 from polyglotic_desktop.core.lexicon.english import EnglishDictionary
 from polyglotic_desktop.core.shared import EntryId
@@ -137,6 +138,68 @@ def test_the_bands_sizes_from_the_file(tmp_path: Path) -> None:
     assert file.words_at_levels("en-frequency") == {}
     zh = ChineseDictionary(file)
     assert zh.words_in_ranks([(1, 1000), (1001, 2000), (2001, 5000)]) == [1, 1, 0]
+    # the words a learning load takes in (polyglotic-hq 324): each headword
+    # once, commonest first, by the entry a caption counts it for
+    assert file.headwords_ranked(0, 10) == [("还", 40), ("啊", 1500)]
+    assert file.headwords_ranked(40, 10) == [("啊", 1500)]
+    assert file.headwords_ranked(0, 1) == [("还", 40)]
+    assert file.headwords_ranked(1500, 10) == []
+    assert sorted(file.headwords_at_levels("hsk-2025"), key=str) == [
+        ("啊", 1, 1500),
+        ("还", 1, 40),
+    ]
+    assert file.headwords_at_levels("hsk-2021") == [("吧", 1, None)]
+    assert file.headwords_at_levels("en-frequency") == []
+
+
+def test_the_words_past_a_place_come_in_the_learning_windows_order(
+    tmp_path: Path,
+) -> None:
+    """What a learning load takes in (polyglotic-hq 324): each word once,
+    by its place - its frequency rank, or its syllabus level's size where
+    that is smaller - so a level's words rare in written text aren't left
+    for last. HSK 3.0's levels 1 and 2 hold 300 and 500 words."""
+    records = [
+        EntryRecord("t:hai", "还", "還", "hai2", ("still",), 40, (("hsk-2025", 1),)),
+        EntryRecord("t:huan", "还", "還", "huan2", ("return",), 40, (("hsk-2025", 2),)),
+        EntryRecord("t:de", "的", "的", "de5", ("of",), 120, ()),
+        EntryRecord("t:a", "啊", "啊", "a1", ("ah",), 1500, (("hsk-2025", 1),)),
+        EntryRecord("t:x", "向", "向", "xiang4", ("towards",), 400, ()),
+        EntryRecord("t:b", "吧", "吧", "ba5", ("eh",), None, (("hsk-2025", 2),)),
+        EntryRecord("t:y", "跃", "躍", "yue4", ("leap",), 2000, ()),
+        EntryRecord("t:z", "乙", "乙", "yi3", ("second",), None, ()),
+    ]
+    forms = {r.headword: [r.entry_id] for r in records[2:]} | {
+        "还": ["t:hai", "t:huan"]
+    }
+    write_dictionary(tmp_path / "d.sqlite", {}, records, forms)
+    zh = ChineseDictionary(SqliteDictionary(tmp_path / "d.sqlite"))
+    in_order = [(40, "t:hai"), (120, "t:de"), (300, "t:a"), (400, "t:x"), (500, "t:b")]
+    in_order.append((2000, "t:y"))
+
+    def past(after: int, limit: int, scheme: str = "hsk-2025") -> list[tuple[int, str]]:
+        return [(at, f.entry_id) for at, f in zh.words_past(after, limit, scheme)]
+
+    assert past(0, 10) == in_order
+    assert past(120, 10) == in_order[2:]
+    assert past(2000, 10) == []
+    # read a few at a time, from where the last reading ended: none missed,
+    # none twice
+    read: list[tuple[int, str]] = []
+    while batch := past(read[-1][0] if read else 0, 2):
+        read += batch
+    assert read == in_order
+    # each word's place is the one its facts give (`levels.place`)
+    assert all(place(f) == at for at, f in zh.words_past(0, 10, "hsk-2025"))
+    # a scheme of frequency cut-offs, or one this file has no levels for:
+    # the ranks alone
+    assert past(0, 10, "en-frequency") == [
+        (40, "t:hai"),
+        (120, "t:de"),
+        (400, "t:x"),
+        (1500, "t:a"),
+        (2000, "t:y"),
+    ]
 
 
 def read_from_two_threads(file: SqliteDictionary | GuardedDictionary) -> list[str]:

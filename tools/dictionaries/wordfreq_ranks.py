@@ -6,8 +6,14 @@ frozen at about 2021. Project 019 prefers it to ECDICT's own columns,
 whose corpus isn't named.
 
 Only `wordfreq/data/large_<language>.msgpack.gz` is read (English for
-ECDICT; Spanish and Japanese for their packs), from the package's wheel
-as a zip archive; its code is never run. That file is a gzipped
+ECDICT; Spanish and Japanese for their packs) - or, for a language
+wordfreq has no large list of, `small_<language>` (Indonesian, Korean,
+Turkish, Hindi, Malay, Danish, Filipino, Persian, Greek, Hungarian and
+Romanian among the caption languages) - from the package's wheel as a zip
+archive; its code is never run. A small list stops at about 20,000-30,000
+words; polyglotic-hq 374 measured it against the large one in English and
+Spanish: the same top 1,000 (99.8 % and 98.3 %) and top 5,000 (99.3 % and
+97.4 %). That file is a gzipped
 MessagePack list: a header (`{"format": "cB", "version": 1}`), then one
 list of words per centibel - list i holds the words whose frequency is
 10^(-i/100). A small decoder for just those types is below, rather than a
@@ -25,7 +31,13 @@ import zipfile
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 
-DATA = "wordfreq/data/large_{language}.msgpack.gz"
+DATA = "wordfreq/data/{size}_{language}.msgpack.gz"
+SIZES = ("large", "small")
+"""The lists read, the first the wheel has."""
+CODES = {"tl": "fil"}
+"""A caption language's wordfreq code, where it differs: the app calls
+Filipino "tl" (the speech server's and kaikki's code), wordfreq "fil"
+(polyglotic-hq 387)."""
 
 
 class _Reader:
@@ -73,9 +85,19 @@ class _Reader:
 
 
 def frequencies(wheel: Path, language: str = "en") -> dict[str, float]:
-    """Each word form's frequency (a share of all words) in `language`."""
+    """Each word form's frequency (a share of all words) in `language`,
+    from its large list, else its small one (`SIZES`)."""
+    language = CODES.get(language, language)
     with zipfile.ZipFile(wheel) as archive:
-        data = gzip.decompress(archive.read(DATA.format(language=language)))
+        names = set(archive.namelist())
+        found = [
+            name
+            for size in SIZES
+            if (name := DATA.format(size=size, language=language)) in names
+        ]
+        if not found:
+            raise KeyError(f"wordfreq has no list for {language!r}")
+        data = gzip.decompress(archive.read(found[0]))
     top = _Reader(data).value()
     if not isinstance(top, list) or top[:1] != [{"format": "cB", "version": 1}]:
         raise ValueError("not wordfreq's cB format, version 1")

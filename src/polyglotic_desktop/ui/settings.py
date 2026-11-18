@@ -25,8 +25,16 @@ from typing import Any
 
 from PySide6.QtCore import QObject, Signal
 
+from polyglotic_desktop.core.learning.first_known import Before
 from polyglotic_desktop.core.learning.highlights import WordIntroductions
 from polyglotic_desktop.core.learning.languages import FULL, LearningLanguages
+from polyglotic_desktop.core.learning.levels import LanguageChoices, LinkChoice
+from polyglotic_desktop.core.learning.load import (
+    MAX_SIZE,
+    MIN_SIZE,
+    Counting,
+    LoadRules,
+)
 from polyglotic_desktop.core.listening.dictation import DICTATION_LANGUAGES
 from polyglotic_desktop.core.listening.dictation_keys import (
     DEFAULT_KEY,
@@ -34,10 +42,19 @@ from polyglotic_desktop.core.listening.dictation_keys import (
     refusal,
 )
 from polyglotic_desktop.core.listening.display import (
+    READING_LANGUAGES,
     LinkDetail,
     LinkGap,
     LinkLine,
+    ReadingColour,
+    ReadingSize,
+    ReadingSystem,
     WordLinks,
+)
+from polyglotic_desktop.core.listening.hidden import PAUSE_AFTER_MIN, PAUSE_CHOICES
+from polyglotic_desktop.core.listening.settling import (
+    SETTLE_AFTER_SEC,
+    SETTLE_RANGE,
 )
 from polyglotic_desktop.core.listening.sources import colors_for
 from polyglotic_desktop.core.listening.timing import (
@@ -76,11 +93,29 @@ ARRIVALS = ("step_and_slide", "step")
 # the app's own text size, Settings > App (the new interface's
 # `style.APP_TEXT_SIZES`' keys, which ui can't import; decision 0084)
 APP_TEXT_SIZES = ("smaller", "normal", "larger", "largest")
+MANDARIN_SCRIPTS = ("simplified", "traditional")
+"""How Mandarin's captions are written (`mandarin_script`)."""
+TRANSCRIPT_LENGTHS = ("newest", "three_hours", "session")
+"""How far back a transcript's list may go: `TranscriptLength`'s values."""
 WIDTH_SHARES = (0.2, 1.0)
 OLD_LIVE_DEFAULT = 1.5  # the interval before there were caption modes
 # the caption mode as versions before 176 kept it: Steady whether chosen or
 # not, so only Quick preview and Live updates show a choice
 OLD_CAPTION_TIMING = "caption_timing"
+FOLLOW_DEFAULT = (
+    "dictation",
+    "word_links",
+    "show_hidden_on_speech",
+    "reading_past",
+    "whole_system",
+)
+"""The switches that follow the app's default until changed on this PC
+(`AppSettings.changed`) - turned on for a new learner by polyglotic-hq 478
+(the user, 2026-11-18: "Default all functional features as on") and 484
+(everything the PC plays: "Make the first time launch easier, everything
+the PC plays should be [the default]"). Another setting is kept as stored,
+as before. A name added here later follows its new default only where the
+record began before it was changed."""
 
 
 @dataclass(frozen=True)
@@ -102,11 +137,17 @@ class AppSettings:
     targets: tuple[str, ...] = ("en",)  # an overlay each
     second_languages: dict[str, str] = field(default_factory=dict)  # target -> second
     spoken_language: str | None = None  # None: detect
+    # Mandarin's captions in "simplified" or "traditional" characters,
+    # converted on this PC (polyglotic-hq 375); None: like this PC -
+    # Traditional on a Taiwan or Hong Kong Windows (`shows_traditional`)
+    mandarin_script: str | None = None
     translate_live: bool = True
     spelling_hints: tuple[str, ...] = ()  # names and slang, for recognition only
     # captions: how the overlays look and when they update
     show_original: bool = True
-    word_links: str = WordLinks.OFF.value
+    # on for a new learner (polyglotic-hq 478): the links with their lines,
+    # as a caption window's word links button turns them on (446)
+    word_links: str = WordLinks.ARROWS.value
     link_detail: str = LinkDetail.MOST.value
     link_line: str = LinkLine.MEDIUM.value  # a word link's underline (F14)
     link_gap: str = LinkGap.MEDIUM.value  # and how far below the text
@@ -117,6 +158,24 @@ class AppSettings:
     # how a new caption arrives: "step_and_slide" (the default) or "step"
     # (ui_next.views.arrivals; polyglotic-hq DECISIONS.md #104)
     caption_arrival: str = "step_and_slide"
+    # a hidden caption window: minutes it still listens (None: always), and
+    # whether it comes back when its app's speech starts (polyglotic-hq 335)
+    pause_hidden_after: int | None = PAUSE_AFTER_MIN
+    show_hidden_on_speech: bool = True  # on for a new learner (478)
+    # the languages with a reading line over their text ("zh": pinyin above
+    # Chinese), and its size (core.listening.display; polyglotic-hq 369)
+    reading_lines: tuple[str, ...] = ()
+    reading_size: str = ReadingSize.SMALL.value
+    # only over the words past what the learner knows: off - readings over
+    # every word, as the user's picture shows (2026-11-18, DECISIONS #206)
+    reading_past: bool = False
+    # the reading line's colour: its line's, its word link's or one picked
+    # (`reading_custom_color`); and linked words in their link's colour (395)
+    reading_system: str = ReadingSystem.PINYIN.value  # or zhuyin (395)
+    reading_colour: str = ReadingColour.LINK.value  # its word link's (446)
+    reading_custom_color: str = "#9ad0ff"
+    said_in_link_colours: bool = True  # what was said's linked words (431, 446)
+    translation_in_link_colours: bool = True  # the translation's (431, 446)
     # Settings > Captions > Lab's experimental values (the new interface's
     # `views.lab.CaptionLab`, which reads each one leniently): only those
     # moved from their defaults; {} untouched (polyglotic-hq 284)
@@ -132,12 +191,31 @@ class AppSettings:
     # longer than this many seconds without a line on screen (2 to 6;
     # core.listening.timing's `max_wait`, polyglotic-hq 277)
     max_wait_for_text: float = MAX_WAIT_FOR_TEXT_SEC
+    # how long shown text may still change, in seconds (0 to 3; 0: never
+    # once shown - core.listening.settling's `SETTLE_RANGE`, polyglotic-hq
+    # 309, decision 0099)
+    text_settles_after: float = SETTLE_AFTER_SEC
     # word introductions (Learning; core.learning.highlights.WordIntroductions):
     # Off, A few per caption (the cap, "common words only") or Every new word.
     # Kept as two keys, so a version that knows only `common_words_only`
     # still has the cap chosen; turned off, the cap is kept for coming back
     common_words_only: bool = True
     marks_off: bool = False
+    # what the learner chose for each language they learn, by its code
+    # (core.learning.levels.LanguageChoices, read leniently): the learning
+    # window's size. Only languages with a choice; {} none (polyglotic-hq 323)
+    language_choices: dict[str, dict[str, object]] = field(default_factory=dict)
+    # the learning load's rules for each language learned, by its code
+    # (core.learning.load.LoadRules, read leniently): its size, the meetings
+    # a stage, what counts as one, the most in a colour. Only what was
+    # chosen; {} none. Whether the mode is on is the Lab's (`caption_lab`'s
+    # "load": polyglotic-hq 324)
+    learning_load: dict[str, dict[str, object]] = field(default_factory=dict)
+    # where each language learned goes back to on Learning's Reset after
+    # "Mark the first N words known" (core.learning.first_known.Before, read
+    # leniently): its known line before the first quick mark; {} none was
+    # set. Only languages with a Reset offered (polyglotic-hq 342)
+    known_reset: dict[str, dict[str, object]] = field(default_factory=dict)
     locked: bool = False
     overlay_geometry: dict[str, list[int]] = field(default_factory=dict)
     # the display: the captions' font and colours, the panel behind them,
@@ -156,22 +234,47 @@ class AppSettings:
     # "smaller", "normal", "larger" or "largest" - every window of the app
     # but the captions, which keep their own (polyglotic-hq 292)
     app_text_size: str = "normal"
+    # how far back each transcript window's list goes (Settings > App): the
+    # newest 1,000 lines, the last three hours or the whole session -
+    # `ui_next.views.transcript.TranscriptLength`'s values (polyglotic-hq 334)
+    transcript_length: str = "newest"
+    # Quit asks to save a transcript of more than 300 lines that isn't saved,
+    # with three hours or the whole session kept; "Don't ask again" turns it
+    # off, Settings > App > Transcripts back on (polyglotic-hq 334)
+    transcript_ask_at_quit: bool = True
     # the tray said once that closing the main window keeps the app running
     # there (polyglotic-hq 135, finding 10): never again on this PC
     tray_note_shown: bool = False
     # "Start Polyglotic with Windows?" was asked, after a good session -
     # once only, whatever the answer (polyglotic-hq 176)
     start_with_windows_asked: bool = False
+    # on a Mac, "Move Polyglotic to Applications?" was asked, the app run
+    # from macOS's temporary copy - once only, whatever the answer
+    # (polyglotic-hq 433, decision 0205)
+    applications_offered: bool = False
     # Home's line asking for the level (the first run doesn't: polyglotic-hq
     # 293) was answered Not now - never again; setting the level ends it too
     level_line_dismissed: bool = False
+    # the version whose release notes the learner has seen: Home's What's
+    # new card shows each newer version's after an update, until it's
+    # closed; a fresh install starts at its own (polyglotic-hq 345,
+    # `core.releases.notes`). None: kept by no version yet (0.1.5 and before)
+    whats_new_seen: str | None = None
     # the account's test group, as the server last said (`welcome.cohort`);
     # None signed out or not yet known. The alpha's testers get "Report a
     # problem" with everything attached (polyglotic-hq 275)
     cohort: str | None = None
-    # audio: what's listened to - nothing until the learner picks (the
-    # first run starts paused: polyglotic-hq DECISIONS.md #25)
-    whole_system: bool = False  # everything the PC plays, not chosen apps
+    # the planned maintenance window the server last told of (its times and
+    # how far this PC's clock was ahead of the server's: core.listening.
+    # maintenance's `stored`), so the app still says it after a restart while
+    # the server can't be reached; empty: none (polyglotic-hq 319)
+    maintenance: dict[str, object] = field(default_factory=dict)
+    # audio: what's listened to - everything the PC plays for a new learner,
+    # from the first launch until they pick apps (polyglotic-hq 484, the
+    # user, 2026-11-18; it was nothing until they picked, DECISIONS.md #25,
+    # until then). Follows the default until changed (`FOLLOW_DEFAULT`), so
+    # a learner from 0.1.7 or before keeps what they had
+    whole_system: bool = True  # everything the PC plays, not chosen apps
     # the apps picked, by name (they stay on this PC): each captioned at once,
     # as a source of its own
     apps: tuple[str, ...] = ()
@@ -179,6 +282,12 @@ class AppSettings:
     # app picked only (`captions_everything_else`; DECISIONS.md #59)
     everything_else: bool = False
     caption_mic: bool = False  # the user's own speech, captioned "You"
+    # which speakers everything the PC plays is heard from, and which mic
+    # is captioned (and dictation's): the OS's id for each, kept on this PC
+    # only (polyglotic-hq 372) - None: Windows' default, also used while
+    # the one chosen isn't plugged in
+    speaker_device: str | None = None
+    mic_device: str | None = None
     # capturing apps one by one failed on this PC, where Windows doesn't
     # promise it (Windows 10 version 2004 to 22H2; decision 0076): the
     # Windows build and app version it failed with ("windows", "app") and
@@ -197,17 +306,24 @@ class AppSettings:
     # end to shown, and the server's share (polyglotic-hq 271; the tray's
     # "Show each caption's delay"). For finding out why captions come late.
     show_delay: bool = False
-    # dictation (polyglotic-hq 283, decision 0073): off until turned on - the
-    # mic is then sent only while `dictation_key` (a DictationKey as kept:
+    # dictation (polyglotic-hq 283, decision 0073): on for a new learner
+    # (478; off until turned on before) - the mic is sent only while
+    # `dictation_key` (a DictationKey as kept:
     # "right_ctrl", "ctrl+alt+d", 283's "insert"...; polyglotic-hq 289) is
     # held; heard as `dictation_language` - None: whatever language is
     # detected, each hold; else that one, forced (one of the speech model's,
     # DICTATION_LANGUAGES); English in Australian spelling if
     # `dictation_australian`
-    dictation: bool = False
+    dictation: bool = True
     dictation_key: str = str(DEFAULT_KEY)
     dictation_language: str | None = None
     dictation_australian: bool = False
+    # the settings changed on this PC since this record began (0.1.8), by
+    # name - by the learner, or by the app for them: a switch that follows
+    # the app's default (`FOLLOW_DEFAULT`) and isn't here takes the default
+    # of the version running. Settings from before the record count as all
+    # changed: they can't say which were (polyglotic-hq 478, decision 0220)
+    changed: tuple[str, ...] = ()
 
     @property
     def caption_mode(self) -> CaptionMode:
@@ -222,6 +338,25 @@ class AppSettings:
         return LearningLanguages.of(
             self.learning, self.also_learning, self.not_now_learning
         )
+
+    def choices_for(self, code: str) -> LanguageChoices:
+        """What the learner chose for the language `code` (its learning
+        window's size); the defaults where nothing was."""
+        return LanguageChoices.from_stored(self.language_choices.get(code))
+
+    def reset_point(self, code: str) -> Before | None:
+        """Where Reset takes the language `code`'s known line back to after
+        a quick mark; None: no Reset is offered (polyglotic-hq 342)."""
+        stored = self.known_reset.get(code)
+        return Before.from_stored(stored) if stored is not None else None
+
+    def load_rules_for(self, code: str) -> LoadRules | None:
+        """The learning load's rules for the language `code` - the
+        defaults where nothing was chosen - or None while the Lab's mode is
+        off (polyglotic-hq 324)."""
+        if self.caption_lab.get("load") is not True:
+            return None
+        return load_rules_from(self.learning_load.get(code))
 
     @property
     def word_introductions(self) -> WordIntroductions:
@@ -238,8 +373,10 @@ class AppSettings:
         values["targets"] = list(self.targets)
         values["spelling_hints"] = list(self.spelling_hints)
         values["apps"] = list(self.apps)
+        values["reading_lines"] = list(self.reading_lines)
         values["also_learning"] = list(self.also_learning)
         values["not_now_learning"] = list(self.not_now_learning)
+        values["changed"] = list(self.changed)
         # what versions before 176 read: the mode followed, chosen or not
         values[OLD_CAPTION_TIMING] = self.caption_mode.value
         return values
@@ -249,6 +386,7 @@ class AppSettings:
         """Settings from what was stored: anything missing or not valid
         takes its default. The one app an older version kept (`app_name`)
         becomes the only app picked."""
+        as_filed = stored  # as the file has it, before `_migrated` fills it in
         stored = _migrated(stored)
         defaults = cls()
         found: dict[str, Any] = {}
@@ -273,6 +411,23 @@ class AppSettings:
                 for t, s in found["second_languages"].items()
                 if t not in NOT_OFFERED and s not in NOT_OFFERED
             }
+        # a switch nobody changed follows today's default (478); settings
+        # without the record (0.1.7 and before, or not valid) can't say
+        # which were changed, so each valid one they hold counts as changed
+        changed = found.get("changed")
+        if changed is None:
+            changed = tuple(
+                f.name for f in fields(cls) if f.name in as_filed and f.name in found
+            )
+            found["changed"] = changed
+        for name in FOLLOW_DEFAULT:
+            if name not in changed:
+                found.pop(name, None)
+        # what's captioned is one choice (484): apps picked by a learner who
+        # never chose everything the PC plays - in a record begun while its
+        # default was off, or a file without it - are captioned, not everything
+        if found.get("apps") and "whole_system" not in changed:
+            found["whole_system"] = False
         return replace(defaults, **found)
 
     @property
@@ -314,6 +469,55 @@ def learning_changes(languages: LearningLanguages) -> dict[str, object]:
     }
 
 
+ADDED_LANGUAGE_LINKS = LinkChoice.PAST_KNOWN
+"""Which words are linked in a language added from now on, until the
+learner chooses (polyglotic-hq 323): only those past what they know - key
+words, where no dictionary ranks them. A language learned before keeps
+every word linked."""
+
+
+def added_language_changes(
+    value: AppSettings, languages: LearningLanguages
+) -> dict[str, object]:
+    """The settings change for the languages being learned becoming
+    `languages` (`learning_changes`), and each one newly added starting
+    with `ADDED_LANGUAGE_LINKS` - unless it has choices already (learned
+    before, stopped, and added again: they were kept)."""
+    changes = learning_changes(languages)
+    before = value.learning_languages
+    choices = {k: dict(v) for k, v in value.language_choices.items()}
+    for code in languages.all:
+        if not before.learns(code) and code not in choices:
+            choices[code] = LanguageChoices(links=ADDED_LANGUAGE_LINKS).to_stored()
+    if choices != value.language_choices:
+        changes["language_choices"] = choices
+    return changes
+
+
+def language_choices_changes(
+    value: AppSettings, code: str, choices: LanguageChoices
+) -> dict[str, object]:
+    """The settings change that keeps `choices` for the language `code`:
+    the other languages' as they are, and no entry for one with nothing
+    chosen."""
+    kept = {k: dict(v) for k, v in value.language_choices.items() if k != code}
+    stored = choices.to_stored()
+    if stored:
+        kept[code] = stored
+    return {"language_choices": kept}
+
+
+def reset_point_changes(
+    value: AppSettings, code: str, before: Before | None
+) -> dict[str, object]:
+    """The settings change that keeps `before` as where Reset takes the
+    language `code` back to (None: no Reset), the others as they are."""
+    kept = {k: dict(v) for k, v in value.known_reset.items() if k != code}
+    if before is not None:
+        kept[code] = before.to_stored()
+    return {"known_reset": kept}
+
+
 def introductions_changes(choice: WordIntroductions) -> dict[str, object]:
     """The settings Learning's word introductions change to `choice`."""
     return {"marks_off": choice.off, "common_words_only": choice.common_only}
@@ -336,7 +540,14 @@ _TUPLES = (  # stored as lists
     "apps",
     "also_learning",
     "not_now_learning",
+    "reading_lines",
+    "changed",
 )
+
+
+OLD_LINK_WORDS = "link_words_coloured"
+"""0.1.7's previews' one switch for linked words in their link's colour,
+in what was said and the translation alike (395): two since 431."""
 
 
 def _migrated(stored: Mapping[str, object]) -> Mapping[str, object]:
@@ -353,6 +564,11 @@ def _migrated(stored: Mapping[str, object]) -> Mapping[str, object]:
         found["overlay_position"] = "custom"
     if "caption_mode_chosen" not in found:
         found["caption_mode_chosen"] = _caption_mode_chosen_from(found)
+    old_link_words = found.get(OLD_LINK_WORDS)
+    if isinstance(old_link_words, bool):  # 0.1.7's previews: one for both (431)
+        # off stays off, now that both are on by default (446)
+        found.setdefault("said_in_link_colours", old_link_words)
+        found.setdefault("translation_in_link_colours", old_link_words)
     return found
 
 
@@ -450,6 +666,64 @@ def _text_map(value: object, valid: Callable[[str], bool]) -> bool:
     )
 
 
+def load_rules_from(stored: object) -> LoadRules:
+    """A language's learning load rules as the settings keep them: anything
+    missing or not valid takes its default."""
+    if not isinstance(stored, dict):
+        return LoadRules()
+    default = LoadRules()
+
+    def count(name: str, least: int, most: int, otherwise: int) -> int:
+        value = stored.get(name)
+        if isinstance(value, bool) or not isinstance(value, int):
+            return otherwise
+        return value if least <= value <= most else otherwise
+
+    counting = stored.get("counting")
+    return LoadRules(
+        size=count("size", MIN_SIZE, MAX_SIZE, default.size),
+        step=count("step", 1, 50, default.step),
+        counting=Counting(counting)
+        if isinstance(counting, str) and counting in set(Counting)
+        else default.counting,
+        stage_limit=count("limit", 0, MAX_SIZE, default.stage_limit),
+    )
+
+
+def load_rules_changes(
+    value: AppSettings, code: str, rules: LoadRules
+) -> dict[str, object]:
+    """The settings change that keeps `rules` for the language `code`'s
+    learning load: only what differs from the defaults, the other
+    languages' as they are."""
+    default = LoadRules()
+    stored: dict[str, object] = {}
+    if rules.size != default.size:
+        stored["size"] = rules.size
+    if rules.step != default.step:
+        stored["step"] = rules.step
+    if rules.counting is not default.counting:
+        stored["counting"] = rules.counting.value
+    if rules.stage_limit != default.stage_limit:
+        stored["limit"] = rules.stage_limit
+    kept = {k: dict(v) for k, v in value.learning_load.items() if k != code}
+    if stored:
+        kept[code] = stored
+    return {"learning_load": kept}
+
+
+def _choices_map(value: object) -> bool:
+    """Languages' codes, each to a map of its choices (read leniently by
+    `LanguageChoices.from_stored`: one value not valid loses only itself)."""
+    return isinstance(value, dict) and all(
+        isinstance(k, str)
+        and bool(_LEARNED_CODE.fullmatch(k))
+        and isinstance(v, dict)
+        and all(isinstance(name, str) for name in v)
+        for k, v in value.items()
+    )
+
+
 def _geometry(value: object) -> bool:
     return isinstance(value, dict) and all(
         isinstance(k, str)
@@ -470,9 +744,13 @@ _CHECKS: dict[str, Callable[[object], bool]] = {
     "targets": _languages,
     "second_languages": _language_map,
     "spoken_language": _text_or_none,
+    "mandarin_script": lambda v: v is None or v in MANDARIN_SCRIPTS,
+    "speaker_device": _text_or_none,
+    "mic_device": _text_or_none,
     "dictation_key": _dictation_key,
     "dictation_language": lambda v: v is None or v in DICTATION_LANGUAGES,
     "cohort": _text_or_none,
+    "whats_new_seen": _text_or_none,
     "word_links": lambda v: v in {w.value for w in WordLinks},
     "link_detail": lambda v: v in {d.value for d in LinkDetail},
     "link_line": lambda v: v in {w.value for w in LinkLine},
@@ -481,10 +759,25 @@ _CHECKS: dict[str, Callable[[object], bool]] = {
     "opacity": _number_in(0.0, 1.0),
     "fade_after": _number_in(1.0, 600.0, optional=True),
     "caption_arrival": lambda v: v in ARRIVALS,
+    "pause_hidden_after": lambda v: (
+        v is None
+        or (isinstance(v, int) and not isinstance(v, bool) and v in PAUSE_CHOICES)
+    ),
     "caption_lab": lambda v: isinstance(v, dict) and all(isinstance(k, str) for k in v),
+    "reading_lines": lambda v: (
+        isinstance(v, list | tuple) and all(x in READING_LANGUAGES for x in v)
+    ),
+    "reading_size": lambda v: v in {s.value for s in ReadingSize},
+    "reading_colour": lambda v: v in {c.value for c in ReadingColour},
+    "reading_system": lambda v: v in {s.value for s in ReadingSystem},
+    "reading_custom_color": lambda v: isinstance(v, str) and bool(_COLOR.fullmatch(v)),
+    "language_choices": lambda v: _choices_map(v),
+    "learning_load": lambda v: _choices_map(v),
+    "known_reset": lambda v: _choices_map(v),
     "caption_mode_chosen": lambda v: v is None or v in {m.value for m in CaptionMode},
     "live_update_interval": _number_in(*LIVE_INTERVALS),
     "max_wait_for_text": _number_in(*MAX_WAIT_RANGE),
+    "text_settles_after": _number_in(*SETTLE_RANGE),
     "overlay_geometry": _geometry,
     "caption_font": lambda v: v is None or (isinstance(v, str) and 0 < len(v) <= 100),
     "original_color": lambda v: isinstance(v, str) and bool(_COLOR.fullmatch(v)),
@@ -494,6 +787,7 @@ _CHECKS: dict[str, Callable[[object], bool]] = {
     "window_theme": lambda v: v in WINDOW_THEMES,
     "theme": lambda v: v in THEMES,
     "app_text_size": lambda v: v in APP_TEXT_SIZES,
+    "transcript_length": lambda v: v in TRANSCRIPT_LENGTHS,
     "overlay_width": _number_in(*WIDTH_SHARES, optional=True),
     "apps": _languages,  # a list of strings
     "source_names": lambda v: _text_map(
@@ -502,7 +796,23 @@ _CHECKS: dict[str, Callable[[object], bool]] = {
     "source_colors": lambda v: _text_map(v, lambda c: bool(_COLOR.fullmatch(c))),
     "spelling_hints": _languages,  # a list of strings
     "app_capture_fell_back": lambda v: _text_map(v, lambda text: len(text) <= 100),
+    # read whole by core.listening.maintenance.from_stored, which refuses the rest
+    "maintenance": lambda v: isinstance(v, dict) and len(v) <= 3,
+    "changed": _languages,  # a list of settings' names
 }
+
+
+def with_changed(before: AppSettings, after: AppSettings) -> AppSettings:
+    """`after`, with every setting that differs from `before` named in its
+    record of changes (`AppSettings.changed`; 478)."""
+    moved = [
+        f.name
+        for f in fields(AppSettings)
+        if f.name != "changed"
+        and f.name not in after.changed
+        and getattr(before, f.name) != getattr(after, f.name)
+    ]
+    return replace(after, changed=(*after.changed, *moved)) if moved else after
 
 
 class Settings(QObject):
@@ -527,6 +837,7 @@ class Settings(QObject):
         new = replace(self.value, **changes)  # type: ignore[arg-type]
         if new == self.value:
             return
+        new = with_changed(self.value, new)
         self.value = new
         if self._store is not None:
             # the file's other keys as they are now: saved, changed or

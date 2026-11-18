@@ -19,10 +19,11 @@ import pytest
 
 from polyglotic_desktop.core.learning.highlights import caption_cap, unfamiliar_words
 from polyglotic_desktop.core.learning.levels import (
-    KNOWN_AT,
-    NEXT_BAND,
-    SLOPE,
-    LevelCurve,
+    DEFAULT_WINDOW,
+    UNLIMITED,
+    WORDS,
+    KnownLine,
+    place,
 )
 from polyglotic_desktop.core.lexicon.chinese import ChineseDictionary
 from polyglotic_desktop.core.listening.captions import Language, WordLink
@@ -48,11 +49,11 @@ from polyglotic_desktop.core.listening.timing import (
 from polyglotic_desktop.core.shared import (
     EntryFacts,
     EntryId,
-    Level,
     WordInLine,
     WordStatus,
 )
 from polyglotic_desktop.ports.capture import SourceCategory
+from polyglotic_desktop.ports.dictionary import EntryRecord
 from tools import rule_cases
 
 FOLDER = Path(__file__).resolve().parents[1] / "docs" / "rule-cases"
@@ -169,25 +170,31 @@ def test_timing(case: dict[str, Any]) -> None:
                 assert mine[key] == value, (key, mine, theirs)
 
 
-# -- the level curve -------------------------------------------------------------------
+# -- the known line and the learning window ------------------------------------------------
 
 
-@pytest.mark.parametrize("case", LEVELS["cases"], ids=lambda c: str(c["midpoint"]))
-def test_level_curve(case: dict[str, Any]) -> None:
-    assert LEVELS["constants"] == {
-        "slope": SLOPE,
-        "known_at": KNOWN_AT,
-        "next_band": NEXT_BAND,
-    }
-    curve = LevelCurve(case["scheme"], case["midpoint"])
-    if "picked_level" in case:
-        picked = LevelCurve.picked(Level(case["scheme"], case["picked_level"]))
-        assert picked == curve and picked.picked_level == case["picked_level"]
-    for row in case["levels"]:
-        level = row["level"]
-        assert abs(curve.chance_known(level) - row["chance_known"]) < CLOSE
-        assert curve.estimates_known(level) is row["estimates_known"]
-        assert curve.within_reach(level) is row["within_reach"]
+@pytest.mark.parametrize(
+    "case",
+    LEVELS["cases"],
+    ids=lambda c: f"{c['scale']}-{c['known']}-{c['window_size']}",
+)
+def test_known_line(case: dict[str, Any]) -> None:
+    assert LEVELS["constants"] == {"words": WORDS, "default_window": DEFAULT_WINDOW}
+    line = KnownLine(case["scale"], case["known"])
+    stored = case["stored"]
+    assert KnownLine.stored(stored["scheme"], stored["midpoint"]) == line
+    assert line.midpoint == stored["midpoint"]
+    size = case["window_size"]
+    window = line.window(UNLIMITED if size == UNLIMITED.value else size)
+    assert window.last == case["window_last"]
+    for row in case["words"]:
+        facts = EntryFacts(
+            EntryId("case:word"), row["level"], row["rank"], False, row["level_words"]
+        )
+        assert place(facts) == row["place"]
+        assert line.knows(facts) is row["known"]
+        assert window.reaches(facts) is row["reached"]
+        assert window.holds(facts) is row["in_window"]
 
 
 # -- highlights ------------------------------------------------------------------------
@@ -214,7 +221,7 @@ def test_highlights(case: dict[str, Any]) -> None:
     shown = unfamiliar_words(
         lines,
         lambda facts: statuses[facts.entry_id],
-        LevelCurve("", case["midpoint"]),
+        KnownLine(case["scale"], case["known"]).window(),
         lambda entry_id: heard.get(entry_id.removeprefix("case:"), 0),
         case["common_only"],
     )
@@ -228,11 +235,18 @@ def test_highlights(case: dict[str, Any]) -> None:
 
 class Headwords:
     """All the word split reads from a dictionary file: its headwords
-    (both scripts) and their frequency ranks."""
+    (both scripts), their frequency ranks, and which are kept whole - a
+    name, an idiom or a syllabus's word (decision 0151), here as a name."""
 
-    def __init__(self, headwords: Iterable[str], ranks: Mapping[str, int]) -> None:
+    def __init__(
+        self,
+        headwords: Iterable[str],
+        ranks: Mapping[str, int],
+        kept_whole: Iterable[str] = (),
+    ) -> None:
         self._headwords = list(headwords)
         self._ranks = dict(ranks)
+        self._kept = set(kept_whole)
 
     def headwords(self) -> Iterable[str]:
         return self._headwords
@@ -240,10 +254,14 @@ class Headwords:
     def frequency_ranks(self) -> Mapping[str, int]:
         return self._ranks
 
+    def records(self, word: str) -> list[EntryRecord]:
+        reading = "Kept" if word in self._kept else "kept"
+        return [EntryRecord(word, word, word, reading, ())]
+
 
 @pytest.mark.parametrize("case", SPLIT["cases"], ids=lambda c: c["splits"][0]["text"])
 def test_word_split(case: dict[str, Any]) -> None:
-    file = Headwords(case["headwords"], case["frequency_ranks"])
+    file = Headwords(case["headwords"], case["frequency_ranks"], case["kept_whole"])
     dictionary = ChineseDictionary(file)  # type: ignore[arg-type]
     for split in case["splits"]:
         text = split["text"]

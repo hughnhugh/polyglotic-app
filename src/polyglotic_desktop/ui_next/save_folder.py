@@ -31,10 +31,18 @@ def install_folder() -> Path | None:
     """The installer's folder the packed app runs from - `current`'s parent,
     which holds the packages and the updater too, all replaced or removed
     on install, update and uninstall (decision 0014) - or the packed
-    folder itself, run without installing. None run from source."""
+    folder itself, run without installing. On a Mac, the whole `.app`
+    bundle the executable runs from (`Polyglotic.app/Contents/MacOS`),
+    which an update or a new copy replaces (polyglotic-hq 409, 410). None
+    run from source."""
     if not getattr(sys, "frozen", False):
         return None
     folder = Path(sys.executable).resolve().parent
+    bundle = next(
+        (f for f in (folder, *folder.parents) if f.suffix.lower() == ".app"), None
+    )
+    if bundle is not None:
+        return bundle
     return folder.parent if folder.name.lower() == "current" else folder
 
 

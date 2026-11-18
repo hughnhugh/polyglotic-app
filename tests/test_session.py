@@ -8,8 +8,10 @@ shortened and the backoff's jitter is fixed so the tests run in seconds.
 """
 
 import asyncio
+import dataclasses
 import json
 import logging
+import re
 import threading
 import time
 from collections.abc import Callable, Iterator
@@ -44,6 +46,7 @@ from polyglotic_desktop.core.listening.captions import (
     CaptionUpdate,
     Language,
 )
+from polyglotic_desktop.core.listening.maintenance import Maintenance
 from polyglotic_desktop.core.listening.recheck import (
     RecheckOutcome,
     RecheckRequest,
@@ -80,6 +83,7 @@ class Listener:
         self.notices: list[str] = []
         self.rechecks: list[RecheckResult] = []
         self.plans: list[protocol.PlanState] = []
+        self.windows: list[Maintenance | None] = []
         self.failed = 0
         self.stalls: list[bool] = []
 
@@ -109,6 +113,9 @@ class Listener:
 
     def plan_changed(self, plan: protocol.PlanState) -> None:
         self.plans.append(plan)
+
+    def maintenance_changed(self, window: Maintenance | None) -> None:
+        self.windows.append(window)
 
     def states(self) -> list[SessionState]:
         return [s.state for s in self.statuses]
@@ -713,6 +720,53 @@ def test_a_live_updates_error_before_its_finished_speech_went_changes_nothing(
     assert (ended.captions, ended.dropped) == (1, 0)
 
 
+def test_refused_live_updates_are_told_once_and_logged_once_not_each(
+    server: FakeServer, caplog: pytest.LogCaptureFixture
+) -> None:
+    """polyglotic-hq 300: three apps in Live updates had 75 live updates
+    refused in two minutes - a WARNING each, and the learner told nothing."""
+
+    def answer(header: protocol.SpeechHeader) -> list[dict[str, Any]]:
+        if header.kind == "live":
+            return [error_for(header) | {"kind": "live"}]
+        return [caption_for(header)]
+
+    server.script = [answering(answer)]
+    caplog.set_level(logging.INFO)
+    with Harness(server) as app:
+        wait_until(app.listener.listening)
+        for n in range(12):
+            app.speech.put(live(f"c{n}"), b"OggS live")
+            app.session.speech_ready()
+        wait_until(lambda: app.listener.notices == ["live_updates_held_back"])
+        app.speech.put(finished("last"), b"OggS finished")
+        app.session.speech_ready()
+        wait_until(lambda: len(app.listener.captions) == 1)
+    assert app.listener.notices == ["live_updates_held_back"]  # once, not 12 times
+    assert app.session.ended() is not None
+    lines = [r for r in caplog.records if "speech limit" in r.getMessage()]
+    # the first refusal at once, and what was left as the session ended
+    assert [r.levelno for r in lines] == [logging.WARNING, logging.WARNING]
+    assert "refused 1 " in lines[0].getMessage()
+    assert "refused 11 " in lines[1].getMessage()
+    assert not [r for r in caplog.records if "the server: error" in r.getMessage()]
+
+
+def test_live_updates_that_waited_their_turn_are_told_too(server: FakeServer) -> None:
+    server.script = [answering(lambda header: [caption_for(header)])]
+    with Harness(server) as app:
+        wait_until(app.listener.listening)
+        for n in range(8):
+            held = dataclasses.replace(live(f"c{n}"), held=True)
+            app.speech.put(held, b"OggS live")
+            app.session.speech_ready()
+        wait_until(lambda: app.listener.notices == ["live_updates_held_back"])
+        wait_until(lambda: len(server.speech) == 8)  # the notice comes as they're sent
+    # nothing about it goes to the server: the header is as any live update's
+    assert len(server.speech) == 8
+    assert all("held" not in h.model_dump() for h, _ in server.speech)
+
+
 def test_finished_speech_with_a_live_updates_error_is_sent_again_after_a_reconnect(
     server: FakeServer,
 ) -> None:
@@ -1001,3 +1055,39 @@ def test_a_sync_session_never_asks_to_resume(server: FakeServer) -> None:
     wait_until(lambda: len(server.hellos) >= 1)
     session.stop()
     assert "resume" not in server.hellos[0]
+
+
+def test_the_log_says_how_long_each_drop_kept_the_learner_away(
+    server: FakeServer, caplog: pytest.LogCaptureFixture
+) -> None:
+    """302: a tester's log had a session end and resume about 140 times in
+    two days, but not how long each session had lasted or how long the
+    learner waited for captions - which the server's own log can't say."""
+    caplog.set_level(logging.INFO)
+    a = "11111111-1111-4111-8111-111111111111"
+
+    async def welcome_then_drop(
+        server: FakeServer, websocket: ServerConnection
+    ) -> None:
+        await websocket.send(json.dumps(welcome_message(session_id=a)))
+        await websocket.close(1011)
+
+    server.script = [welcome_then_drop, welcome_then_drop]
+    with Harness(server) as app:
+        wait_until(lambda: app.listener.listening(2), timeout=8)
+    assert "session ended (close 1011, server_error) after 0s; trying again" in (
+        caplog.text
+    )
+    assert re.search(
+        r"session resumed: no, \d+\.\ds after the last one ended", caplog.text
+    )
+
+
+def test_the_log_says_how_long_a_failed_open_took(
+    server: FakeServer, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A reset at once and no answer for 10 s read alike (302)."""
+    caplog.set_level(logging.INFO)
+    with Harness(server, url="http://127.0.0.1:9", jitter=1.0) as app:
+        wait_until(lambda: SessionState.WAITING in app.listener.states(), timeout=5)
+    assert re.search(r"couldn't open a session after \d+\.\ds: \w+", caplog.text)

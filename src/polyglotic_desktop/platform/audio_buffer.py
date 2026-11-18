@@ -37,6 +37,18 @@ class AudioBuffer:
         with self._lock:
             self._chunks.clear()
 
+    def peak(self, seconds: float = 0.1) -> float | None:
+        """The loudest sample over the newest `seconds` of audio, 0.0 to
+        1.0 of full scale: a level meter's reading (polyglotic-hq 372).
+        None while the buffer has nothing."""
+        with self._lock:
+            newest = list(self._chunks)[-8:]  # a capture's chunks are short
+        if not newest:
+            return None
+        want = round(seconds * VAD_SAMPLE_RATE)
+        tail = np.concatenate([audio for _, audio in newest])[-want:]
+        return float(np.max(np.abs(tail))) if len(tail) else 0.0
+
     def slice(
         self,
         start: float,

@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 from tests.learning.fakes import Clock, words_of
 from tests.learning.test_vocabulary import ENTRIES, LINE, eid, lookup
+from tests.stopped_clock import AFTER_MIDNIGHT_IN_MELBOURNE, stopped_at
 
 from polyglotic_desktop.adapters import sqlite_learning
 from polyglotic_desktop.adapters.sqlite_learning import (
@@ -341,7 +342,7 @@ def test_only_the_newest_few_are_kept_and_never_a_folder(tmp_path: Path) -> None
 
 
 def test_set_aside_in_this_pcs_time_and_the_oldest_by_time_go_first(
-    tmp_path: Path,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Home's banner names the file: named in UTC it read as yesterday in
     Australia (polyglotic-hq 203, as the settings file's). With this PC's
@@ -359,14 +360,17 @@ def test_set_aside_in_this_pcs_time_and_the_oldest_by_time_go_first(
     path = tmp_path / "learning.sqlite"
     not_sqlite(path)
 
+    # the clock stopped: a "today" read after the name was made was the next
+    # day when the PC's midnight fell between (polyglotic-hq 344)
+    now = AFTER_MIDNIGHT_IN_MELBOURNE
+    monkeypatch.setattr(sqlite_learning, "datetime", stopped_at(now))
     store = open_learning_store(path)
     store.close()
 
     assert store.set_aside is not None
     new = store.set_aside.path.name
-    today = datetime.now().astimezone()
-    assert new.startswith(f"learning.sqlite.damaged-{today:%Y%m%d}")
-    assert new.endswith(today.strftime("%z"))
+    here = now.astimezone()  # this PC's time and offset
+    assert new == f"learning.sqlite.damaged-{here:%Y%m%dT%H%M%S%z}"
     kept = {p.name for p in tmp_path.glob("learning.sqlite.damaged-*")}
     assert kept == {names[2], names[3], new}  # the two oldest by time went
     assert set_aside_in(tmp_path) == [names[2], names[3], new]

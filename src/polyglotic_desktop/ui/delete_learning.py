@@ -6,10 +6,11 @@ to see and delete. The server's copy goes by protocol.md's
 `learning_delete`, which names no language: every language's goes. The
 copy on this PC (statuses, saved words with their sentences, exposure
 counts) is theirs as well, so deleting it is a separate, explicit choice -
-off until ticked - and covers the language being learned now (its own
-file, project 043), with any copies of that file set aside after damage
-(polyglotic-hq 206): when there are some, the dialog says how many go
-with it (207) - under the box, while it's ticked (223). The dialog only
+off until ticked - and covers every language whose learning data is open
+(each its own file, project 043; DECISIONS #135, polyglotic-hq 306), with
+any copies of those files set aside after damage (polyglotic-hq 206):
+when there are some, the dialog says how many go with them (207) - under
+the box, while it's ticked (223). The dialog only
 asks; `main` sends the request (`DataExchange.delete_learning`) and, once the server
 answers, deletes the local copy if asked (`Vocabulary.delete_learning_data`).
 Every string goes through `tr()`.
@@ -24,14 +25,16 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from polyglotic_desktop.ui.os_words import pc_or_mac
+
 BOX_INDENT = 24
 """The set-aside line's indent: under the box's words, not its square."""
 
 
 class DeleteLearningDialog(QDialog):
     def __init__(self, parent: QWidget | None = None, set_aside: int = 0) -> None:
-        """`set_aside`: how many copies of this language's learning data
-        are set aside on this PC - deleted with it."""
+        """`set_aside`: how many copies of the learning data are set aside
+        on this PC, every open language's - deleted with it."""
         super().__init__(parent)
         self.setObjectName("DeleteLearningDialog")
         self.setWindowTitle(self.tr("Delete your learning data"))
@@ -44,20 +47,34 @@ class DeleteLearningDialog(QDialog):
         title.setWordWrap(True)
         layout.addWidget(title)
         text = QLabel(
-            self.tr(
-                "We'll delete the words you looked up, saved and marked, and any "
-                "exposure counts you shared, in every language you learn. Your "
-                "other PCs keep their own copies until you delete them there too."
+            pc_or_mac(
+                self.tr(
+                    "We'll delete the words you looked up, saved and marked, and any "
+                    "exposure counts you shared, in every language you learn. Your "
+                    "other PCs keep their own copies until you delete them there too."
+                ),
+                self.tr(
+                    "We'll delete the words you looked up, saved and marked, and any "
+                    "exposure counts you shared, in every language you learn. Your "
+                    "other computers keep their own copies until you delete them there "
+                    "too."
+                ),
             )
         )
         text.setObjectName("Dim")
         text.setWordWrap(True)
         layout.addWidget(text)
         self.on_this_pc = QCheckBox(
-            self.tr(
-                "Also delete it from this PC, for the language you're learning "
-                "now - your word statuses, saved words and how often you heard "
-                "each word"
+            pc_or_mac(
+                self.tr(
+                    "Also delete it from this PC, in every language you're learning "
+                    "- your word statuses, saved words and how often you heard each "
+                    "word"
+                ),
+                self.tr(
+                    "Also delete it from this Mac, in every language you're learning - "
+                    "your word statuses, saved words and how often you heard each word"
+                ),
             )
         )
         self.on_this_pc.setObjectName("delete.on_this_pc")
@@ -68,11 +85,19 @@ class DeleteLearningDialog(QDialog):
             # said under the box, and only while it's ticked: unticked, nothing
             # on this PC is deleted, the copies included (polyglotic-hq 223)
             self.set_aside = QLabel(
-                self.tr(
-                    "This also deletes the %Ln copy(s) of your learning data set "
-                    "aside on this PC when it was found damaged.",
-                    "",
-                    set_aside,
+                pc_or_mac(
+                    self.tr(
+                        "This also deletes the %Ln copy(s) of your learning data set "
+                        "aside on this PC when it was found damaged.",
+                        "",
+                        set_aside,
+                    ),
+                    self.tr(
+                        "This also deletes the %Ln copy(s) of your learning data set "
+                        "aside on this Mac when it was found damaged.",
+                        "",
+                        set_aside,
+                    ),
                 )
             )
             self.set_aside.setObjectName("Dim")

@@ -27,6 +27,7 @@ from polyglotic_desktop.core.learning.anki import AnkiNote, deck_notes, guid
 from polyglotic_desktop.core.learning.lookups import LookupContext
 from polyglotic_desktop.core.learning.vocabulary import EntryText, Vocabulary
 from polyglotic_desktop.core.shared import EntryFacts, EntryId
+from polyglotic_desktop.ports.anki_deck import DeckSentence
 
 HANG = EntryId("cedict:行-háng")
 XING = EntryId("cedict:行-xíng")
@@ -105,7 +106,9 @@ def note(entry_id: EntryId, sentence: str = "", translation: str = "") -> AnkiNo
 
 
 def build(notes: list[AnkiNote], **options: bool) -> Collection:
-    return read_apkg(GenankiDeckWriter().build(deck_notes(notes), **options))
+    listen, recall = options.get("listen", False), options.get("recall", False)
+    built = GenankiDeckWriter().build(deck_notes(notes), listen=listen, recall=recall)
+    return read_apkg(built)
 
 
 def test_chinese_and_english_notes_go_in_their_own_note_type_and_sub_deck() -> None:
@@ -272,3 +275,110 @@ def test_the_csv_and_the_deck_file_carry_the_same_words_and_guids() -> None:
     assert set(c.notes) == {guid(HANG), guid(XING)}
     vocab.mark_exported(export.entry_ids)
     assert vocab.export_anki(only_new=True).notes == ()
+
+
+# -- a pack language's words (decision 0175; polyglotic-hq 391) --------------
+
+HOUSE = EntryId("wiktru:дом")
+EAT = EntryId("jmdict:食べる")
+TEXTS[HOUSE] = EntryText("дом", "", "дом", "house; home")
+TEXTS[EAT] = EntryText("食べる", "", "たべる", "to eat")
+
+
+def pack_build(language: str, notes: list[AnkiNote]) -> Collection:
+    return read_apkg(GenankiDeckWriter().build(deck_notes(notes, language)))
+
+
+def test_a_pack_languages_words_go_in_its_own_note_type_and_sub_deck() -> None:
+    c = pack_build("ru", [note(HOUSE, "Это мой Дом.", "This is my house.")])
+    russian = c.notes[guid(HOUSE)]
+    assert list(russian) == list(FIELDS)  # the same fields as Chinese's
+    assert russian["Word"] == "дом" and russian["Traditional"] == ""
+    assert russian["Reading"] == "дом" and russian["Meaning"] == "house; home"
+    assert russian["Sentence"] == "Это мой <b>Дом</b>."  # any case
+    assert russian["Translation"] == "This is my house."
+    assert russian["EntryID"] == HOUSE
+    assert c.note_models[guid(HOUSE)] == "Polyglotic Russian"
+    assert "Polyglotic::Russian" in set(c.decks.values())
+    model = c.models["Polyglotic Russian"]
+    templates = " ".join(t["qfmt"] + t["afmt"] for t in model["tmpls"])
+    assert "{{tts ru_RU:Word}}" in templates and "{{tts ru_RU:Sentence}}" in templates
+    assert "YaHei" not in model["css"]  # the card's own font, not a Chinese one
+
+
+def test_a_japanese_word_with_kanji_is_japanese_not_chinese() -> None:
+    c = pack_build("ja", [note(EAT, "パンを食べる。")])
+    assert c.note_models[guid(EAT)] == "Polyglotic Japanese"
+    assert c.notes[guid(EAT)]["Sentence"] == "パンを<b>食べる</b>。"
+    model = c.models["Polyglotic Japanese"]
+    assert "Yu Gothic UI" in model["css"] and "YaHei" not in model["css"]
+    assert "{{tts ja_JP:Word}}" in model["tmpls"][0]["qfmt"]
+
+
+def ids(data: bytes) -> tuple[set[str], set[str]]:
+    """The note type IDs and deck IDs in a deck file (Anki's own default
+    deck, 1, left out)."""
+    with (
+        zipfile.ZipFile(io.BytesIO(data)) as archive,
+        tempfile.TemporaryDirectory() as folder,
+    ):
+        path = Path(folder) / "c.anki2"
+        path.write_bytes(archive.read("collection.anki2"))
+        db = sqlite3.connect(path)
+        try:
+            models, decks = db.execute("SELECT models, decks FROM col").fetchone()
+        finally:
+            db.close()
+    return set(json.loads(models)), set(json.loads(decks)) - {"1"}
+
+
+def test_each_languages_note_type_and_deck_keep_their_ids_for_good() -> None:
+    """Anki knows a note type and a deck by number: a language's must be
+    the same in every export, and no two languages' the same - worked out
+    from the code, so a language added later needs no table."""
+    writer = GenankiDeckWriter()
+    russian = ids(writer.build(deck_notes([note(HOUSE)], "ru")))
+    assert russian == ({"1791610507"}, {"1791640507"})  # r=18, u=21: 18*27+21
+    assert ids(writer.build(deck_notes([note(HOUSE)], "ru"))) == russian
+    seen: set[str] = set()
+    codes = ["ja", "es", "ko", "fr", "de", "pt", "it", "ru", "vi", "nl", "id", "ar",
+             "hi", "pl", "tr", "ms", "th", "yue", "xx", "aa", "zzz"]  # fmt: skip
+    for code in codes:
+        models, decks = ids(writer.build(deck_notes([note(HOUSE)], code)))
+        assert len(models) == len(decks) == 1
+        assert not (models | decks) & seen, code
+        seen |= models | decks
+    chinese = ids(writer.build(deck_notes([note(DURIAN), note(RUN)])))
+    assert chinese == (
+        {"1791606001", "1791606002"},
+        {"1791606101", "1791606102"},
+    )  # as they always were
+    assert not (chinese[0] | chinese[1]) & seen
+
+
+def test_a_language_with_no_name_here_yet_still_exports() -> None:
+    c = pack_build("xx", [note(HOUSE)])
+    assert c.note_models[guid(HOUSE)] == "Polyglotic xx"
+    assert "Polyglotic::xx" in set(c.decks.values())
+
+
+SENTENCE_TYPE = (datetime(2026, 11, 7, 12, 5, tzinfo=UTC), "c0b34a6b5fd2166c")
+"""`NOTE_TYPES_CHANGED` and the sentence note type's fingerprint then
+(polyglotic-hq 459): a change to its cards or style needs a new time too."""
+
+
+def test_a_changed_sentence_card_carries_a_new_note_types_changed() -> None:
+    sentence = DeckSentence(
+        "polyglotic:sentence:a", "zh", "我", "我", "I", "", "a", ("polyglotic",), WHEN
+    )
+    c = read_apkg(GenankiDeckWriter().build([], sentences=[sentence]))
+    model = c.models["Polyglotic Chinese sentence"]
+    shape = (
+        model["css"],
+        [f["name"] for f in model["flds"]],
+        [(t["name"], t["qfmt"], t["afmt"]) for t in model["tmpls"]],
+    )
+    digest = hashlib.sha256(json.dumps(shape).encode()).hexdigest()[:16]
+    assert (NOTE_TYPES_CHANGED, digest) == SENTENCE_TYPE
+    assert c.note_models == {"polyglotic:sentence:a": "Polyglotic Chinese sentence"}
+    assert c.decks[str(1_791_606_101)] == "Polyglotic::Chinese"

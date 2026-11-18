@@ -35,7 +35,9 @@ class Action:
 
 @pytest.fixture(autouse=True)
 def judged(monkeypatch: pytest.MonkeyPatch) -> Iterator[list[budget_judge.Judged]]:
-    """This file's judgements, kept out of the run's summary."""
+    """This file's judgements, kept out of the run's summary; judged as on
+    any machine but GitHub's Mac (decision 0195 has a test of its own)."""
+    monkeypatch.delenv("RUNNER_ENVIRONMENT", raising=False)
     mine: list[budget_judge.Judged] = []
     monkeypatch.setattr(budget_judge, "JUDGED", mine)
     yield mine
@@ -150,3 +152,44 @@ def test_a_start_is_one_run_judged_against_its_own_budget() -> None:
     assert budget_judge.fits(budgets.START_FROM_SOURCE, Sampled((start,)))
     assert not budget_judge.fits(budgets.START_FROM_SOURCE, Sampled((start + 1,)))
     assert not budget_judge.fits(budgets.CLICK, Sampled((1.0, 1.0, 51.0)))
+
+
+def test_over_in_every_try_on_a_busy_pc_is_its_own_outcome(
+    qapp: QApplication, judged: list[budget_judge.Judged], load: list[float]
+) -> None:
+    """Every reading busy: "over on a busy PC", still a failure, told apart
+    at a glance from "over" - a reading calm, so the action itself."""
+    load[0] = 0.97
+    action = Action(*range(1, 9))
+    with pytest.raises(AssertionError, match=r"^OVER ON A BUSY PC \(every reading"):
+        within(budgets.CLICK, lambda: sampled(qapp, [action]))
+    assert judged[-1].on_a_busy_pc
+    assert judged[-1].verdict().startswith("over on a busy PC in all 4 tries")
+    load[0] = 0.4
+    with pytest.raises(AssertionError, match=r"^click over its"):
+        within(budgets.CLICK, lambda: sampled(qapp, [Action(*range(1, 5))]))
+    assert not judged[-1].on_a_busy_pc
+    assert judged[-1].verdict().startswith("over in both tries")
+
+
+def test_a_test_may_count_the_pc_busy_from_a_lower_share(
+    qapp: QApplication, judged: list[budget_judge.Judged]
+) -> None:
+    """The start counts the PC busy from 30 % (decision 0103): at 40 % it
+    gets the tries a saturated PC gets, and fails "on a busy PC"."""
+    action = Action(*range(1, 9))
+    with pytest.raises(AssertionError, match=r"^OVER ON A BUSY PC \(every reading 30%"):
+        within(budgets.CLICK, lambda: sampled(qapp, [action]), busy_from=busy_pc.CALM)
+    assert len(judged[-1].tries) == 4
+
+
+def test_a_try_that_read_the_load_during_its_runs_is_judged_by_that(
+    judged: list[budget_judge.Judged], load: list[float]
+) -> None:
+    """A start reads how busy the rest of the PC was during its runs; that
+    reading is the try's, and the PC isn't read again after it."""
+    tries = iter([Sampled((450.0,), busy=0.45), Sampled((430.0,), busy=0.12)])
+    with pytest.raises(AssertionError, match=r"^start_from_source over its .*12% busy"):
+        within(budgets.START_FROM_SOURCE, lambda: next(tries), busy_from=busy_pc.CALM)
+    assert load[1:] == []  # never read: each try brought its own
+    assert judged[-1].busy == (0.12,) and not judged[-1].on_a_busy_pc

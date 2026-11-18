@@ -154,7 +154,7 @@ class PresetTile(QPushButton):
         original, translation, panel = (QColor(c) for c in self.colours)
         painter.setPen(QColor(128, 128, 128, 90))
         painter.setBrush(panel)
-        painter.drawRoundedRect(sample, 5, 5)
+        painter.drawRoundedRect(sample, 6, 6)
         painter.setPen(Qt.PenStyle.NoPen)
         bar = max(2.0, sample.height() / 7)
         for row, (colour, share) in enumerate(((original, 0.62), (translation, 0.74))):

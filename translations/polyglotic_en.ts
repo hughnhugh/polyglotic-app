@@ -2,13 +2,13 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en" sourcelanguage="en">
 <context>
-    <name>ComparisonCard</name>
+    <name>CaptionWindow</name>
     <message numerus="yes">
-        <location filename="../src/polyglotic_desktop/ui/looks_wrong.py"/>
-        <source>Checked with our best model · about %n s</source>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Copied %Ln caption(s)</source>
         <translation>
-            <numerusform>Checked with our best model · about %n s</numerusform>
-            <numerusform>Checked with our best model · about %n s</numerusform>
+            <numerusform>Copied %Ln caption</numerusform>
+            <numerusform>Copied %Ln captions</numerusform>
         </translation>
     </message>
 </context>
@@ -20,6 +20,102 @@
         <translation>
             <numerusform>This also deletes the %Ln copy of your learning data set aside on this PC when it was found damaged.</numerusform>
             <numerusform>This also deletes the %Ln copies of your learning data set aside on this PC when it was found damaged.</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui/delete_learning.py"/>
+        <source>This also deletes the %Ln copy(s) of your learning data set aside on this Mac when it was found damaged.</source>
+        <translation>
+            <numerusform>This also deletes the %Ln copy of your learning data set aside on this Mac when it was found damaged.</numerusform>
+            <numerusform>This also deletes the %Ln copies of your learning data set aside on this Mac when it was found damaged.</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>DesktopApp</name>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui/app.py"/>
+        <source>Captions paused after %n minute(s) hidden - show the windows to carry on</source>
+        <translation>
+            <numerusform>Captions paused after %n minute hidden - show the windows to carry on</numerusform>
+            <numerusform>Captions paused after %n minutes hidden - show the windows to carry on</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>Home</name>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>every caption window hidden over %n minute(s) - show them to carry on</source>
+        <translation>
+            <numerusform>every caption window hidden over %n minute - show them to carry on</numerusform>
+            <numerusform>every caption window hidden over %n minutes - show them to carry on</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/home.py"/>
+        <source>paused after %n minute(s) hidden - show it to carry on</source>
+        <translation>
+            <numerusform>paused after %n minute hidden - show it to carry on</numerusform>
+            <numerusform>paused after %n minutes hidden - show it to carry on</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>Lab</name>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Over %n caption(s)</source>
+        <translation>
+            <numerusform>Over %n caption</numerusform>
+            <numerusform>Over %n captions</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>Languages</name>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>Detect · %Ln language(s)</source>
+        <extracomment>Short, on a button: the spoken language is found automatically, among this many languages</extracomment>
+        <translation>
+            <numerusform>Detect · %Ln language</numerusform>
+            <numerusform>Detect · %Ln languages</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/languages.py"/>
+        <source>Any of the %Ln language(s) below</source>
+        <translation>
+            <numerusform>Any of the %Ln language below</numerusform>
+            <numerusform>Any of the %Ln languages below</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>Learning</name>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>About %Ln word(s) you marked known in bulk will count as new again, and your level goes back to: {level}. Words you marked yourself stay as you set them.</source>
+        <translation>
+            <numerusform>About %Ln word you marked known in bulk will count as new again, and your level goes back to: {level}. Words you marked yourself stay as you set them.</numerusform>
+            <numerusform>About %Ln words you marked known in bulk will count as new again, and your level goes back to: {level}. Words you marked yourself stay as you set them.</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/learning_page.py"/>
+        <source>About %Ln more word(s) count as known now.</source>
+        <translation>
+            <numerusform>About %Ln more word counts as known now.</numerusform>
+            <numerusform>About %Ln more words count as known now.</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/pack_row.py"/>
+        <source>about %n minute(s) left</source>
+        <translation>
+            <numerusform>about %n minute left</numerusform>
+            <numerusform>about %n minutes left</numerusform>
         </translation>
     </message>
 </context>
@@ -50,6 +146,25 @@
         <translation>
             <numerusform>%n caption</numerusform>
             <numerusform>%n captions</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>SavedSentences</name>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>{found} of %Ln saved sentence(s)</source>
+        <translation>
+            <numerusform>{found} of %Ln saved sentence</numerusform>
+            <numerusform>{found} of %Ln saved sentences</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/saved_sentences.py"/>
+        <source>%Ln saved sentence(s)</source>
+        <translation>
+            <numerusform>%Ln saved sentence</numerusform>
+            <numerusform>%Ln saved sentences</numerusform>
         </translation>
     </message>
 </context>
@@ -92,6 +207,17 @@
     </message>
 </context>
 <context>
+    <name>Transcripts</name>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/transcripts.py"/>
+        <source>It has %Ln line(s), and it&apos;s gone when Polyglotic quits.</source>
+        <translation>
+            <numerusform>It has %Ln line, and it&apos;s gone when Polyglotic quits.</numerusform>
+            <numerusform>It has %Ln lines, and it&apos;s gone when Polyglotic quits.</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>Words</name>
     <message numerus="yes">
         <location filename="../src/polyglotic_desktop/ui_next/heard_card.py"/>
@@ -119,11 +245,36 @@
         </translation>
     </message>
     <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/word_table.py"/>
+        <source>%Ln word(s) picked</source>
+        <translation>
+            <numerusform>%Ln word picked</numerusform>
+            <numerusform>%Ln words picked</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>%Ln saved sentence(s) written to {name}.</source>
+        <translation>
+            <numerusform>%Ln saved sentence written to {name}.</numerusform>
+            <numerusform>%Ln saved sentences written to {name}.</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
         <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
         <source>%Ln word(s) written to {name}.</source>
         <translation>
             <numerusform>%Ln word written to {name}.</numerusform>
             <numerusform>%Ln words written to {name}.</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>And %Ln saved sentence(s).</source>
+        <extracomment>after &quot;12 words written to polyglotic-words.apkg.&quot;</extracomment>
+        <translation>
+            <numerusform>And %Ln saved sentence.</numerusform>
+            <numerusform>And %Ln saved sentences.</numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -148,6 +299,14 @@
         <translation>
             <numerusform>%Ln word</numerusform>
             <numerusform>%Ln words</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/words_page.py"/>
+        <source>Remove %Ln saved word(s)? The lines they were saved from go with them.</source>
+        <translation>
+            <numerusform>Remove %Ln saved word? The lines they were saved from go with them.</numerusform>
+            <numerusform>Remove %Ln saved words? The lines they were saved from go with them.</numerusform>
         </translation>
     </message>
     <message numerus="yes">

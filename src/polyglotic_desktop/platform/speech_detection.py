@@ -32,6 +32,14 @@ this is the small part of it the app needs (from polyglotic-hq project
   missed 28 of 28 quiet English ones and 18 of 28 Mandarin. With the
   gain: none of them, and no sound that wasn't speech was sent.
 
+- **the mic's audio is raised by `MIC_GAIN_MAX` at most** (+6 dB, not
+  +40; decision 0145, polyglotic-hq 352). The gain exists for app audio,
+  where a quiet speaker after a loud one is content the learner chose to
+  hear. On the mic the learner is the closest, loudest voice; what is
+  quiet there is the room - speakers turned down, headphones' leak, a TV -
+  and raised +40 dB the model heard it as speech even under the mic's own
+  hiss. Everything else about detection is the same for every source.
+
 The model is `silero_vad_16k_op15.onnx` from Silero VAD v6.2.3 (MIT; see
 THIRD_PARTY_NOTICES.md), committed with this package - decision 0003.
 
@@ -82,6 +90,16 @@ in the pauses between a loud speaker's words, longer and a quiet speaker
 who answers a loud one soon after is still missed (project 186: with 3s,
 12 of 28 quiet speakers half a second after a loud one; with 1-2s, none)."""
 _GAIN_HOLD_FRAMES = round(GAIN_HOLD_SEC * VAD_SAMPLE_RATE / FRAME_SAMPLES)
+MIC_GAIN_MAX = 2.0
+"""The most the gain raises the mic's audio: +6 dB (decision 0145). On
+polyglotic-hq 352's bench (FLEURS speech, Wikimedia Commons noises,
+synthetic rooms; the app's own detection, timing and bleed check, Live
+updates) the room's sound sent from the mic as the learner's fell from 287
+requests to 119, and the learner's own speech dropped as bleed from 30
+stretches to 7; all 360 of the learner's clips, down to -52 dBFS, were
+still heard. With no gain at all less of the room was sent, but a quiet
+answer 30 dB under the learner's own loud sentence lost a quarter of its
+seconds on a laptop's mic."""
 
 Audio = npt.NDArray[np.float32]
 
@@ -110,10 +128,14 @@ class DetectionGain:
     """The gain one stream's frames are heard through by the model: each
     frame raised so the loudest sample of the last `GAIN_HOLD_SEC` (this
     frame's included, so a loud frame is never raised) reaches
-    `GAIN_TARGET_PEAK`, by at most `GAIN_MAX`; never lowered. Frames are
-    returned as new arrays - the audio given is never changed."""
+    `GAIN_TARGET_PEAK`, by at most `most` (`GAIN_MAX` unless given);
+    never lowered. Frames are returned as new arrays - the audio given is
+    never changed."""
 
-    def __init__(self) -> None:
+    def __init__(self, most: float = GAIN_MAX) -> None:
+        """`most`: the most it raises audio (a factor) - GAIN_MAX, or
+        MIC_GAIN_MAX for the mic."""
+        self._most = most
         self._peaks: deque[float] = deque(maxlen=_GAIN_HOLD_FRAMES)
 
     def reset(self) -> None:
@@ -126,7 +148,7 @@ class DetectionGain:
         peak = max(self._peaks)
         if peak <= 0.0 or peak >= GAIN_TARGET_PEAK:
             return frame
-        return frame * np.float32(min(GAIN_MAX, GAIN_TARGET_PEAK / peak))
+        return frame * np.float32(min(self._most, GAIN_TARGET_PEAK / peak))
 
 
 @dataclass(frozen=True, slots=True)
@@ -144,10 +166,14 @@ class FrameResult:
 class SpeechDetector:
     """Speech detection for one stream of 16kHz mono audio."""
 
-    def __init__(self, model: "ort.InferenceSession") -> None:
+    def __init__(
+        self, model: "ort.InferenceSession", gain_max: float = GAIN_MAX
+    ) -> None:
+        """`gain_max`: the most quiet audio is raised for the model -
+        MIC_GAIN_MAX for the mic (decision 0145)."""
         self._model = model
         self._sample_rate = np.array(VAD_SAMPLE_RATE, dtype=np.int64)
-        self._gain = DetectionGain()
+        self._gain = DetectionGain(gain_max)
         self.reset()
 
     def reset(self) -> None:

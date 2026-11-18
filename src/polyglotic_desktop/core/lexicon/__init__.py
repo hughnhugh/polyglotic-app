@@ -11,6 +11,11 @@ Entries are shared with Learning and the server by entry ID only.
   reverse lookup.
 - `english`: `EnglishDictionary` (ECDICT) - lookups, inflected forms.
 - `pinyin`: tone marks.
+- `basic`: `BasicDictionary`, a basic dictionary pack's lookups.
+- `vietnamese`: Vietnamese's word split, by a pack's own words of one or
+  more syllables (decision 0121).
+- `thai`: Thai's word split, by a pack's own words in a line written
+  without spaces (decision 0173).
 - `meanings`: definitions apart from measure words; short meanings.
 
 `words_in` (both dictionaries) gives Learning the words in a line as

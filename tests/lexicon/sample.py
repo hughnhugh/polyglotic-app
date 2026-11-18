@@ -3,6 +3,7 @@ the proof of concept's sample of real CC-CEDICT lines, assembled the way
 the build assembles the real thing."""
 
 from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import replace
 
 from tools.dictionaries import cedict
 from tools.dictionaries.entry_ids import default_id
@@ -102,6 +103,26 @@ class FakeDictionaryFile:
         ranks = {r.frequency_rank for r in self.by_id.values()}
         return sorted(r for r in ranks if r is not None and r <= last)
 
+    def headwords_ranked(self, after: int, limit: int) -> Sequence[tuple[str, int]]:
+        found = [
+            (first.headword, first.frequency_rank)
+            for first in self._own_first()
+            if first.frequency_rank is not None and first.frequency_rank > after
+        ]
+        return sorted(found, key=lambda pair: pair[1])[:limit]
+
+    def headwords_at_levels(self, scheme: str) -> Sequence[tuple[str, int, int | None]]:
+        return [
+            (first.headword, level, first.frequency_rank)
+            for first in self._own_first()
+            if (level := dict(first.levels).get(scheme)) is not None
+        ]
+
+    def _own_first(self) -> list[EntryRecord]:
+        """The entries that are the first for their own headword."""
+        firsts = (self.by_id[ids[0]] for form, ids in self.forms.items() if ids)
+        return [r for r in firsts if self.forms[r.headword][0] == r.entry_id]
+
     def words_at_levels(self, scheme: str) -> Mapping[int, int]:
         headwords: dict[int, set[str]] = {}
         for record in self.by_id.values():
@@ -143,6 +164,46 @@ def chinese_sample(
         for word in chinese.index_words(e):
             meaning_words.setdefault(word, []).append(e.entry_id)
     return FakeDictionaryFile(records, forms, meaning_words)
+
+
+PHRASES_SAMPLE = """\
+中 中 [zhong1] /within; among; in/
+的 的 [de5] /of; ~'s (possessive particle)/
+中的 中的 [zhong4 di4] /to hit the target; (fig.) to hit the nail on the head/
+生活 生活 [sheng1 huo2] /life; to live/
+有 有 [you3] /to have; there is/
+了 了 [le5] /(completed action marker)/
+有了 有了 [you3 le5] /I've got a solution!; to have a bun in the oven (i.e. to be pregnant)/
+有的 有的 [you3 de5] /(there are) some (who are...); some (exist)/
+人 人 [ren2] /person; people/
+馬 马 [ma3] /horse/
+裡 里 [li3] /inside/
+馬里 马里 [Ma3 li3] /Mali/
+自由 自由 [zi4 you2] /freedom; free/
+自在 自在 [zi4 zai4] /free; unrestrained/
+自由自在 自由自在 [zi4 you2 zi4 zai4] /free and unrestrained (idiom)/
+滄 沧 [cang1] /blue-green or azure (of water)/
+龍 龙 [long2] /dragon/
+滄龍 沧龙 [cang1 long2] /(zoology) mosasaur/
+"""
+"""Real CC-CEDICT lines (polyglotic-hq 359): unranked phrases of two common
+words (中的, 有了) beside unranked words kept whole - a name (马里), an
+idiom (自由自在), an HSK word (有的) and one with a rare part (沧龙)."""
+PHRASE_RANKS = {
+    "的": 1, "有": 5, "了": 6, "中": 17, "人": 20, "里": 50, "生活": 200,
+    "马": 600, "自由": 800, "龙": 1500, "自在": 2900, "沧": 21810,
+}  # fmt: skip
+"""Ranks like jieba's (沧 past the 3,000 commonest)."""
+
+
+def phrases_sample(ranked: bool = True) -> FakeDictionaryFile:
+    """`PHRASES_SAMPLE` as a file, with 有的's HSK level as the build
+    attaches it; `ranked`: with `PHRASE_RANKS`."""
+    file = chinese_sample(PHRASES_SAMPLE, PHRASE_RANKS if ranked else None)
+    for entry_id in file.forms["有的"]:
+        record = file.by_id[entry_id]
+        file.by_id[entry_id] = replace(record, levels=(("hsk-2025", 1),))
+    return file
 
 
 def english_sample() -> FakeDictionaryFile:

@@ -109,6 +109,70 @@ def contrast(text: str, under: str) -> float:
     return (high + 0.05) / (low + 0.05)
 
 
+def _lab(colour: str) -> tuple[float, float, float]:
+    """`colour` in CIELAB (D65): lightness, then the two colour axes."""
+    digits = colour.lstrip("#")
+    r, g, b = (_channel(int(digits[i : i + 2], 16)) for i in (0, 2, 4))
+    xyz = (
+        (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047,
+        0.2126 * r + 0.7152 * g + 0.0722 * b,
+        (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883,
+    )
+    x, y, z = (t ** (1 / 3) if t > 0.008856 else 7.787 * t + 16 / 116 for t in xyz)
+    return 116 * y - 16, 500 * (x - y), 200 * (y - z)
+
+
+def colour_difference(a: str, b: str) -> float:
+    """How far apart two "#rrggbb" colours look: CIE76's distance in CIELAB
+    (about 2.3 is just noticeable side by side; thin text needs far more)."""
+    return float(
+        sum((p - q) ** 2 for p, q in zip(_lab(a), _lab(b), strict=True)) ** 0.5
+    )
+
+
+def readable_at(colour: str, under: str, alpha: float, ratio: float = AA_TEXT) -> str:
+    """`colour` drawn `alpha` opaque over `under` (a faint reading, an
+    older caption's words) reaching `ratio` against it - or the nearest to
+    it that does, as `readable_on` moves it (polyglotic-hq 395: words and
+    pinyin in their link's colour)."""
+    end = (
+        "#000000"
+        if contrast("#000000", under) > contrast("#ffffff", under)
+        else "#ffffff"
+    )
+    for step in range(21):
+        mixed = _mix(colour, end, step / 20)
+        if contrast(_mix(under, mixed, alpha), under) >= ratio:
+            return mixed
+    return end
+
+
+LARGE_TEXT = 3.0
+"""WCAG 2.2's 1.4.3 for large text, which caption text is."""
+
+VIDEOS = ("#f3f5f7", "#000000")
+"""A light video and a black one: what a panel that isn't solid is seen
+over, at its worst (284)."""
+
+
+def readable_through(
+    colour: str, panel: str, opacity: float, alpha: float, ratio: float
+) -> str:
+    """`colour` drawn `alpha` opaque, readable as a caption's text is
+    (polyglotic-hq 431): `ratio` on `panel` drawn solid (`readable_at`),
+    and 3:1 - large text's floor - on it seen at its `opacity` over a
+    light or a black video (`VIDEOS`). Moved towards white on a dark
+    panel, black on a light one, only as far as it needs. 395 checked the
+    solid panel only: on Classic's 72 % over a light video, #e040fb was at
+    2.4:1."""
+    found = readable_at(colour, panel, alpha, ratio)
+    if opacity >= 1.0:
+        return found
+    for video in VIDEOS:
+        found = readable_at(found, _mix(video, panel, opacity), alpha, LARGE_TEXT)
+    return found
+
+
 def _mix(colour: str, towards: str, share: float) -> str:
     a, b = colour.lstrip("#"), towards.lstrip("#")
     mixed = (

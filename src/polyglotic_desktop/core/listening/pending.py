@@ -15,6 +15,13 @@ concept's rule (`SegmentExecutor` in `overlay_core`):
   floods the server with minutes-old captions when it's back (its 32
   frames waiting and 240 s of finished speech a minute). Speech that waited
   less than that goes out in order. Memory only.
+- **nothing held through a planned maintenance window** (polyglotic-hq
+  319): while the server is away for a window the app knows (`hold`),
+  what waits is dropped and so is what comes - after it every app would
+  otherwise send up to two minutes of old speech at once (320 measured
+  finished captions' p95 at 7.7 s at capacity), and speech from before the
+  window is no use to the learner by then. Nothing is reordered: captions
+  start again, in order, with what's said once the server is back.
 
 Each item carries a payload the caller chooses (such as the encoded
 audio); core never looks inside it.
@@ -43,9 +50,14 @@ class PendingSpeech[P]:
         self._wait_max_sec = wait_max_sec
         self._newest = float("-inf")  # the end of the newest speech put
         self.dropped = 0
-        """Finished speech dropped for waiting too long, all told."""
+        """Finished speech dropped for waiting too long (or held through a
+        planned maintenance window), all told."""
+        self._holding = True
 
     def put(self, decision: Decision, payload: P) -> None:
+        if not self._holding:  # a planned maintenance window: not kept
+            self._count_dropped(decision)
+            return
         if isinstance(decision, TranscriptionRequest):
             self._newest = max(self._newest, decision.speech_end)
         if (
@@ -86,6 +98,22 @@ class PendingSpeech[P]:
                 continue
             kept.append((decision, payload))
         self._first = kept
+
+    def hold(self, holding: bool) -> None:
+        """False: the server is away for a planned maintenance window -
+        what waits is dropped, and so is what comes, until True again."""
+        self._holding = holding
+        if not holding:
+            for decision, _ in self._first:
+                self._count_dropped(decision)
+            self.clear()
+
+    def _count_dropped(self, decision: Decision) -> None:
+        if (
+            isinstance(decision, TranscriptionRequest)
+            and decision.kind is SpeechKind.FINISHED
+        ):
+            self.dropped += 1
 
     def clear(self) -> None:
         """Everything waiting dropped: nothing of it is to be sent."""

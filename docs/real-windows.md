@@ -54,7 +54,7 @@ from real windows: the pictures would come from another platform
 | The caption windows never take activation: no-activate, never their thread's active window; the other app keeps its own | Yes |
 | Windows' own windows, styles, DWM's view (not cloaked), DPI | Yes |
 | Each window's icon as Windows has it - the one its title bar, the taskbar's button and Alt-Tab draw - is Polyglotic's, small and big | Yes, read from outside (`tools/window_icon.py`, 245); how the real taskbar and Alt-Tab show it is still the user's screen |
-| Real-window numbers (start time, GDI and USER objects) | They're the process's own, so they're read the same way as on the user's screen (not measured under 205) |
+| Real-window numbers (start time, GDI and USER objects) | They're the process's own, so they're read the same way as on the user's screen. The start is timed there in CI: `tools/learner_start.py --real-windows`, `tests/ui/test_start_with_real_windows.py` (322, decision 0111). GDI and USER objects: not measured |
 | Qt's high-DPI paths at 150 % | Partly: `QT_SCALE_FACTOR=1.5` gives Qt's split between logical and real pixels (960 x 300 became 1440 x 450), but Windows still reports the monitor's own DPI |
 
 **Where it works:** in the signed-in user's session, which is where an

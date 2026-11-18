@@ -11,31 +11,48 @@ and the dot paint themselves in the theme's colours at paint time.
 
 import math
 import time
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 
-from PySide6.QtCore import QRectF, Qt, QTimer, QUrl, Signal
+from PySide6.QtCore import QRect, QRectF, QSize, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import (
     QColor,
     QDesktopServices,
+    QFont,
+    QFontMetrics,
+    QFontMetricsF,
     QIcon,
     QPainter,
     QPaintEvent,
+    QPalette,
     QPixmap,
+    QResizeEvent,
+    QTextLayout,
+    QTextOption,
 )
 from PySide6.QtWidgets import (
+    QAbstractButton,
     QApplication,
+    QCheckBox,
+    QComboBox,
     QFrame,
     QHBoxLayout,
-    QLabel,
+    QLayout,
+    QLayoutItem,
     QMenu,
     QPushButton,
     QSizePolicy,
+    QSpacerItem,
+    QStyle,
+    QStyleOptionButton,
+    QStylePainter,
     QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
-from polyglotic_desktop.ui_next import style
+from polyglotic_desktop.ui_next import glyphs, style
+from polyglotic_desktop.ui_next.copying import Measured, Text
 
 
 def page_button(text: str, url: str, name: str) -> QPushButton:
@@ -52,13 +69,523 @@ def page_button(text: str, url: str, name: str) -> QPushButton:
     return button
 
 
-def label(text: str = "", role: str | None = None, wrap: bool = False) -> QLabel:
+class Flow(QLayout):
+    """A row that wraps (polyglotic-hq 354): its items left to right, and
+    what doesn't fit on the next line - so a row of buttons, or a title and
+    the choices beside it, fits the main window at its narrowest in every
+    language and text size instead of making the page scroll sideways.
+
+    Each line is as tall as its tallest item, the others centred in it. An
+    item that wraps its own words (a label with word wrap, a `WrapButton`)
+    is as wide as its words if they fit on a line, else the line's width.
+    `add_stretch` is the room a line has to spare, given out as a
+    QHBoxLayout's stretch is: on the line it falls on, it pushes what
+    follows to the right (a stretch at the start of a line is nothing);
+    a line with no stretch gives it to its items added with a stretch, if
+    any. The least width is the widest item's least. `right`: each line's
+    spare room on its left (a row of buttons at a card's right)."""
+
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        spacing: int = 8,
+        line_spacing: int = 6,
+        right: bool = False,
+    ) -> None:
+        super().__init__(parent)
+        self._right = right
+        self._items: list[QLayoutItem] = []
+        self._stretch: dict[int, int] = {}  # id(item) -> its stretch
+        self._spacing = spacing
+        self._line_spacing = line_spacing
+        self._heights: dict[int, int] = {}  # by width, until it's invalidated
+        self._least: QSize | None = None
+        self._placed = 0  # the width it was last laid out at
+        self._height_placed = 0
+        self.setContentsMargins(0, 0, 0, 0)
+
+    # -- QLayout -------------------------------------------------------------
+
+    def addItem(self, item: QLayoutItem) -> None:
+        self._items.append(item)
+        self.invalidate()
+
+    def add_widget(self, widget: QWidget, stretch: int = 0) -> None:
+        """`widget` at the line's end; with `stretch`, it takes a share of a
+        line's spare room when the line has no `add_stretch`."""
+        self.addWidget(widget)
+        if stretch:
+            self._stretch[id(self._items[-1])] = stretch
+
+    def add_stretch(self, stretch: int = 1) -> None:
+        spacer = QSpacerItem(
+            0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
+        )
+        self.addItem(spacer)
+        self._stretch[id(spacer)] = stretch
+
+    def add_layout(self, layout: QLayout, stretch: int = 0) -> QWidget:
+        """`layout` as one item, in a widget of its own (returned), its
+        margins none: a layout held straight in a layout written in Python
+        was deleted twice as its window closed (a crash, 354)."""
+        holder = QWidget()
+        layout.setContentsMargins(0, 0, 0, 0)
+        holder.setLayout(layout)
+        self.add_widget(holder, stretch)
+        return holder
+
+    def count(self) -> int:
+        return len(self._items)
+
+    def itemAt(self, index: int) -> QLayoutItem | None:
+        return self._items[index] if 0 <= index < len(self._items) else None
+
+    def takeAt(self, index: int) -> QLayoutItem | None:
+        if not 0 <= index < len(self._items):
+            return None
+        item = self._items.pop(index)
+        self._stretch.pop(id(item), None)
+        self.invalidate()
+        return item
+
+    def setSpacing(self, spacing: int) -> None:
+        self._spacing = spacing
+        self.invalidate()
+
+    def spacing(self) -> int:
+        return self._spacing
+
+    def expandingDirections(self) -> Qt.Orientation:
+        return Qt.Orientation.Horizontal
+
+    def hasHeightForWidth(self) -> bool:
+        return True
+
+    def heightForWidth(self, width: int) -> int:
+        if width not in self._heights:  # asked thousands of times a restyle
+            self._heights[width] = self._lay_out(QRect(0, 0, width, 0), place=False)
+        return self._heights[width]
+
+    def invalidate(self) -> None:
+        self._heights.clear()
+        self._least = None
+        super().invalidate()
+
+    def sizeHint(self) -> QSize:
+        """All on one line - as tall as its lines are at its width now, so
+        a widget of fixed height holding it is as tall as they are."""
+        shown = self._shown()
+        width = sum(item.sizeHint().width() for item in shown)
+        width += self._spacing * max(0, len(shown) - 1)
+        height = max((item.sizeHint().height() for item in shown), default=0)
+        hint = QSize(width, height) + self._margins()
+        if 0 < self._placed < hint.width():
+            hint.setHeight(self.heightForWidth(self._placed))
+        return hint
+
+    def minimumSize(self) -> QSize:
+        if self._least is None:
+            shown = self._shown()
+            width = max((item.minimumSize().width() for item in shown), default=0)
+            height = max((item.minimumSize().height() for item in shown), default=0)
+            self._least = QSize(width, height) + self._margins()
+        return QSize(self._least)
+
+    def setGeometry(self, rect: QRect) -> None:
+        super().setGeometry(rect)
+        height = self._lay_out(rect, place=True)
+        if rect.width() != self._placed and height != self._height_placed:
+            self._placed, self._height_placed = rect.width(), height
+            self.invalidate()  # its size hint's height follows its lines
+        self._placed = rect.width()
+
+    # -- the lines -----------------------------------------------------------
+
+    def _margins(self) -> QSize:
+        m = self.contentsMargins()
+        return QSize(m.left() + m.right(), m.top() + m.bottom())
+
+    def _shown(self) -> list[QLayoutItem]:
+        """The items that take room: shown widgets, layouts (stretches
+        take none until a line has room to spare)."""
+        return [
+            item
+            for item in self._items
+            if not item.isEmpty() and item.spacerItem() is None
+        ]
+
+    def _width(self, item: QLayoutItem, room: int) -> int:
+        least = item.minimumSize().width()
+        return max(least, min(item.sizeHint().width(), room))
+
+    def _height(self, item: QLayoutItem, width: int) -> int:
+        if item.hasHeightForWidth():
+            height = item.heightForWidth(width)
+        else:
+            height = item.sizeHint().height()
+        return max(height, item.minimumSize().height())
+
+    def _lines(self, room: int) -> list[list[QLayoutItem]]:
+        """The items (stretches among them) on each line, at `room` wide."""
+        lines: list[list[QLayoutItem]] = [[]]
+        used = 0
+        for item in self._items:
+            if item.spacerItem() is not None:
+                lines[-1].append(item)
+                continue
+            if item.isEmpty():
+                continue
+            width = self._width(item, room)
+            taken = [i for i in lines[-1] if i.spacerItem() is None]
+            if taken and used + self._spacing + width > room:
+                lines.append([])
+                used = 0
+                taken = []
+            used += width + (self._spacing if taken else 0)
+            lines[-1].append(item)
+        return lines
+
+    def _lay_out(self, rect: QRect, place: bool) -> int:
+        """Places the items in `rect` (if `place`); its height either way."""
+        m = self.contentsMargins()
+        area = rect.adjusted(m.left(), m.top(), -m.right(), -m.bottom())
+        room = max(0, area.width())
+        y = area.y()
+        first = True
+        for line in self._lines(room):
+            items = [i for i in line if i.spacerItem() is None]
+            if not items:
+                continue
+            # a stretch counts only between two of the line's items
+            start = line.index(items[0])
+            end = line.index(items[-1])
+            spacers = [i for i in line[start : end + 1] if i.spacerItem() is not None]
+            widths = {id(i): self._width(i, room) for i in items}
+            spare = room - sum(widths.values()) - self._spacing * (len(items) - 1)
+            stretched = [i for i in items if self._stretch.get(id(i))]
+            extra = self._share(spare, spacers + stretched, line)
+            for item in items:
+                widths[id(item)] += extra[id(item)]
+            heights = {id(i): self._height(i, widths[id(i)]) for i in items}
+            tall = max(heights.values())
+            if not first:
+                y += self._line_spacing
+            first = False
+            if place:
+                x = area.x()
+                if self._right and not any(extra.values()):
+                    x += max(0, spare)
+                for item in line[start : end + 1]:
+                    if item.spacerItem() is not None:
+                        x += extra[id(item)]
+                        continue
+                    if item.isEmpty():
+                        continue
+                    width, height = widths[id(item)], heights[id(item)]
+                    top = y + (tall - height) // 2
+                    if item.alignment() & Qt.AlignmentFlag.AlignTop:
+                        top = y
+                    item.setGeometry(QRect(x, top, width, height))
+                    x += width + self._spacing
+            y += tall
+        return y - area.y() + m.top() + m.bottom()
+
+    def _share(
+        self, spare: int, takers: list[QLayoutItem], line: list[QLayoutItem]
+    ) -> dict[int, int]:
+        """A line's `spare` room, given out to `takers` by their stretch, as
+        a QHBoxLayout does: an item no wider than its maximum, what it
+        can't take going to the stretches."""
+        extra = {id(i): 0 for i in line}
+        left = [i for i in takers if self._stretch.get(id(i))]
+        while spare > 0 and left:
+            total = sum(self._stretch[id(i)] for i in left)
+            given, full = 0, []
+            for item in left:
+                part = spare * self._stretch[id(item)] // total
+                if item.spacerItem() is None:
+                    most = item.maximumSize().width() - item.sizeHint().width()
+                    room = max(0, most - extra[id(item)])
+                    if part >= room:
+                        part = room
+                        full.append(item)
+                extra[id(item)] += part
+                given += part
+            spare -= given
+            left = [i for i in left if i not in full]
+            if not full:  # all given but the rounding's few px: to the last
+                if left:
+                    extra[id(left[-1])] += spare
+                break
+        return extra
+
+
+def least_width(text: str, font: QFont) -> int:
+    """The widest piece of `text` a line can't break inside, in `font`: a
+    word - or, in Chinese or Japanese, a character (Unicode's line breaking,
+    as Qt does it)."""
+    layout = QTextLayout(text, font)
+    option = QTextOption()
+    option.setWrapMode(QTextOption.WrapMode.WordWrap)
+    layout.setTextOption(option)
+    widest = 0.0
+    layout.beginLayout()
+    while True:
+        line = layout.createLine()
+        if not line.isValid():
+            break
+        line.setLineWidth(0)  # one piece a line
+        widest = max(widest, line.naturalTextWidth())
+    layout.endLayout()
+    return math.ceil(widest)
+
+
+def wrapped(text: str, font: QFont, width: int) -> str:
+    """`text` broken into lines `width` px wide in `font`: at spaces, and
+    inside a word only when it's wider than a line (Chinese and Japanese
+    break between any characters)."""
+    layout = QTextLayout(text, font)
+    option = QTextOption()
+    option.setWrapMode(QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere)
+    layout.setTextOption(option)
+    lines = []
+    layout.beginLayout()
+    while True:
+        line = layout.createLine()
+        if not line.isValid():
+            break
+        line.setLineWidth(max(1, width))
+        lines.append(text[line.textStart() : line.textStart() + line.textLength()])
+    layout.endLayout()
+    return "\n".join(each.rstrip() for each in lines)
+
+
+class _Wraps:
+    """What `WrapButton` and `WrapCheckBox` share: their words wrap onto
+    more lines when the button is narrower than them - never cut - and the
+    least width is the longest word's. `text()` stays the words as given
+    (a screen reader, the tests); only the painting breaks them. Its height
+    follows its lines (`sizeHint` at its width now), so a layout gives it
+    the lines' height and no more."""
+
+    _element = QStyle.ControlElement.CE_PushButton
+    _lines = 1
+
+    def _one_line(self) -> QSize:
+        raise NotImplementedError
+
+    def _button(self) -> QAbstractButton:
+        assert isinstance(self, QAbstractButton)
+        return self
+
+    def _room(self, width: int) -> int:
+        """The words' width in a button `width` px wide: less its padding
+        (and a check box's box), as its one-line size has them."""
+        button = self._button()
+        words = QFontMetrics(button.font()).horizontalAdvance(button.text())
+        return max(1, width - (self._one_line().width() - words))
+
+    def _wrapped(self, width: int) -> str:
+        button = self._button()
+        return wrapped(button.text(), button.font(), self._room(width))
+
+    def _setup(self) -> None:
+        button = self._button()
+        policy = button.sizePolicy()
+        if policy.horizontalPolicy() == QSizePolicy.Policy.Minimum:  # Qt's own
+            policy.setHorizontalPolicy(QSizePolicy.Policy.Preferred)  # may narrow
+        policy.setHeightForWidth(True)
+        button.setSizePolicy(policy)
+
+    def sizeHint(self) -> QSize:
+        one = self._one_line()
+        button = self._button()
+        width = button.width()
+        # laid out yet? A child's width is Qt's 100 px until it is
+        if width >= one.width() or not button.isVisible():
+            return one
+        return QSize(one.width(), self.heightForWidth(width))
+
+    def minimumSizeHint(self) -> QSize:
+        button = self._button()
+        one = self._one_line()
+        metrics = QFontMetrics(button.font())
+        padding = one.width() - metrics.horizontalAdvance(button.text())
+        word = least_width(button.text(), button.font())
+        return QSize(min(one.width(), word + padding), one.height())
+
+    def hasHeightForWidth(self) -> bool:
+        return True
+
+    def heightForWidth(self, width: int) -> int:
+        one = self._one_line()
+        if width >= one.width():
+            return one.height()
+        button = self._button()
+        key = (button.text(), button.font().key(), one.toTuple(), width)
+        heights: dict[object, int] = button.__dict__.setdefault("_wrap_heights", {})
+        if key not in heights:  # a restyle asks thousands of times
+            if len(heights) > 32:
+                heights.clear()
+            lines = self._wrapped(width).count("\n") + 1
+            spacing = QFontMetrics(button.font()).lineSpacing()
+            heights[key] = one.height() + (lines - 1) * spacing
+        return heights[key]
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        button = self._button()
+        super().resizeEvent(event)  # type: ignore[misc]  # the Qt class's
+        lines = self.heightForWidth(button.width())
+        if lines != self._lines:  # taller or shorter: the layout asks again
+            self._lines = lines
+            button.updateGeometry()
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        button = self._button()
+        if button.width() >= self._one_line().width():
+            super().paintEvent(event)  # type: ignore[misc]
+            return
+        option = QStyleOptionButton()
+        button.initStyleOption(option)  # type: ignore[attr-defined]
+        option.text = self._wrapped(button.width())
+        painter = QStylePainter(button)
+        painter.drawControl(self._element, option)
+        painter.end()
+
+
+class WrapButton(_Wraps, QPushButton):
+    """A push button whose words wrap onto more lines when it's narrower
+    than them (polyglotic-hq 354): a whole sentence on a switch, a help
+    topic - never cut, never pushing the page wider than the window."""
+
+    def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
+        super().__init__(text, parent)
+        self._setup()
+
+    def _one_line(self) -> QSize:
+        return QPushButton.sizeHint(self)
+
+
+class WrapCheckBox(_Wraps, QCheckBox):
+    """A check box whose words wrap, as `WrapButton`'s do."""
+
+    _element = QStyle.ControlElement.CE_CheckBox
+
+    def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
+        super().__init__(text, parent)
+        self._setup()
+
+    def _one_line(self) -> QSize:
+        return QCheckBox.sizeHint(self)
+
+
+def right_row(*buttons: QWidget) -> Flow:
+    """`buttons` at a row's right - and onto more lines, still at the
+    right, where the room runs out (polyglotic-hq 354)."""
+    row = Flow(right=True)
+    for button in buttons:
+        row.addWidget(button)
+    return row
+
+
+def label(
+    text: str = "", role: str | None = None, wrap: bool = False, copyable: bool = True
+) -> Measured:
     """A label; `role` is its object name for the stylesheet (`Dim`,
-    `Faint`, `CardTitle`, ...)."""
-    found = QLabel(text)
+    `Faint`, `CardTitle`, ...) - and its `role` property, which the
+    stylesheet reads too for the quieter roles (`style.QUIET_ROLES`), so a
+    note given a name of its own afterwards (`setObjectName`, for a test or
+    the lab) stays the note it was: eleven such notes drew at the full
+    text colour and size (polyglotic-hq 403). Its words can be selected and copied
+    (`copying.Text`) - `copyable=False` only for a label inside
+    something a click anywhere on works, such as Home's rows of apps to
+    add, where a selectable label would take the click; and not for a
+    window that never takes the keyboard (a caption window's settings),
+    where its menu would take the mouse from the game under it. Wrapped,
+    its lines keep to a readable length (`copying.Measured`)."""
+    found = Text(text) if copyable else Measured(text)
+    if isinstance(found, Text):
+        found.ink_links()  # a link in the text: readable on the theme (377)
     if role:
         found.setObjectName(role)
+        found.setProperty("role", role)
     found.setWordWrap(wrap)
+    return found
+
+
+@contextmanager
+def focus_kept(within: QWidget) -> Iterator[None]:
+    """Rows inside `within` made again - a language's card on Learning, a
+    category's row on Words - with the keyboard where it was: on the same
+    control of the row made again (or the same one, not made again), found
+    by its object name and which of its parts had the keyboard (a
+    `Segmented`'s choice); with none, on nothing. Wrap the making again in
+    it; each old row is hidden as it goes.
+
+    Qt hands the keyboard of a widget that hides to the next control along,
+    and a page scrolls that one into view: as each old card hid in turn,
+    Learning ran down to about its middle at every setting changed
+    (polyglotic-hq 480). Taken from the old control before its row hides,
+    the keyboard is handed to nothing; given to the new one, nothing
+    scrolls - the page stays where it was. The window's keyboard, active or
+    not: one made again behind a dialog (Change your level's) has it back
+    on the same control when the dialog closes."""
+    focused = within.window().focusWidget()
+    place = _place(focused, within) if focused is not None else None
+    if focused is None or place is None:
+        yield
+        return
+    name, part = place
+    focused.clearFocus()
+    yield
+    again = _named(within, name)
+    if len(again) != 1:
+        return  # gone with its row, or not one to be sure of
+    found: QWidget | None = again[0]
+    if part >= 0:
+        parts = again[0].findChildren(QWidget)
+        found = parts[part] if part < len(parts) else None
+    if found is not None and type(found) is type(focused):
+        found.setFocus(Qt.FocusReason.OtherFocusReason)
+
+
+def _place(focused: QWidget, within: QWidget) -> tuple[str, int] | None:
+    """Where `focused` is inside `within`: the object name of the nearest
+    widget at or above it that no other in `within` has, and which of that
+    one's widgets it is (-1: that one). None: not inside `within`, or under
+    no such name (a label's role, a card's "Card")."""
+    if not within.isAncestorOf(focused):
+        return None
+    named = focused
+    while not named.objectName():
+        parent = named.parentWidget()
+        if parent is None or parent is within:
+            return None
+        named = parent
+    same = _named(within, named.objectName())
+    if len(same) != 1 or same[0] is not named:
+        return None
+    part = -1 if named is focused else named.findChildren(QWidget).index(focused)
+    return named.objectName(), part
+
+
+def _named(within: QWidget, name: str) -> list[QWidget]:
+    """The widgets called `name` in `within` that show, or will once they're
+    shown - not one in a row hidden as it goes (it's deleted later), nor
+    one hidden on purpose. A row just made isn't shown until the event loop
+    comes round, and a second making again can come first: "Mark known"
+    shows the page twice in one click."""
+    found = []
+    for each in within.findChildren(QWidget, name):
+        widget: QWidget | None = each
+        while widget is not None and widget is not within:
+            if widget.isHidden() and widget.testAttribute(
+                Qt.WidgetAttribute.WA_WState_ExplicitShowHide
+            ):
+                break
+            widget = widget.parentWidget()
+        else:
+            found.append(each)
     return found
 
 
@@ -80,7 +607,7 @@ class Card(QFrame):
         if subtitle:
             self.column.addWidget(label(subtitle, "Dim", wrap=True))
 
-    def add(self, item: QWidget | QHBoxLayout | QVBoxLayout) -> None:
+    def add(self, item: QWidget | QLayout) -> None:
         if isinstance(item, QWidget):
             self.column.addWidget(item)
         else:
@@ -133,7 +660,9 @@ class Segmented(QFrame):
     """A row of choices, one at a time - a handful that should all stay in
     view rather than in a dropdown. Each choice is a Tab stop: the one-at-a-
     time rule is kept here, not by an exclusive button group (which Qt
-    makes a single Tab stop, reached only at its checked choice)."""
+    makes a single Tab stop, reached only at its checked choice). Its
+    choices wrap onto a second line where the room runs out (`Flow`), as
+    in a long language at the main window's narrowest (polyglotic-hq 354)."""
 
     changed = Signal(object)
 
@@ -143,11 +672,11 @@ class Segmented(QFrame):
         super().__init__()
         self.setProperty("segmented", True)  # its name is free for tests
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
-        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        # as wide as its choices on one line at most; narrower, they wrap
+        self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         self._values = [v for v, _ in options]
-        row = QHBoxLayout(self)
+        row = Flow(self, spacing=2, line_spacing=2)
         row.setContentsMargins(3, 3, 3, 3)
-        row.setSpacing(2)
         self.buttons: list[QPushButton] = []
         for index, (_, text) in enumerate(options):
             button = QPushButton(text)
@@ -188,6 +717,14 @@ TICK = 16
 text size: it grows with the tick, `style.px`)."""
 SWITCH = (28, 16)
 """The on / off switch's size: on, it's filled with the accent."""
+DROP = "▾"
+"""What marks a control that opens a list: a chip's ("EN ▾") and a
+`Combo`'s alike."""
+DROP_ROOM = 22
+"""The room a `Combo` keeps at its right for `DROP` (at 100 % text size)."""
+DROP_INSET = 10
+"""...and how far in from the box's right edge the mark ends: a field's
+own padding, so it sits where a chip's does."""
 
 
 def _ink(given: tuple[str, ...] | None, tokens: tuple[str, ...]) -> list[QColor]:
@@ -224,15 +761,131 @@ class TickButton(QPushButton):
         painter.end()
 
 
-class SwitchButton(QPushButton):
+class Combo(QComboBox):
+    """A box that opens a list of choices, marked as the chips are - `DROP`
+    at its right, in its text's colour - where Qt's own style draws a
+    bevelled arrow box that pokes past the field's rounded border
+    (polyglotic-hq 376, 403). The stylesheet leaves the arrow's room empty
+    (`QComboBox[drop="own"]`); this draws the mark in it."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setProperty("drop", "own")
+
+    def drop_rect(self) -> QRectF:
+        """Where the mark is drawn: the arrow's room, its right edge the
+        field's padding in from the box's."""
+        room = style.px(DROP_ROOM)
+        return QRectF(self.width() - room, 0, room - DROP_INSET, self.height())
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        super().paintEvent(event)
+        group = (
+            QPalette.ColorGroup.Normal
+            if self.isEnabled()
+            else QPalette.ColorGroup.Disabled
+        )
+        painter = QPainter(self)
+        painter.setPen(self.palette().color(group, QPalette.ColorRole.Text))
+        painter.drawText(
+            self.drop_rect(),
+            Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight,
+            DROP,
+        )
+        painter.end()
+
+
+LABEL_GAP = 6
+"""Between a choice's icon and its name, as Qt's stylesheet style draws a
+`Combo`'s label (CE_ComboBoxLabel: its rule's `spacing`, 6 when none is
+set) - where Qt's own measure of the box allows 4."""
+
+
+class FittingCombo(Combo):
+    """A `Combo` whose width is its own (a fixed size policy): its widest
+    choice fits as it's drawn, at the text size now. Qt's measure
+    (`QComboBox.sizeHint`) takes a name's ink, a pixel or two inside its
+    advance in Chinese, and 4 px beside an icon where the label is drawn
+    6 px from it: at the largest text size Settings' sections dropdown cut
+    "應用程式" (App, Traditional Chinese) 2 px short (polyglotic-hq 500).
+    Measured again whenever a choice changes (`AdjustToContents`)."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+
+    def sizeHint(self) -> QSize:
+        hint = super().sizeHint()
+        drawn, measured = QFontMetricsF(self.font()), self.fontMetrics()
+        icon = self.iconSize().width()
+        needed = held = 0
+        for index in range(self.count()):
+            name = self.itemText(index)
+            beside = not self.itemIcon(index).isNull()
+            advance = math.ceil(drawn.horizontalAdvance(name))
+            needed = max(needed, advance + (icon + LABEL_GAP if beside else 0))
+            ink = measured.boundingRect(name).width()
+            held = max(held, ink + (icon + 4 if beside else 0))  # Qt's own
+        return QSize(hint.width() + max(0, needed - held), hint.height())
+
+
+class GlyphButton(QToolButton):
+    """A small button whose face is one of the interface's own drawn icons
+    (`glyphs`), in the theme's colours at paint time: dim, the accent while
+    checked, faint while off to clicks. Home's "show my speech in this
+    window" was the 🎤 emoji as the button's text - Windows' colour emoji
+    font in one place, a drawn mic on the caption window in another
+    (polyglotic-hq 403). `ink`: (dim, accent, faint) - the theme's if not
+    given."""
+
+    GLYPH = 14
+    """The icon's square (at 100 % text size)."""
+    TARGET = 24
+    """Its least height, a target WCAG 2.5.8 accepts: a Mac's smaller font
+    made it 23 px (polyglotic-hq 421)."""
+
+    def __init__(
+        self,
+        glyph: glyphs.Glyph,
+        parent: QWidget | None = None,
+        ink: tuple[str, str, str] | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.glyph, self.ink = glyph, ink
+
+    def sizeHint(self) -> QSize:
+        """As wide as the icon font's glyph made a button (`glyphs.text_width`)
+        with the stylesheet's padding either side; as tall as a chip beside
+        it, and never under a target's least height (`TARGET`)."""
+        side = style.px(self.GLYPH)
+        height = max(max(self.fontMetrics().height(), side) + 2 * 3 + 2, self.TARGET)
+        return QSize(glyphs.text_width(side) + 2 * 6 + 2, height)
+
+    def minimumSizeHint(self) -> QSize:
+        return self.sizeHint()
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        super().paintEvent(event)  # the frame; there is no text
+        dim, accent, faint = _ink(self.ink, ("TEXT_DIM", "ACCENT", "TEXT_FAINT"))
+        color = faint if not self.isEnabled() else accent if self.isChecked() else dim
+        side = style.px(self.GLYPH)
+        box = QRectF(0, 0, side, side)
+        box.moveCenter(QRectF(self.rect()).center())
+        painter = QPainter(self)
+        glyphs.paint(painter, self.glyph, box, color)
+        painter.end()
+
+
+class SwitchButton(WrapButton):
     """A row button with an on / off switch at its right: on, filled with
-    the accent and the knob at the right. The whole row is the switch.
+    the accent and the knob at the right. The whole row is the switch; its
+    words wrap when the row is narrower than them (`WrapButton`).
     `ink`: (accent, dim, the knob on the accent) - the theme's if not given."""
 
     def __init__(
         self, parent: QWidget | None = None, ink: tuple[str, str, str] | None = None
     ) -> None:
-        super().__init__(parent)
+        super().__init__("", parent)
         self.ink = ink
         self.setCheckable(True)
         self.setProperty("switch", True)
@@ -272,10 +925,10 @@ def tipped(row: QWidget, control: QWidget, tip: str) -> None:
     (a slider and its value), each of them that takes the focus: on hover,
     and to a screen reader."""
     row.setToolTip(tip)
-    held = [
+    held = [  # a selectable label takes it from a click only: not one of them
         w
         for w in control.findChildren(QWidget)
-        if w.focusPolicy() is not Qt.FocusPolicy.NoFocus
+        if w.focusPolicy() & Qt.FocusPolicy.TabFocus
     ]
     for each in [control, *held]:
         if not each.toolTip():

@@ -7,10 +7,12 @@ Learning:
 - a finished caption (joins included - a join finishes the earlier
   caption's id again, and `Vocabulary` counts only the difference) counts
   its words as exposures and towards the day's coverage, the user's own
-  mic as "by you" - **only in the language being learned**: the learner's
-  dictionary finds its words in other languages too (polyglotic-hq 174),
-  so a caption in another language counts nothing (and a join that turns
-  a caption into one takes back what it counted);
+  mic as "by you" - **only in a language being learned, in that
+  language's own learning data** (`LearningTools.of`; Chinese and English
+  each their own, DECISIONS #110): a dictionary finds its words in other
+  languages too (polyglotic-hq 174), so a caption in a language not
+  learned counts nothing (and a join that turns a caption into another
+  language takes back what it counted);
 - a withdrawn caption, and any caption a join replaces, takes back what
   it counted (nothing, if it never finished).
 Then `changed` tells the views (overlays, transcript) to redraw, and
@@ -103,13 +105,16 @@ class CaptionFeed(QObject):
         if caption is None:
             return
         tools = self.tools
-        if tools is not None and tools.learns(caption.language):
-            words: list[WordInLine] = []
-            for clause in caption.clauses:
-                words += tools.words_in(clause.original)
-            tools.vocabulary.caption_finished(caption_id, words, caption.by_you)
-        elif tools is not None:  # now another language: what it counted goes
-            tools.vocabulary.caption_withdrawn(caption_id)
+        if tools is not None:
+            ours = tools.of(caption.language)
+            for other in tools.every:  # in another language now: what it counted goes
+                if other is not ours or not ours.learns(caption.language):
+                    other.vocabulary.caption_withdrawn(caption_id)
+            if ours.learns(caption.language):
+                words: list[WordInLine] = []
+                for clause in caption.clauses:
+                    words += ours.words_in(clause.original)
+                ours.vocabulary.caption_finished(caption_id, words, caption.by_you)
         self.changed.emit()
         self.checked.emit(caption_id, result)
 
@@ -162,21 +167,29 @@ class CaptionFeed(QObject):
     def _count(
         self, update: CaptionUpdate, applied: bool, tools: LearningTools
     ) -> None:
-        vocabulary = tools.vocabulary
+        every = tools.every  # each full language learned's learning data
         if update.kind is CaptionKind.WITHDRAWN:
-            vocabulary.caption_withdrawn(update.caption_id)
+            for each in every:
+                each.vocabulary.caption_withdrawn(update.caption_id)
             return
         if update.kind is not CaptionKind.FINISHED or not applied:
             return
         for replaced in update.replaces:
             if replaced != update.caption_id:
-                vocabulary.caption_withdrawn(replaced)
-        if not tools.learns(update.language):  # another language: not heard
-            vocabulary.caption_withdrawn(update.caption_id)
+                for each in every:
+                    each.vocabulary.caption_withdrawn(replaced)
+        # counted in its own language's learning data (`of`), and taken back
+        # from any other's that counted it before a join changed its language
+        ours = tools.of(update.language)
+        heard = ours.learns(update.language)
+        for each in every:
+            if each is not ours or not heard:  # another language: not heard
+                each.vocabulary.caption_withdrawn(update.caption_id)
+        if not heard:
             return
         words: list[WordInLine] = []
         for clause in update.clauses:
-            words += tools.words_in(clause.original)
-        vocabulary.caption_finished(
+            words += ours.words_in(clause.original)
+        ours.vocabulary.caption_finished(
             update.caption_id, words, self.history.is_yours(update.source_id)
         )

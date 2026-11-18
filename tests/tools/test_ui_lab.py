@@ -24,7 +24,7 @@ from polyglotic_desktop.perf import budgets
 from polyglotic_desktop.ui.learning import LearningTools
 from polyglotic_desktop.ui_next import style
 from polyglotic_desktop.ui_next.words_page import WordsPage
-from tools import busy_pc
+from tools import busy_pc, start_record, timing_record
 
 
 @pytest.fixture(autouse=True)
@@ -256,3 +256,140 @@ def test_each_state_begins_at_the_runs_app_text_size() -> None:
         assert begun == [1.45, 1.45]
     finally:
         style.use_app_text_size("normal")
+
+
+class LabClock:
+    """The lab's clock in a gate's test (`time` in `tools.ui_lab.lab`): its
+    `sleep` moves it on and sleeps nothing, so a click takes what the test
+    says, whatever the PC. GitHub's Mac slept 50 and 60 ms as 125 and 151,
+    and a click as slow as main's read as twice as slow (polyglotic-hq 420:
+    the first Mac run of the suite)."""
+
+    def __init__(self) -> None:
+        self.seconds = 0.0
+        self.monotonic = time.monotonic  # the lab's waits: the PC's own
+
+    def perf_counter(self) -> float:
+        return self.seconds
+
+    def sleep(self, seconds: float) -> None:
+        self.seconds += seconds
+
+
+def clicks_taking(ms: float) -> lab.State:
+    """A gated state whose six clicks each take `ms` (the click's budget: 30),
+    on the lab's clock: a `LabClock` in a gate's test."""
+
+    def state(lab_: lab.Lab) -> QWidget:
+        lab_.time(
+            "click", lambda: lab.time.sleep(ms / 1000), repeat=6, budget=budgets.CLICK
+        )
+        return QLabel("clicks")
+
+    return lab.State("ui_next.clicks", state, gated=True)
+
+
+def gate(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    state: lab.State,
+    event: str,
+    capsys: pytest.CaptureFixture[str],
+) -> tuple[int, str]:
+    """The lab's gate on `state` alone, as CI runs it on a pull request or
+    a push to main: its exit code and what it said."""
+    monkeypatch.setattr(new_parts, "STATES", [state])
+    monkeypatch.setattr(cli, "new_states", lambda: list(new_parts.STATES))
+    monkeypatch.setattr(cli.goldens, "GOLDENS", None)  # the budgets alone
+    monkeypatch.setattr(lab, "time", LabClock())
+    monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.setenv("POLYGLOTIC_TIMING_RECORD", str(tmp_path / "records"))
+    monkeypatch.setenv("GITHUB_EVENT_NAME", event)
+    monkeypatch.setenv(
+        "GITHUB_REF", "refs/heads/main" if event == "push" else "refs/pull/1/merge"
+    )
+    monkeypatch.setenv("GITHUB_SHA", "abcdef1234567890")
+    code = cli.main(["--gate", "--out", str(tmp_path / "out")])
+    return code, capsys.readouterr().err
+
+
+MAIN = timing_record.kind(100, "normal", "en")
+
+
+@pytest.mark.parametrize(
+    ("main_ms", "fails"),
+    [(60.0, 0), (30.0, 1)],
+    ids=["as slow on main", "twice as slow as main"],
+)
+def test_a_pull_request_over_budget_fails_only_if_slower_than_main(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    main_ms: float,
+    fails: int,
+) -> None:
+    """Decision 0136 (polyglotic-hq 344): main's theme change crept from 29
+    to 76 ms of its 100 and failed pull requests that hadn't touched it. A
+    click at 60 ms (its budget: 30) on a pull request: as main's record has
+    it, over its budget as main is - said, not failed; main's at 30 ms, the
+    change made it twice as slow - failed."""
+    monkeypatch.setenv("POLYGLOTIC_TIMING_RECORD", str(tmp_path / "records"))
+    timing_record.save(
+        MAIN,
+        {"ui_next.clicks: click": timing_record.Timing(main_ms, main_ms)},
+        "1234abcd",
+    )
+    code, said = gate(tmp_path, monkeypatch, clicks_taking(60), "pull_request", capsys)
+    assert code == fails, said
+    if fails:
+        assert "over budget - ui_next.clicks: click" in said
+    else:
+        assert "over its budget as main is - ui_next.clicks: click - median" in said
+        assert "main's (1234abcd) median 60.0" in said
+
+
+def test_main_is_held_to_the_budget_alone_and_keeps_its_record(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Main's runs are never excused: main going over is seen there. Its
+    timings become the record pull requests are compared with."""
+    monkeypatch.setenv("POLYGLOTIC_TIMING_RECORD", str(tmp_path / "records"))
+    timing_record.save(
+        MAIN, {"ui_next.clicks: click": timing_record.Timing(60.0, 60.0)}, "1234abcd"
+    )
+    code, said = gate(tmp_path, monkeypatch, clicks_taking(60), "push", capsys)
+    assert code == 1 and "over budget - ui_next.clicks: click" in said
+    record = timing_record.load(MAIN)
+    assert record is not None and record.commit == "abcdef1234567890"
+    kept = record.timings["ui_next.clicks: click"]
+    assert 60 <= kept.median_ms < 120 and kept.longest_ms >= kept.median_ms
+
+
+def test_a_gate_run_in_a_test_never_keeps_this_pcs_record(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Polyglotic-hq 367: CI's Checks on a push to main run these tests with
+    the push's own environment, and a test's gate kept its made-up timings
+    (none, or one click) as main's record on the PC, over the UI lab's own.
+    Every pull request's lab after that was judged against it: with nothing
+    of main's to compare, any action over its budget failed."""
+    pc = tmp_path / "this-pc"
+    monkeypatch.setattr(start_record, "RECORD_FOLDER", pc)
+    monkeypatch.setattr(new_parts, "STATES", [clicks_taking(1)])
+    monkeypatch.setattr(cli, "new_states", lambda: list(new_parts.STATES))
+    monkeypatch.setattr(cli.goldens, "GOLDENS", None)
+    monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "push")
+    monkeypatch.setenv("GITHUB_REF", "refs/heads/main")
+    assert cli.main(["--gate", "--out", str(tmp_path / "out")]) == 0
+    assert not pc.exists() or not any(pc.iterdir())
+
+
+def test_without_a_record_a_pull_request_is_held_to_the_budget(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """No record of main's here (another PC, or none kept yet): the gate is
+    the budget, as before 0136."""
+    code, said = gate(tmp_path, monkeypatch, clicks_taking(60), "pull_request", capsys)
+    assert code == 1 and "over budget - ui_next.clicks: click" in said

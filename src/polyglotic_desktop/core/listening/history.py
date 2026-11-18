@@ -11,10 +11,13 @@ protocol.md's caption updates:
 
 Every caption keeps a `key` for as long as it's shown - through its live
 updates, its finishing and joins - so a view updates what it drew rather
-than drawing it afresh. The last `MAX_HISTORY` captions are kept - and,
-if asked (`keep_earlier`), the finished captions that dropped off before
-them, as text, for writing out the whole session (a transcript's Copy all
-and Save, polyglotic-hq 137).
+than drawing it afresh. The last `MAX_HISTORY` captions are kept - or
+as many as asked, and with `keep_for` only those that first appeared in
+that many seconds (a transcript's "the last 3 hours", polyglotic-hq 334);
+`set_limits` changes both while captions arrive. If asked
+(`keep_earlier`), the finished captions that dropped off before them are
+kept as text, for writing out the whole session (a transcript's Copy all
+and Save, polyglotic-hq 137) - and a raised limit takes them back.
 
 **Never blank:** a translation stays until a new one arrives. If a live
 update comes without a clause's translation that the previous version had
@@ -27,7 +30,8 @@ this time) - otherwise what was finished is what's shown.
 shown for a few seconds doesn't change. An update - a live update, the
 finished caption, a join - is the same speech heard again; `apply` keeps
 the words the caption (and, for a join, the captions it replaces) has
-shown unchanged for 3s, and its clauses above the last two, and takes
+shown unchanged for 3s (or the shorter time chosen: `set_settle_after`),
+and its clauses above the last two, and takes
 only what comes after them from the update (`core.listening.settling`).
 
 An update that comes too late is ignored: a live update for a caption
@@ -46,7 +50,7 @@ import itertools
 from collections import OrderedDict, deque
 from collections.abc import Callable, Collection, Iterable
 from dataclasses import dataclass, replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from polyglotic_desktop.core.listening.captions import (
     CaptionKind,
@@ -56,6 +60,8 @@ from polyglotic_desktop.core.listening.captions import (
     WordLink,
 )
 from polyglotic_desktop.core.listening.settling import (
+    SETTLE_AFTER_SEC,
+    SETTLE_RANGE,
     Stable,
     joint,
     settle,
@@ -149,19 +155,24 @@ class CaptionHistory:
         clock: Callable[[], datetime] = _utc_now,
         max_captions: int = MAX_HISTORY,
         keep_earlier: int = 0,
+        keep_for: float | None = None,
     ) -> None:
         """`your_sources`: the sources that are the user's own mic - their
-        captions are "by you". `keep_earlier`: how many finished captions
-        that drop off the front are kept in `earlier` (the oldest of those
-        go first)."""
+        captions are "by you". `max_captions`: at most this many kept;
+        `keep_for`: and only those that first appeared in the last this
+        many seconds (None: however long ago). `keep_earlier`: how many
+        finished captions that drop off the front are kept in `earlier`
+        (the oldest of those go first)."""
         self._yours = frozenset(your_sources)
         self._clock = clock
         self._max = max_captions
+        self._keep_for = keep_for
         self.earlier: deque[Caption] = deque(maxlen=keep_earlier)
         """Finished captions dropped off the front, oldest first, as text:
         no word links, no first version - what writing them out needs.
         Never updated again: a join, withdrawal or check this far back
-        doesn't reach them."""
+        doesn't reach them - unless a raised limit takes them back
+        (`set_limits`), still as text."""
         self._captions: list[Caption] = []
         self._keys = itertools.count(1)
         self._gone: OrderedDict[CaptionId, None] = OrderedDict()
@@ -169,6 +180,7 @@ class CaptionHistory:
         # speech its latest version heard (seconds; None: not known)
         self._stable: dict[CaptionId, Stable] = {}
         self._heard: dict[CaptionId, float | None] = {}
+        self._settle_after = SETTLE_AFTER_SEC
         self.started_at = clock()
         self.version = 0
 
@@ -178,6 +190,49 @@ class CaptionHistory:
 
     def caption(self, caption_id: CaptionId) -> Caption | None:
         return next((c for c in self._captions if c.caption_id == caption_id), None)
+
+    @property
+    def settle_after(self) -> float:
+        """How long shown words may still change, in seconds
+        (`SETTLE_RANGE`; 0: settled as soon as shown)."""
+        return self._settle_after
+
+    def set_settle_after(self, seconds: float) -> None:
+        """The learner's choice, kept within `SETTLE_RANGE`. It applies
+        from the next update on: what an earlier update changed stays."""
+        low, high = SETTLE_RANGE
+        self._settle_after = min(high, max(low, seconds))
+
+    @property
+    def limits(self) -> tuple[int, float | None]:
+        """At most how many captions are kept, and for how many seconds
+        (None: however long ago they appeared)."""
+        return self._max, self._keep_for
+
+    def set_limits(self, max_captions: int, keep_for: float | None = None) -> None:
+        """Keeps at most `max_captions`, and with `keep_for` only those that
+        first appeared in the last that many seconds - from now: what's
+        past the new limits drops off the front at once (finished captions
+        into `earlier`, if it keeps any); under a raised limit the captions
+        that dropped off before come back from `earlier`, newest first,
+        while they're within it - as text (no word links)."""
+        if (max_captions, keep_for) == self.limits:
+            return
+        self._max, self._keep_for = max_captions, keep_for
+        before = len(self._captions)
+        oldest = self._oldest_kept()
+        taken: list[Caption] = []
+        while (
+            self.earlier
+            and before + len(taken) < self._max
+            and (oldest is None or self.earlier[-1].started_at >= oldest)
+        ):
+            taken.append(self.earlier.pop())
+        if taken:
+            self._captions[:0] = reversed(taken)
+            self.version += 1
+        if self._drop_off_the_front():
+            self.version += 1
 
     def is_yours(self, source_id: SourceId) -> bool:
         return source_id in self._yours
@@ -240,7 +295,9 @@ class CaptionHistory:
             starts = len(text) + len(joint(text, shown_text(caption.clauses)))
             stable = stable.then(len(text), starts, own)
             before += caption.clauses
-        settled = settled_length(before, stable.stood(at), shown[-1].live)
+        settled = settled_length(
+            before, stable.stood(at, self._settle_after), shown[-1].live
+        )
         heard, hears = self._heard.get(update.caption_id), _speech_heard(update)
         grew = None
         if len(shown) == 1 and heard and hears and hears >= heard:
@@ -295,18 +352,32 @@ class CaptionHistory:
         self._captions[positions[0]] = placed
         return placed
 
-    def _drop_off_the_front(self) -> None:
-        """The oldest captions past `max_captions` go - the finished ones
-        into `earlier`, if it keeps any."""
-        dropped = self._captions[: -self._max]
-        if not dropped:
-            return
-        del self._captions[: -self._max]
+    def _oldest_kept(self) -> datetime | None:
+        """The earliest a kept caption may have first appeared, now
+        (`keep_for`); None: any time."""
+        if self._keep_for is None:
+            return None
+        return self._clock() - timedelta(seconds=self._keep_for)
+
+    def _drop_off_the_front(self) -> bool:
+        """The oldest captions past `max_captions`, or that first appeared
+        longer than `keep_for` ago, go - the finished ones into `earlier`,
+        if it keeps any. True if any went."""
+        cut = max(0, len(self._captions) - self._max)
+        oldest = self._oldest_kept()
+        if oldest is not None:
+            while cut < len(self._captions) and self._captions[cut].started_at < oldest:
+                cut += 1
+        if not cut:
+            return False
+        dropped = self._captions[:cut]
+        del self._captions[:cut]
         for caption in dropped:
             self._stable.pop(caption.caption_id, None)
             self._heard.pop(caption.caption_id, None)
         if self.earlier.maxlen:
             self.earlier.extend(_as_text(c) for c in dropped if not c.live)
+        return True
 
     def _remove(self, ids: list[CaptionId]) -> None:
         kept = [c for c in self._captions if c.caption_id not in ids]

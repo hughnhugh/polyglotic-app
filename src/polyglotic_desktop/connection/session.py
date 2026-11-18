@@ -82,10 +82,12 @@ audio, settings or the token.
 import asyncio
 import contextlib
 import logging
+import ssl
 import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, replace
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from typing import Any, Protocol
 
@@ -97,11 +99,12 @@ from websockets.exceptions import (
     InvalidURI,
 )
 
-from polyglotic_desktop.connection import listening, protocol
+from polyglotic_desktop.connection import listening, protocol, tls
 from polyglotic_desktop.connection.addresses import SECURE, server_address
 from polyglotic_desktop.connection.app import AppInfo
 from polyglotic_desktop.connection.exchange import DataExchange
 from polyglotic_desktop.connection.failures import (
+    ANNOUNCED_GOING_AWAY,
     why_closed,
     why_not_opened,
     why_refused,
@@ -112,16 +115,23 @@ from polyglotic_desktop.connection.reconnect import (
     Ended,
     Reconnects,
     Refusal,
+    RetryIn,
     Stop,
     StopReason,
 )
 from polyglotic_desktop.connection.unanswered import Handed, UnansweredSpeech
 from polyglotic_desktop.core.listening import delays, unstable
+from polyglotic_desktop.core.listening import maintenance as planned
 from polyglotic_desktop.core.listening.captions import (
     CaptionKind,
     CaptionUpdate,
     SpeechTimes,
 )
+from polyglotic_desktop.core.listening.held_back import (
+    LIVE_UPDATES_HELD_BACK,
+    HeldBack,
+)
+from polyglotic_desktop.core.listening.maintenance import Maintenance
 from polyglotic_desktop.core.listening.recheck import (
     ANSWER_WITHIN_SEC,
     RecheckRequest,
@@ -215,6 +225,10 @@ class Status:
     unreachable: Unreachable | None = None
     source_fields: tuple[str, ...] | None = None
     cohort: str | None = None
+    clock_looks_wrong: bool = False
+    """Listening, but let through only once the leaf's dates were checked
+    against when the app was built, with this PC's time outside them: its
+    date or time looks wrong (connection.tls, decision 0104; 313)."""
 
 
 class SessionListener(Protocol):
@@ -254,6 +268,12 @@ class SessionListener(Protocol):
     def plan_changed(self, plan: protocol.PlanState) -> None:
         """The account's plan, as the server states it: in `welcome`, then
         again whenever it changes (polyglotic-hq 178, 185)."""
+        ...
+
+    def maintenance_changed(self, window: Maintenance | None) -> None:
+        """The planned maintenance window the app holds changed - told in
+        `welcome`, a `maintenance` message or a refusal for it - or there's
+        none now (core.listening.maintenance; polyglotic-hq 319)."""
         ...
 
 
@@ -312,12 +332,19 @@ class ListeningSession:
         live_interval: float | None = LIVE_UPDATE_INTERVAL_SEC,
         caption_mode: CaptionMode | None = None,
         capture: Capture | None = None,
+        maintenance: Maintenance | None = None,
+        wall_clock: Callable[[], datetime] = lambda: datetime.now(UTC),
     ) -> None:
         """`live_interval` is the live-update interval followed (None:
         none), `caption_mode` the learner's caption mode and `capture` what
         is captured as it starts (None: not known yet), for the session's
-        summary."""
+        summary. `maintenance`: the planned maintenance window the app
+        holds as it starts (kept between starts; polyglotic-hq 319);
+        `wall_clock`: this PC's time, which the window is placed against."""
         self._url = session_url(server)
+        self._clock_looks_wrong = False
+        """The last session's leaf let through with this PC's time outside
+        its dates (connection.tls)."""
         self._exchange = exchange
         self._purpose: protocol.Purpose = purpose
         self.unanswered = UnansweredSpeech()
@@ -327,6 +354,7 @@ class ListeningSession:
         handed over from another thread (`take_on`): the session's own
         thread takes it into `unanswered` and sends it."""
         self._handed_lock = threading.Lock()
+        self._held_back = HeldBack()
         self._summary = SessionSummary(
             live_interval,
             settings.targets[0] if settings.targets else None,
@@ -337,6 +365,10 @@ class ListeningSession:
         if settings.original_only:
             self._summary.did(SessionAction.ORIGINAL_ONLY)
         self._welcomes = 0
+        self._lost_at: float | None = None
+        """When the last session open ended (time.monotonic), until the
+        next `welcome`: the log says how long the learner was without
+        captions (polyglotic-hq 302)."""
         self._resume: str | None = None
         """The listening session to resume on the next connection."""
         self._again: list[bytes] = []
@@ -368,6 +400,16 @@ class ListeningSession:
         self._restarting_since: float | None = None
         """When the server last said it's restarting (close 1001), until a
         session opens again (core.listening.unreachable.after_restart)."""
+        self._going_away_told = False
+        """This session's server announced its close 1001 (a `notice` in
+        `failures.ANNOUNCED_GOING_AWAY`): only then is it a restart (368)."""
+        self._maintenance = maintenance
+        """The planned maintenance window held: what the last `welcome`,
+        `maintenance` message or refusal for it said (319)."""
+        self._wall_clock = wall_clock
+        self._ahead = maintenance.pc_ahead if maintenance else timedelta(0)
+        """How far this PC's clock is ahead of the server's: from the last
+        `welcome.server_time`, else the window held."""
 
     # --- From any thread ----------------------------------------------------
 
@@ -493,6 +535,9 @@ class ListeningSession:
         session)."""
         if self._purpose != "listen":
             return None
+        left = self._held_back.left_to_log()
+        if left is not None:
+            self._log_held_back(left.waited, left.refused)
         return self._summary.ended(time.perf_counter())
 
     def _call(self, action: Callable[[], None]) -> None:
@@ -536,6 +581,8 @@ class ListeningSession:
             await session  # a listening session closes itself, normally
             stopping.cancel()
             ended = session.result()
+            if ended.lasted > 0 or self._lost_at is None:
+                self._lost_at = time.monotonic()  # away from now, till welcomed
             if self._stop.is_set():
                 break
             step = self._reconnects.after(ended)
@@ -570,10 +617,14 @@ class ListeningSession:
                     )
                 continue
             why = self._unreachable(ended)
+            step = self._in_maintenance(why, ended, step)
+            if why is Unreachable.MAINTENANCE:
+                self._give_up_for_maintenance()
             log.info(
-                "session ended (close %s, %s); trying again in %.1fs",
+                "session ended (close %s, %s) after %.0fs; trying again in %.1fs",
                 ended.close_code,
                 why,
+                ended.lasted,
                 step.seconds,
             )
             self._status(
@@ -581,7 +632,8 @@ class ListeningSession:
                     SessionState.WAITING,
                     retry_in=step.seconds,
                     close_code=ended.close_code,
-                    server_busy=isinstance(ended.refusal, protocol.ServerBusy),
+                    server_busy=isinstance(ended.refusal, protocol.ServerBusy)
+                    and why is not Unreachable.MAINTENANCE,
                     unreachable=why,
                 )
             )
@@ -597,15 +649,72 @@ class ListeningSession:
         why = (
             ended.unreachable
             or why_refused(ended.refusal)
-            or why_closed(ended.close_code)
+            or why_closed(ended.close_code, self._going_away_told)
         )
+        self._going_away_told = False  # said of this session's end only
         now = time.monotonic()
         if why is Unreachable.RESTARTING:
             self._restarting_since = now
         if why is None:
             return None
         since = self._restarting_since
-        return after_restart(why, None if since is None else now - since)
+        why = after_restart(why, None if since is None else now - since)
+        return planned.during_maintenance(why, self._maintenance, self._wall_clock())
+
+    def _in_maintenance(
+        self, why: Unreachable | None, ended: Ended, step: RetryIn
+    ) -> RetryIn:
+        """Waiting in a planned maintenance window the app holds: try again
+        at most every 2 minutes, then at its end plus a random 0-60 s - not
+        every few seconds, and not all apps in the same second (319). A
+        refusal for the window already waits so (`Reconnects`)."""
+        window = self._maintenance
+        if why is not Unreachable.MAINTENANCE or window is None or ended.refusal:
+            return step
+        seconds = planned.wait(window, self._wall_clock(), self._reconnects.random())
+        return step if seconds is None else RetryIn(seconds)
+
+    def _told(self, window: protocol.MaintenanceWindow | None) -> Maintenance | None:
+        """A window as the server wrote it, placed with the clock difference held."""
+        if window is None:
+            return None
+        return planned.told(window.starts_at, window.ends_at, self._pc_ahead())
+
+    def _pc_ahead(self) -> timedelta:
+        """How far this PC's clock is ahead of the server's, as last told."""
+        held = self._maintenance
+        return held.pc_ahead if held is not None else self._ahead
+
+    def _hold_welcomes(self, welcome: protocol.Welcome) -> None:
+        """`welcome` says the window that stands, or none - a server from
+        before 2026-11-14 plans none, so a window held from a newer one is
+        let go - and the server's time places it."""
+        ahead = planned.pc_ahead_of(welcome.server_time, self._wall_clock())
+        if ahead is not None:
+            self._ahead = ahead
+        window = welcome.maintenance
+        self._hold(
+            None
+            if window is None
+            else planned.told(window.starts_at, window.ends_at, self._ahead)
+        )
+
+    def _hold(self, window: Maintenance | None) -> None:
+        if window == self._maintenance:
+            return
+        self._maintenance = window
+        log.info(
+            "planned maintenance: %s",
+            "none"
+            if window is None
+            else f"{window.starts_at:%Y-%m-%d %H:%M}Z to {window.ends_at:%H:%M}Z",
+        )
+        self._notify(self._listener.maintenance_changed, window)
+
+    @property
+    def maintenance(self) -> Maintenance | None:
+        """The planned maintenance window this session holds."""
+        return self._maintenance
 
     def _asks_again(self, reason: StopReason) -> bool:
         """A listening session refused for its version asks again later:
@@ -621,19 +730,21 @@ class ListeningSession:
         )
 
     async def _one_session(self, credentials: DeviceCredentials) -> Ended:
+        began = time.monotonic()
         try:
-            async with connect(
-                self._url,
-                open_timeout=self._timings.answer_within,
-                close_timeout=self._timings.close_within,
-                ping_interval=None,  # the app's own `ping` (protocol.md)
-                compression=None,  # speech is Opus already
-                max_size=MAX_MESSAGE_BYTES,
-                logger=_websocket_log,
-                # the app's own name, as every other request (core/shared/
-                # client.py): websockets' default is "Python/3.x websockets/y"
-                user_agent_header=USER_AGENT,
-            ) as websocket:
+            secure = tls.context() if self._url.startswith("wss://") else None
+            try:
+                websocket = await self._connect(secure)
+            except ssl.SSLCertVerificationError as error:
+                # a certificate's dates: once more, everything else still
+                # checked (connection.tls, decision 0104; polyglotic-hq 313)
+                failed = tls.on_dates(error)
+                if failed is None:
+                    raise
+                secure = tls.context(failed)
+                websocket = await self._connect(secure)
+            self._clock_looks_wrong = tls.clock_looks_wrong(tls.let_for(secure))
+            async with websocket:
                 return await self._open(websocket, credentials)
         except (
             OSError,
@@ -643,10 +754,35 @@ class ListeningSession:
             InvalidProxy,  # the PC's proxy setting: not one websockets can use
         ) as error:
             why = why_not_opened(error)
-            log.info("couldn't open a session: %s (%s)", type(error).__name__, why)
+            # how long it took tells a reset at once from no answer at all
+            log.info(
+                "couldn't open a session after %.1fs: %s (%s)",
+                time.monotonic() - began,
+                type(error).__name__,
+                why,
+            )
             return Ended(None, unreachable=why)
         except ConnectionClosed as closed:
             return Ended(_close_code(closed))
+
+    async def _connect(self, secure: ssl.SSLContext | None) -> ClientConnection:
+        """The WebSocket, opened: over `wss://` with connection.tls's
+        context `secure` - after a failure on dates, the one that checks the
+        leaf's dates itself (decision 0104). `ws://` (a server on this PC)
+        has none; websockets refuses `ssl=None` for `wss://`."""
+        return await connect(
+            self._url,
+            open_timeout=self._timings.answer_within,
+            close_timeout=self._timings.close_within,
+            ping_interval=None,  # the app's own `ping` (protocol.md)
+            compression=None,  # speech is Opus already
+            max_size=MAX_MESSAGE_BYTES,
+            logger=_websocket_log,
+            # the app's own name, as every other request (core/shared/
+            # client.py): websockets' default is "Python/3.x websockets/y"
+            user_agent_header=USER_AGENT,
+            ssl=secure,
+        )
 
     async def _open(
         self, websocket: ClientConnection, credentials: DeviceCredentials
@@ -673,6 +809,15 @@ class ListeningSession:
             log.info("the server refused the session: %s", message.type)
             if isinstance(message, protocol.LimitReached) and message.plan:
                 self._notify(self._listener.plan_changed, message.plan)
+            if (
+                isinstance(message, protocol.ServerBusy)
+                and message.reason == "maintenance"
+            ):  # the window's end, which may have moved since it was told
+                self._hold(
+                    planned.ends_at(
+                        self._maintenance, message.until, self._wall_clock()
+                    )
+                )
             try:
                 await asyncio.wait_for(websocket.recv(), self._timings.close_within)
             except ConnectionClosed as closed:
@@ -692,6 +837,7 @@ class ListeningSession:
         self._last_heard = welcomed
         self._listening = True
         self._restarting_since = None  # back: a restart's over
+        self._going_away_told = False
         try:
             return await self._listen_until_closed(
                 websocket, welcome, welcomed, install_id
@@ -713,7 +859,12 @@ class ListeningSession:
         self._welcomes += 1
         if self._welcomes > 1:
             self._summary.reconnected()
-            log.info("session resumed: %s", "yes" if welcome.resumed else "no")
+            log.info(
+                "session resumed: %s, %.1fs after the last one ended",
+                "yes" if welcome.resumed else "no",
+                0.0 if self._lost_at is None else time.monotonic() - self._lost_at,
+            )
+        self._lost_at = None
         if self._purpose == "listen":
             self._resume = welcome.session_id
         if self._exchange is not None:
@@ -738,10 +889,12 @@ class ListeningSession:
                 cohort=welcome.cohort,
                 tier=welcome.plan.tier if welcome.plan is not None else None,
                 source_fields=welcome.source_fields,
+                clock_looks_wrong=self._clock_looks_wrong,
             )
         )
         if welcome.plan is not None:
             self._notify(self._listener.plan_changed, welcome.plan)
+        self._hold_welcomes(welcome)
         if self._purpose == "listen":
             self._notify(self._listener.pace_changed, welcome.live_interval_min)
             self._settings_changed.set()  # a new session starts with `settings`
@@ -810,9 +963,13 @@ class ListeningSession:
             elif isinstance(message, protocol.Minutes):
                 self._notify(self._listener.minutes_changed, message.used, message.left)
             elif isinstance(message, protocol.Notice):
+                if message.code in ANNOUNCED_GOING_AWAY:
+                    self._going_away_told = True  # its close 1001 is the restart
                 self._notify(self._listener.notice, message.code)
             elif isinstance(message, protocol.Plan):
                 self._notify(self._listener.plan_changed, message)
+            elif isinstance(message, protocol.Maintenance):
+                self._hold(self._told(message.window))
             elif isinstance(message, protocol.LimitReached):  # then 4009
                 log.info("listening stops: %s", message.kind)
                 if message.plan is not None:
@@ -844,11 +1001,55 @@ class ListeningSession:
                     )
                 if message.code == "processing_failed":
                     self._notify(self._listener.caption_failed)
-                log.warning(
-                    "the server: error %s (fatal: %s)", message.code, message.fatal
-                )
+                if self._refuses_a_live_update(message):
+                    # one line a minute, not one per live update (decision 0097)
+                    self._live_update_held(self._held_back.refused(time.monotonic()))
+                else:
+                    log.warning(
+                        "the server: error %s (fatal: %s)",
+                        message.code,
+                        message.fatal,
+                    )
                 if self._exchange is not None:
                     self._exchange.heard(message)
+
+    def _refuses_a_live_update(self, message: protocol.Error) -> bool:
+        """Whether an `error` is the server refusing a live update at its
+        speech limit: the caption carries on, and so does the session. A
+        server that doesn't say which kind it refused (before 2026-11-11)
+        is taken to mean a live update unless the caption's finished
+        speech is waiting for its answer."""
+        if message.code != "speech_limit_reached" or message.caption_id is None:
+            return False
+        if message.kind is not None:
+            return message.kind == "live"
+        return message.caption_id not in self.unanswered
+
+    def _live_update_held(self, tell: bool) -> None:
+        """A live update was held back - it waited its turn in the app, or
+        the server refused it: the learner is told once in a while
+        (`HeldBack`), and the log says how many once a minute."""
+        if tell:
+            self._notify(self._listener.notice, LIVE_UPDATES_HELD_BACK)
+        counted = self._held_back.to_log(time.monotonic())
+        if counted is not None:
+            self._log_held_back(counted.waited, counted.refused)
+
+    @staticmethod
+    def _log_held_back(waited: int, refused: int) -> None:
+        if refused:
+            log.warning(
+                "live updates held back since the last such line: the server "
+                "refused %d at its speech limit, %d waited their turn here",
+                refused,
+                waited,
+            )
+        else:
+            log.info(
+                "live updates held back since the last such line: %d waited "
+                "their turn under the speech ceiling",
+                waited,
+            )
 
     def _answers_finished_speech(
         self, code: str, caption_id: str, kind: str | None
@@ -915,6 +1116,10 @@ class ListeningSession:
                         )
                     if isinstance(decision, TranscriptionRequest):
                         self._summary.speech_sent(decision, time.perf_counter())
+                        if decision.held:
+                            self._live_update_held(
+                                self._held_back.waited(time.monotonic())
+                            )
                     else:  # withdrawn: the server answers nothing more for it
                         self.unanswered.withdrawn(decision.caption_id)
                     self._sending(decision, out)
@@ -1029,6 +1234,15 @@ class ListeningSession:
             self._say_stalled(
                 False
             )  # this connection is over: its state says what's next
+
+    def _give_up_for_maintenance(self) -> None:
+        """A planned maintenance window: finished speech still unanswered
+        from before it isn't sent after it - minutes old by then, and every
+        app at once (polyglotic-hq 319). Counted as dropped."""
+        for caption_id in self.unanswered.give_up_all():
+            caption_log.info(delays.line("dropped", caption_id, why="maintenance"))
+            self._speech_sent.pop((caption_id, "finished"), None)
+            self._summary.failed(CaptionId(caption_id))
 
     def _give_up(self) -> None:
         """Finished speech that won't be answered stops being waited for,

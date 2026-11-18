@@ -44,6 +44,14 @@ in the installed app. Only packages the app's code actually
 loads are in the installed app, and only their licences are copied; the
 build's summary lists each with its version and licence.
 
+On a Mac only, sound is captured with catap (MIT, Copyright (c) 2025-2026
+Sage Betko; Core Audio taps, with a native library of its own), PyObjC's
+pyobjc-core, pyobjc-framework-Cocoa and pyobjc-framework-CoreAudio (MIT,
+Ronald Oussoren and contributors), and sounddevice (MIT, Matthias Geier),
+which bundles the PortAudio library 19.7.0 (MIT-style licence, Ross Bencina
+and Phil Burk; its text in `licenses/PortAudio/LICENSE.txt`). None of these
+is in the Windows app.
+
 ## Velopack
 
 The installer (`Setup.exe`), the updater (`Update.exe`) and the app's
@@ -93,23 +101,38 @@ They remain under the OFL.
 
 ## The dictionaries
 
-`cedict.sqlite` and `ecdict.sqlite` ship as separate, unlocked files beside
+`cedict.sqlite`, `ecdict.sqlite` and `ecdict-en.sqlite` ship as separate, unlocked files beside
 the app, in `dictionaries`, with their own `CREDITS.md` naming every source, its version,
 licence and notice (written by `tools/dictionaries/build.py` from
 `tools/dictionaries/sources.py`; decision 0009). In short: CC-CEDICT (CC
 BY-SA 4.0), jieba's word frequencies (MIT), the hsk30 package's HSK lists
 (MIT), ECDICT (MIT) and wordfreq's English frequencies (CC BY-SA 4.0,
-including SUBTLEX, Google Books Ngram and OpenSubtitles data). Both files
-are shared under CC BY-SA 4.0: anyone may reuse them under that licence.
+including SUBTLEX, Google Books Ngram and OpenSubtitles data).
+`ecdict-en.sqlite` is `ecdict.sqlite` with English meanings (decision
+0211): Open English WordNet's (CC BY 4.0, from Princeton WordNet under the
+WordNet License, whose notice `CREDITS.md` carries), ordered with counts
+from UD English-EWT (CC BY-SA 4.0; counts only), and Polyglotic's own.
+All three files are shared under CC BY-SA 4.0: anyone may reuse them
+under that licence.
 
-The dictionary packs for other caption languages (decision 0035) don't ship
-with the app yet. Each is a separate, unlocked file with its own
-`<name>.CREDITS.md` (written by `tools/dictionaries/packs.py`): Spanish and
-Russian from Wiktionary's contributors (CC BY-SA 4.0 and GFDL), as
-extracted by kaikki.org, with Chinese meanings from the Chinese edition of
-Wiktionary; Japanese from JMdict (EDRDG, CC BY-SA 4.0) and Jonathan
-Waller's JLPT lists (CC BY); frequency ranks from wordfreq (CC BY-SA 4.0).
-Each pack is shared under CC BY-SA 4.0.
+The dictionary packs for other caption languages (decision 0035) aren't
+in the app: each is downloaded when its language is learned (decision
+0122), into `dictionaries` in your data folder, as a separate, unlocked
+file with its own `<name>.CREDITS.md` beside it (written by
+`tools/dictionaries/packs.py`, carried in the signed list of packs):
+Spanish, Russian and Vietnamese from Wiktionary's contributors (CC BY-SA
+4.0 and GFDL), as extracted by kaikki.org, with Chinese meanings
+(Spanish's and Russian's) from the Chinese edition of Wiktionary; Japanese
+from JMdict (EDRDG, CC BY-SA 4.0) and Jonathan Waller's JLPT lists
+(CC BY); frequency ranks from wordfreq (CC BY-SA 4.0), and for Russian
+also from FrequencyWords' counts of OPUS OpenSubtitles 2018 (Hermit Dave,
+CC BY-SA 4.0; the subtitles from http://www.opensubtitles.org/).
+Vietnamese's frequency ranks come from OPUS OpenSubtitles v2018 (P.
+Lison, J. Tiedemann and M. Kouylekov, LREC 2018; the subtitles from
+http://www.opensubtitles.org/): we counted its words, and the pack holds
+those counts only, as each word's rank, never a line of the subtitles'
+text. OPUS states no licence for that text. Each pack is shared under
+CC BY-SA 4.0.
 
 ## Silero VAD
 
@@ -162,3 +185,15 @@ Low-Resource and Multilingual Machine Translation", 2022),
 Commons Attribution-ShareAlike 4.0 International licence (CC BY-SA 4.0,
 <https://creativecommons.org/licenses/by-sa/4.0/>). The captions and
 translations the app shows of them are made live by its models.
+
+## OpenCC's conversion table
+
+"Show Mandarin in: Traditional" converts captions with OpenCC's Simplified
+to Traditional dictionaries (STPhrases, STCharacters and TWVariants), from
+<https://github.com/BYVoid/OpenCC> at tag ver.1.1.9, copyright BYVoid
+(Carbo Kuo) and OpenCC's contributors, under the **Apache License,
+version 2.0** (its text: `OpenCC-LICENSE.txt` beside the table, in
+`_internal/polyglotic_desktop/adapters/data/` in the installed app).
+Changed: the three joined into one table, `zh_traditional.txt.gz`, with each
+phrase's first choice in Taiwan's standard forms, and only pairs of Chinese
+characters (`tools/traditional_table.py`).

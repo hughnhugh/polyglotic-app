@@ -107,6 +107,8 @@ def test_build_compiles_each_language_from_its_ts(
 
 
 ABOUT_WINDOWS = {
+    # Windows' own setting: the probe asks it (decision 0122)
+    ("Learning", "Paused: Windows says this connection is metered"),
     ("Help", "Caption apps you add (Windows 11)"),
     ("Help", "On Home, add up to 3 apps with sound open; each gets a caption window"),
     ("Help", "With one app added on Home, turn on Also caption everything else"),
@@ -120,9 +122,10 @@ ABOUT_WINDOWS = {
     ("Home", "Start Polyglotic with Windows?"),
     ("Home", "Start with Windows"),
     ("Home", "It waits in the tray, so captions are a click away when you play"),
-    # 251: where the PC's clock is set is Windows' own Settings page
-    ("Home", "a secure connection needs them right. Set them in Windows' Settings"),
-    ("SignInDialog", "Check this PC's date and time: a secure connection needs them"),
+    # 251, 313: where the PC's clock is set is Windows' own Settings page
+    ("Home", "this PC says it's {date}, which can't be right. Turn on Set time"),
+    ("Home", "This PC's date or time looks wrong: it says {date}, {time}."),
+    ("SignInDialog", "This PC says it's {date}, which can't be right, and a secure"),
     # 286: a voice for a word is added in Windows' own Settings (Windows' voices)
     ("LookupCard", "No {language} voice on this PC yet. Windows adds one for free"),
     ("LookupCard", "Opens Windows' Settings, where voices are added"),
@@ -231,13 +234,29 @@ def test_traditional_chinese_says_help_and_kind_in_taiwans_words() -> None:
     file = ts.read(i18n.ts_path("zh_TW"))
     said = {source: t.forms for (_c, source, _d), t in file.translations.items()}
     assert not [forms for forms in said.values() if any("型別" in f for f in forms)]
-    helps = [  # "what would help", "They help us"
+    helps = [  # "what would help", "They help us" (this PC's and this Mac's: 409)
         forms[0]
         for source, forms in said.items()
         if source.startswith(("Tell us what went wrong or what", "Daily counts of how"))
     ]
-    assert len(helps) == 2
+    assert len(helps) == 3
     assert all("幫助" in each and "說明" not in each for each in helps)
+
+
+@pytest.mark.parametrize("language", [code for code in OFFERED if code != ENGLISH])
+def test_dictations_note_names_detect_as_its_list_does(language: str) -> None:
+    """Settings - Dictation's note names the choice as its list does: 317
+    made it "Detect automatically", but German's note still said "Auto
+    tippt ..." (329's QA), and so did Filipino's, Dutch's, Polish's,
+    Russian's and Ukrainian's - a choice the list no longer has (330)."""
+    file = ts.read(i18n.ts_path(language))
+    said = {source: t.forms[0] for (_c, source, _d), t in file.translations.items()}
+    note = next(
+        text
+        for source, text in said.items()
+        if source.startswith("Detect types whatever language you speak")
+    )
+    assert not re.search(r"\bAuto\b|Авто", note), note
 
 
 @pytest.mark.parametrize(

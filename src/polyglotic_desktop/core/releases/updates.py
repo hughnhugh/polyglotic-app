@@ -25,6 +25,14 @@ checklist for D5, item 9):
   app quits and starts the new version (`restart_when_quitting`); Later
   stops the asking until the next start, which installs it anyway. What a
   look found (`Found`) is what Settings says.
+- **On a metered connection, an update waits for the learner**
+  (polyglotic-hq 345): a look on a connection Windows calls metered -
+  the same check the dictionary packs make (decision 0122) - finds the
+  update but doesn't download it (`held`, `Found.METERED`); Home's card
+  says how big it is and offers Download anyway (`download_anyway`). The
+  next look on a connection that isn't metered downloads it as before.
+  "Update required" downloads whatever the connection: without it there
+  are no captions at all.
 - **The Microsoft Store's copy updates through the Store** (decision
   0056): the app looks for nothing and downloads nothing - the Store
   installs each new package - and "update required" tells the learner to
@@ -35,9 +43,11 @@ gives it - one at a time.
 """
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
 
+from polyglotic_desktop.core.releases.notes import plain_items
 from polyglotic_desktop.ports.updates import (
     DownloadFailed,
     FeedUnreachable,
@@ -80,6 +90,9 @@ class Found(StrEnum):
     trusted: it's looked at again later."""
     NOT_DOWNLOADED = "not_downloaded"
     """Found, but the download failed: tried again at the next look."""
+    METERED = "metered"
+    """Found, not downloaded: the connection is metered, and the learner
+    hasn't said Download anyway (`Updates.held`)."""
     NOT_INSTALLED = "not_installed"
     """Not installed by the installer: this copy can't update itself."""
 
@@ -107,13 +120,23 @@ class Updates:
     """This copy's updates: what to look for, what's downloaded, when it
     applies."""
 
-    def __init__(self, updater: Updater | None, installed_channel: str) -> None:
+    def __init__(
+        self,
+        updater: Updater | None,
+        installed_channel: str,
+        metered: Callable[[], bool] = lambda: False,
+    ) -> None:
         """`updater` None: the Microsoft Store's copy, which the Store
-        updates - nothing here looks, downloads or applies."""
+        updates - nothing here looks, downloads or applies. `metered`:
+        whether Windows calls the connection metered now."""
         self._updater = updater
         self._installed_channel = installed_channel
+        self._metered = metered
         self._server_channel: str | None = None
         self.downloaded: Update | None = None
+        self.held: Update | None = None
+        """Found on a metered connection, not downloaded: Download anyway
+        fetches it."""
         self._restart = False
 
     @property
@@ -127,17 +150,22 @@ class Updates:
         self._server_channel = server_channel
         return self._updater is not None and self.wanted != before
 
-    def check(self) -> Update | None:
+    def check(self, metered_ok: bool = False) -> Update | None:
         """Looks for an update and downloads it, to apply at the next
-        start. Returns what's downloaded (None: nothing to update to, or
-        not installed by the installer)."""
+        start - on a metered connection only with `metered_ok`, else it's
+        `held`. Returns what's downloaded (None: nothing to update to, held,
+        or not installed by the installer)."""
         if self._updater is None or not self._updater.installed():
             return None
         wanted = self.wanted
         update = self._updater.find(wanted.channel, wanted.allow_downgrade)
+        self.held = None
         if update is None:
             return None
         if update != self.downloaded:
+            if not metered_ok and self._metered():
+                self.held = update
+                return None
             self._updater.download(update)
             self.downloaded = update
         return update
@@ -154,7 +182,23 @@ class Updates:
             return Found.NO_FEED
         except DownloadFailed:
             return Found.NOT_DOWNLOADED
+        if self.held is not None:
+            return Found.METERED
         return Found.UP_TO_DATE if update is None else Found.READY
+
+    def download_anyway(self) -> Found:
+        """The learner's Download anyway: the update held on a metered
+        connection is downloaded now. READY once it is; NOT_DOWNLOADED if
+        it fails (held still); UP_TO_DATE when nothing was held."""
+        held = self.held
+        if self._updater is None or held is None:
+            return Found.UP_TO_DATE
+        try:
+            self._updater.download(held)
+        except DownloadFailed:
+            return Found.NOT_DOWNLOADED
+        self.downloaded, self.held = held, None
+        return Found.READY
 
     def restart_when_quitting(self) -> Update | None:
         """The learner chose Restart now: what's downloaded applies as the
@@ -173,7 +217,7 @@ class Updates:
             return UpdateNow.FROM_STORE
         if not self._updater.installed():
             return UpdateNow.NOT_INSTALLED
-        update = self.check()
+        update = self.check(metered_ok=True)  # no captions without it
         if update is None:
             return UpdateNow.NONE_YET
         self._updater.restart_into(update)
@@ -194,7 +238,8 @@ class Updates:
 
 class RestartOffer:
     """Whether the learner is asked to restart into a downloaded update
-    (polyglotic-hq 299): asked once one is ready; after Later, not again
+    (polyglotic-hq 299) - or, on a metered connection, to download one
+    anyway (345): asked once one is ready; after Later, not again
     until the next start - whatever the looks every few hours find, a newer
     version included. It never restarts the app itself: only the learner's
     Restart now does, so captions and dictation are never cut off."""
@@ -202,14 +247,18 @@ class RestartOffer:
     def __init__(self) -> None:
         self.ready: Update | None = None
         """The update downloaded, ready to restart into."""
+        self.held: Update | None = None
+        """Found on a metered connection, not downloaded (345) - while none
+        is ready."""
         self._later = False
 
-    def found(self, update: Update | None) -> bool:
-        """A look's update (None: nothing downloaded). True if what's
-        asked changed."""
-        before = self.asking
+    def found(self, update: Update | None, held: Update | None = None) -> bool:
+        """A look's update (None: nothing downloaded), and the one `held`
+        on a metered connection. True if what's asked changed."""
+        before = (self.asking, self.asking_to_download)
         self.ready = update
-        return self.asking != before
+        self.held = None if update is not None else held
+        return (self.asking, self.asking_to_download) != before
 
     def later(self) -> None:
         """Later: not asked again until the next start."""
@@ -220,15 +269,18 @@ class RestartOffer:
         """The update the learner is asked to restart into, if any."""
         return None if self._later else self.ready
 
+    @property
+    def asking_to_download(self) -> Update | None:
+        """The update the learner is asked to download anyway, on a metered
+        connection, if any - the same Later stops it."""
+        return None if self._later else self.held
+
 
 WHATS_NEW_LINES = 2
 WHATS_NEW_CHARS = 110
 """What's new in the offer: the notes' first lines, each one sentence cut
 to about this long."""
 
-_ITEM = re.compile(r"^\s*[-*] (?P<text>.*)$")
-_LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
-_MARKS = re.compile(r"\*\*|__|`")
 _SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=\S)")
 
 
@@ -239,17 +291,9 @@ def whats_new(
     Markdown): the first `lines` items - New before Better and Fixed, as
     the file has them - each in plain text: its first sentence, cut at a
     word to at most `chars`, with an ellipsis. () when there are none."""
-    items: list[list[str]] = []
-    for line in notes.splitlines():
-        found = _ITEM.match(line)
-        if found:
-            items.append([found["text"].strip()])
-        elif items and line[:1] in (" ", "\t") and line.strip():
-            items[-1].append(line.strip())  # the item goes on
     said = []
-    for item in items[:lines]:
-        text = _MARKS.sub("", _LINK.sub(r"\1", " ".join(item)))
-        text = _SENTENCE_END.split(text, maxsplit=1)[0].strip()
+    for item in plain_items(notes)[:lines]:
+        text = _SENTENCE_END.split(item, maxsplit=1)[0].strip()
         if len(text) > chars:
             text = text[: chars - 1].rsplit(" ", 1)[0].rstrip(" ,;:-") + "…"
         said.append(text)

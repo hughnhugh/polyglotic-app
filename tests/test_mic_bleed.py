@@ -13,7 +13,12 @@ import numpy as np
 import pytest
 
 from polyglotic_desktop.platform.audio_buffer import AudioBuffer
-from polyglotic_desktop.platform.mic_bleed import MicBleed, log_line, survey
+from polyglotic_desktop.platform.mic_bleed import (
+    MicBleed,
+    NotCompared,
+    log_line,
+    survey,
+)
 from polyglotic_desktop.platform.speech_detection import Audio
 
 SR = 16000
@@ -127,6 +132,80 @@ def test_bleed_late_or_from_a_quiet_loopback(
     assert check(T0 + 1.5, T0 + 5.5) is expected
 
 
+_ECHO = np.random.default_rng(3).normal(0, 1, 1600) * np.exp(-np.arange(1600) / 300)
+_ECHO[0] = 3.0  # the direct path, then 100ms of a room's echo
+
+
+def through_a_room(audio: Audio) -> Audio:
+    return (np.convolve(audio, _ECHO)[: len(audio)] / 3.0).astype(np.float32)
+
+
+FAINT_CASES = [
+    # polyglotic-hq 363: the speakers turned down, or headphones' leak, reach
+    # the mic near or under its own hiss; the loudness check's correlation
+    # falls to 0.5-0.6 there, and Silero still hears speech in it
+    (
+        "leaking in under the mic's hiss, 150ms late",
+        THEM,
+        0.003 * late(THEM, 150) + NOISE,
+        True,
+    ),
+    (
+        "leaking in under the mic's hiss, 0.8s late",
+        THEM,
+        0.003 * late(THEM, 800) + NOISE,
+        True,
+    ),
+    (
+        "leaking in faintly through a room's echo",
+        THEM,
+        0.005 * late(through_a_room(THEM), 200) + NOISE,
+        True,
+    ),
+    (
+        "me talking quietly over faint speakers",
+        THEM,
+        0.012 * ME + 0.003 * late(THEM, 150) + NOISE,
+        False,
+    ),
+    (
+        "me talking over loud speakers in a room",
+        THEM,
+        0.3 * ME + 0.05 * late(through_a_room(THEM), 200) + NOISE,
+        False,
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    ("played", "mic", "expected"),
+    [c[1:] for c in FAINT_CASES],
+    ids=[c[0] for c in FAINT_CASES],
+)
+def test_faint_bleed_is_cancelled_and_the_user_is_left(
+    played: Audio, mic: Audio, expected: bool
+) -> None:
+    """Decision 0154: what played, cancelled out of the mic, takes nearly
+    all of it when the mic heard only the speakers, however faint; the
+    user's voice is what's left when they talk."""
+    check = MicBleed(mic=buffer(mic), played=buffer(played))
+    assert check(T0 + 1.5, T0 + 5.5) is expected
+    [checked] = check.checked()
+    assert checked.found.cancelled is not None
+    assert (checked.found.cancelled >= 0.9) is expected
+
+
+def test_the_shortest_finished_caption_is_compared() -> None:
+    """polyglotic-hq 363: a finished caption needs 12 speech frames of 32ms,
+    0.384s - under the check's 0.4s, so the shortest went out unchecked (9
+    of 11 in a learner's log were phantoms). Each is compared now."""
+    check = MicBleed(mic=buffer(0.04 * late(THEM, 120) + NOISE), played=buffer(THEM))
+    shortest = 12 * 0.032
+    assert check(T0 + 2.0, T0 + 2.0 + shortest) is True
+    [checked] = check.checked()
+    assert checked.found.not_compared is None
+
+
 def test_too_short_to_tell() -> None:
     check = MicBleed(mic=buffer(0.04 * late(THEM, 120) + NOISE), played=buffer(THEM))
     assert check(T0 + 1.0, T0 + 1.3) is False
@@ -140,10 +219,9 @@ def test_nothing_played_yet() -> None:
 def test_the_check_says_how_late_the_mic_was_and_keeps_its_numbers() -> None:
     """polyglotic-hq 290: the check's numbers for the caption log - the
     best correlation, the lag it was found at, whether what played was
-    silent - kept until taken; a stretch too short to compare isn't kept."""
+    silent - kept until taken."""
     check = MicBleed(mic=buffer(0.04 * late(THEM, 800) + NOISE), played=buffer(THEM))
     assert check(T0 + 1.5, T0 + 5.5) is True
-    assert check(T0 + 1.0, T0 + 1.3) is False  # too short: not compared
     [checked] = check.checked()
     assert checked.seconds == pytest.approx(4.0)
     assert checked.found.lag == pytest.approx(0.8, abs=0.04)
@@ -159,6 +237,52 @@ def test_the_check_says_how_late_the_mic_was_and_keeps_its_numbers() -> None:
     [nothing] = silent.checked()
     assert (
         log_line(nothing, None) == "mic bleed_check seconds=4.00 played=silent bleed=no"
+    )
+
+
+NOT_COMPARED_CASES = [
+    ("too short", 1.0, 1.3, "them", NotCompared.SHORT),
+    ("nothing captured of what played", 1.5, 5.5, None, NotCompared.NO_PLAYED_AUDIO),
+    (
+        "what played starts after the mic's stretch",
+        0.5,
+        5.5,
+        "late",
+        NotCompared.PLAYED_SHORT,
+    ),
+    ("the mic's loudness flat", 1.5, 5.5, "flat", NotCompared.FLAT),
+]
+
+
+@pytest.mark.parametrize(
+    ("start", "end", "played", "why"),
+    [c[1:] for c in NOT_COMPARED_CASES],
+    ids=[c[0] for c in NOT_COMPARED_CASES],
+)
+def test_a_stretch_not_compared_is_kept_with_why(
+    start: float, end: float, played: str | None, why: NotCompared
+) -> None:
+    """polyglotic-hq 363: the caption log says when a stretch of the mic
+    wasn't compared with what the PC played, and why - 14 of the mic's
+    finished captions in a learner's log had no line, 9 of them phantoms."""
+    mic: Audio = 0.04 * late(THEM, 120) + NOISE
+    if played is None:
+        reference = AudioBuffer()
+    elif played == "late":  # starts 4s in: covers less of the time than the mic
+        reference = AudioBuffer()
+        for i in range(4 * SR, len(THEM) - 1024 + 1, 1024):
+            reference.append(T0 + i / SR, THEM[i : i + 1024])
+    elif played == "flat":
+        reference, mic = buffer(THEM), np.full_like(THEM, 0.01)
+    else:
+        reference = buffer(THEM)
+    check = MicBleed(mic=buffer(mic), played=reference)
+    assert check(T0 + start, T0 + end) is False
+    [checked] = check.checked()
+    assert checked.found.not_compared is why
+    assert log_line(checked, 1) == (
+        f"mic bleed_check seconds={end - start:.2f} not_compared={why.value}"
+        " outputs_playing=1 bleed=no"
     )
 
 

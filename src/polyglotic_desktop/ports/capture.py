@@ -5,6 +5,8 @@ and Linux later), and `main` hands over:
 - `AppList` - the apps playing sound, for the app picker;
 - `AudioCapture` - one source's audio: an app's, the whole system's, or
   the mic's, as 16kHz mono samples stamped on the app's clock;
+- `SoundDevices` - the speakers and mics plugged in, for choosing which
+  the PC's sound and the mic come from (polyglotic-hq 372);
 - `HeldMic` - the mic while the dictation key is held, as pieces of
   speech ready to send (`MicPiece`; polyglotic-hq 283).
 
@@ -68,6 +70,27 @@ class CommonApp:
 
     name: str
     title: str
+
+
+@dataclass(frozen=True, slots=True)
+class SoundDevice:
+    """A speaker or a mic plugged in now (polyglotic-hq 372): the OS's id
+    for it - kept on this PC to choose it again - and its name, for the
+    learner's eyes only ("Headphones (HyperX Cloud III)")."""
+
+    id: str
+    name: str
+
+
+@dataclass(frozen=True, slots=True)
+class SoundDevices:
+    """The speakers and mics plugged in now, by name, and the ids of the
+    OS's defaults (None: none, or the OS can't say)."""
+
+    speakers: tuple[SoundDevice, ...] = ()
+    mics: tuple[SoundDevice, ...] = ()
+    default_speaker: str | None = None
+    default_mic: str | None = None
 
 
 class AppList(Protocol):
@@ -142,8 +165,16 @@ class AudioCapture(Protocol):
 
     @property
     def error(self) -> str | None:
-        """Why capture isn't running, if it failed."""
+        """Why capture isn't running, if it failed - or `NOT_ALLOWED`."""
         ...
+
+
+NOT_ALLOWED = "not allowed"
+"""`AudioCapture.error` while the OS gives a capture only silence because
+the learner hasn't allowed it - macOS records silence, not an error, when
+"System Audio Recording" or the microphone isn't allowed for the app in
+System Settings > Privacy & Security (polyglotic-hq 411). The capture goes
+on running; the error clears if sound comes."""
 
 
 @dataclass(frozen=True, slots=True)

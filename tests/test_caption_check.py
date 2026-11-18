@@ -90,6 +90,35 @@ def test_quiet_system_and_mic_have_their_own_fixes() -> None:
     )
 
 
+def test_a_source_the_os_does_not_allow_is_named_at_once() -> None:
+    """polyglotic-hq 411: macOS records silence when the learner hasn't
+    allowed it. Said at once - waiting 30 s for sound won't bring any - with
+    the Mac's own fix: system audio for an app or the Mac, the microphone
+    for the mic."""
+    refused = SourceActivity(NOW - 12, not_allowed=True)
+    assert first_broken(facts(activity={APP: refused})) == (
+        Step.SOUND,
+        Problem.SOUND_NOT_ALLOWED,
+    )
+    system = Ticked(WHOLE_SYSTEM, "This Mac", "system")
+    assert (
+        first_broken(facts(ticked=[system], activity={WHOLE_SYSTEM: refused}))[1]
+        is Problem.SOUND_NOT_ALLOWED
+    )
+    mic = Ticked(MIC, "You", "mic")
+    assert first_broken(facts(ticked=[mic], activity={MIC: refused}))[1] is (
+        Problem.MIC_NOT_ALLOWED
+    )
+
+
+def test_sound_from_another_source_counts_over_one_not_allowed() -> None:
+    mic = Ticked(MIC, "You", "mic")
+    heard = SourceActivity(NOW - 300, NOW - 200, NOW - 5, NOW - 6)
+    refused = SourceActivity(NOW - 300, not_allowed=True)
+    f = facts(ticked=[DISCORD, mic], activity={APP: heard, MIC: refused})
+    assert statuses(f) == ["ok"] * 5
+
+
 def test_sound_without_speech() -> None:
     music = {APP: SourceActivity(NOW - 300, NOW - 200, NOW - 5, NOW - 100)}
     assert first_broken(facts(activity=music)) == (Step.SPEECH, Problem.NO_SPEECH)

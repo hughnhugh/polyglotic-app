@@ -13,6 +13,7 @@ from tests.ui.fakes import MemorySettingsStore, tools_for
 
 from polyglotic_desktop.core.lexicon.chinese import ChineseDictionary
 from polyglotic_desktop.core.lexicon.english import EnglishDictionary
+from polyglotic_desktop.core.shared import WordStatus
 from polyglotic_desktop.ui.learning import LearningTools
 from polyglotic_desktop.ui_next.views.words import LanguageGroup, language_groups
 from polyglotic_desktop.ui_next.words_page import (
@@ -152,3 +153,75 @@ def test_a_closed_language_refreshes_when_opened(qapp: QApplication) -> None:
         .heading.text()
         .endswith(f"{english_words.heard.words_met} words met")
     )
+
+
+def test_a_word_in_the_english_section_is_looked_up_in_english(
+    qapp: QApplication,
+) -> None:
+    """306: with both open (English beside Chinese, Chinese main), a word in
+    English's section pins the shared card in ECDICT - not in CC-CEDICT's
+    "Chinese for it" - and the card shows English's own learning data."""
+    from PySide6.QtCore import QRect
+
+    from polyglotic_desktop.ui_next.lookup_card import LookupCard
+    from polyglotic_desktop.ui_next.views.lookup import Shows
+
+    zh, en = chinese(), english()
+    zh.learn_beside(en)
+    card = LookupCard(zh)
+    page = WordsPage(list(zh.every), card)
+    run = en.lookup("run")[0].entry_id
+    page.languages[1].look_up(run, QRect(10, 10, 80, 20))
+    shown = card.model.card()
+    assert card.pinned and card.model.word == "run"
+    assert shown.shows is Shows.ENTRY and shown.categories == tuple(
+        en.vocabulary.categories
+    )
+    assert not card.model.is_chinese
+    card.close_card()
+    card.close()
+    page.close()
+
+
+def test_the_in_use_line_shows_only_for_a_main_language_not_open(
+    qapp: QApplication,
+) -> None:
+    """Both open: nothing to say. English made main this run before it
+    opened: the page says these are the Chinese words until the next
+    start (299's line)."""
+    page = shown([chinese()], OpenLanguages())
+    page.show_in_use(("zh", "en"), "zh")
+    assert page.in_use.isHidden()
+    page.show_in_use(("zh", "en"), "en")
+    assert page.in_use.isHidden()
+    page.show_in_use(("zh",), "en")
+    assert not page.in_use.isHidden()
+    assert page.in_use.text().startswith("These are your Chinese words.")
+
+
+def test_a_closed_section_says_how_many_words_it_holds(qapp: QApplication) -> None:
+    """306: English beside Chinese, folded away, said "English · 0 words
+    met" until opened - closed sections aren't refreshed (250). Its heading
+    is counted when the page shows, and again on a Learning change while it
+    shows; before it's counted it names the language alone."""
+    zh, en = chinese(), english()
+    en.reading_ahead = True  # its words still being read, as at the start
+    page = shown([zh, en], OpenLanguages())
+    english_section = page.sections[1]
+    assert english_section.heading.text() == "▸  English"  # not "0 words met"
+    en.reading_ahead = False
+    page.hide()
+    page.show()  # shown again: counted
+    settle()
+    met = len(en.vocabulary.met_words())
+    assert met > 0
+    assert english_section.heading.text() == f"▸  {heading('en', met)}"
+    en.changed.connect(page.learning_changed)
+    en.vocabulary.set_status(en.lookup("keep")[0].entry_id, WordStatus.KNOWN)
+    en.vocabulary.caption_finished("c2", en.words_in("they keep running"), False)
+    page.learning_changed("statuses")
+    settle()
+    assert english_section.heading.text() == (
+        f"▸  {heading('en', len(en.vocabulary.met_words()))}"
+    )
+    assert heading("en", None) == "English"

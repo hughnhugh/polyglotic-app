@@ -44,8 +44,11 @@ def read_log(folder: Path, home: Path | None = None, limit: int = LIMIT) -> str 
 
 def hide_home(text: str, home: Path) -> str:
     """`text` with the user's home folder written as `%USERPROFILE%`, in
-    either slash and any case (Windows paths ignore case)."""
-    for form in {str(home), home.as_posix()}:
+    either slash, any case (Windows paths ignore case), and escaped with
+    each backslash doubled, as Velopack's own lines write a path at every
+    update check ("Reading releases from file: ...", polyglotic-hq 336)."""
+    escaped = str(home).replace("\\", "\\\\")
+    for form in (escaped, str(home), home.as_posix()):  # the escaped one first
         if len(form) <= 3:  # a drive or nothing: no name to hide
             continue
         lowered, needle = text.lower(), form.lower()

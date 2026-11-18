@@ -7,9 +7,7 @@ window's minimum; a status changed and a search typed on the full list;
 Words opened before the start's read ahead is back ("Reading your
 words...", 229); Account signed out and in; Settings; Help's check with an app gone
 quiet, and with the learning data set aside (206). No page may scroll
-sideways. And "Looks wrong?"'s comparison card
-over the main window, with a real-length line and its translation in both
-versions (145: real sentences were cut to a line and a half).
+sideways.
 
 Made-up words (pairs of common characters, their meanings the two
 characters' put together) and made-up apps only; learning kept in memory.
@@ -17,45 +15,57 @@ characters' put together) and made-up apps only; learning kept in memory.
 
 import threading
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from functools import partial
 
-from PySide6.QtCore import QCoreApplication, QPoint
+from PySide6.QtCore import QCoreApplication, QPoint, QRect
 from PySide6.QtGui import QAction, QKeySequence
-from PySide6.QtWidgets import QScrollArea, QWidget
+from PySide6.QtWidgets import QAbstractScrollArea, QScrollArea, QWidget
 from tests.learning.fakes import Clock, MemoryLearningStore
 from tests.lexicon.sample import chinese_sample, english_sample
 
 from polyglotic_desktop.core.learning.highlights import WordIntroductions
 from polyglotic_desktop.core.learning.languages import LearningLanguages
-from polyglotic_desktop.core.learning.levels import LevelCurve
+from polyglotic_desktop.core.learning.levels import (
+    UNLIMITED,
+    KnownLine,
+    LanguageChoices,
+    WindowSize,
+)
 from polyglotic_desktop.core.learning.lookups import LookupContext
+from polyglotic_desktop.core.learning.sentences import SentencePart
 from polyglotic_desktop.core.learning.vocabulary import Vocabulary
 from polyglotic_desktop.core.lexicon.chinese import ChineseDictionary
 from polyglotic_desktop.core.lexicon.english import EnglishDictionary
-from polyglotic_desktop.core.listening.captions import Clause, Language
+from polyglotic_desktop.core.lexicon.pack_download import PackProgress, Problem
+from polyglotic_desktop.core.lexicon.pack_download import Step as PackStep
 from polyglotic_desktop.core.listening.check import Facts, SourceActivity, Ticked
-from polyglotic_desktop.core.listening.history import Caption
-from polyglotic_desktop.core.listening.recheck import RecheckOutcome, RecheckResult
 from polyglotic_desktop.core.listening.sources import SourceId
-from polyglotic_desktop.core.listening.timing import CaptionId
 from polyglotic_desktop.core.shared import EntryFacts, EntryId, Level, WordStatus
 from polyglotic_desktop.perf import budgets
 from polyglotic_desktop.perf.budgets import Budget
 from polyglotic_desktop.ui import interface_language
 from polyglotic_desktop.ui import theme as todays_theme
 from polyglotic_desktop.ui.learning import LearningTools
-from polyglotic_desktop.ui.looks_wrong import ComparisonCard
 from polyglotic_desktop.ui_next import style
 from polyglotic_desktop.ui_next.account_page import AccountPage
 from polyglotic_desktop.ui_next.help_page import HelpPage
 from polyglotic_desktop.ui_next.learning_page import LearningPage
 from polyglotic_desktop.ui_next.lookup_card import LookupCard
-from polyglotic_desktop.ui_next.main_window import MainWindow, minimum_size
+from polyglotic_desktop.ui_next.main_window import (
+    FLOOR,
+    FRAME,
+    MainWindow,
+    minimum_size,
+)
 from polyglotic_desktop.ui_next.settings_page import SECTIONS, SettingsPage
 from polyglotic_desktop.ui_next.views.caption_window import CaptionLook
 from polyglotic_desktop.ui_next.views.lab import CaptionLab, NewFade
+from polyglotic_desktop.ui_next.views.learning import (
+    InstalledPackLine,
+    PackLine,
+)
 from polyglotic_desktop.ui_next.views.learning import cards as learning_cards
 from polyglotic_desktop.ui_next.views.panels import (
     LanguagesView,
@@ -77,7 +87,7 @@ from tools.ui_lab.heard import (
     met_learner_tools,
 )
 from tools.ui_lab.heard import dictionary as heard_dictionary
-from tools.ui_lab.home import SET_ASIDE, scaled
+from tools.ui_lab.home import SET_ASIDE, hub, scaled
 from tools.ui_lab.lab import Lab, State
 
 NORMAL = (1000, 740)
@@ -193,7 +203,9 @@ def window_with(
 ) -> MainWindow:
     """The new main window with a blank Home and `page`, shown on Home - in
     Margin, dark (today's default), with its heading face loaded, whatever
-    the states before did."""
+    the states before did - and `page` in the window's stylesheet ahead of
+    its first show, as `main` has it a second after the start (decision
+    0158): the first show a learner's first click meets."""
     todays_theme.load_heading_face("margin")
     style.use(style.Theme())
     quit_action = QAction(_app("Quit"))
@@ -207,6 +219,8 @@ def window_with(
     window.resize(*(size or scaled(NORMAL)))
     window.show()
     window.go_to("home")
+    lab.pump()
+    window.style_ahead()
     lab.pump()
     lab.closing.append(window.close)
     return window
@@ -301,6 +315,48 @@ def words_full(lab: Lab) -> QWidget:
     return window
 
 
+SENTENCES = (
+    ("我今天去超市买水果。", "I went to the supermarket today to buy fruit.", "saved"),
+    ("你吃饭了吗?我们一起去吧。", "Have you eaten? Let's go together.", "tricky"),
+    ("这个游戏很好玩,我天天玩。", "This game is fun, I play it every day.", "saved"),
+    ("明天的天气怎么样?", "What's the weather like tomorrow?", "saved"),
+)
+"""Made-up saved sentences for Words' Saved sentences (polyglotic-hq 459)."""
+
+
+def words_sentences(lab: Lab) -> QWidget:
+    """Words' Saved sentences, scrolled into view, searched in either
+    language (polyglotic-hq 459): "天 game" finds two, the one with both
+    first."""
+    window, page = _full_words(lab, scaled(NORMAL))
+    vocabulary = page.first.learner.vocabulary
+    for original, translation, category in SENTENCES:
+        part = SentencePart(original, translation, (), "Discord")
+        vocabulary.save_sentence((part,), original, translation, category, "en")
+    lab.pump()
+    card = page.first.sentences
+    terms = ["天 game", "", "fruit", ""]
+
+    def search() -> None:
+        card.search.setText(terms[0])
+        card._searching.stop()
+        card.refresh()  # what the search's pause runs
+        terms.append(terms.pop(0))
+
+    lab.time("sentence_search", search, repeat=4, budget=budgets.CLICK)
+    card.search.setText("天 game")
+    card._searching.stop()
+    card.refresh()
+    settled = time.monotonic() + 0.4  # the field's clear button fades in
+    while time.monotonic() < settled:
+        lab.pump()
+    scroll = page.findChild(QScrollArea) or window.findChild(QScrollArea)
+    if scroll is not None:
+        scroll.ensureWidgetVisible(card, 0, 0)
+    lab.pump()
+    return window
+
+
 def words_two_languages(lab: Lab) -> QWidget:
     """Words for a learner of two languages (polyglotic-hq 250, the user's
     F23): a section each, under a heading with its count, the first open -
@@ -339,6 +395,76 @@ def english_tools() -> LearningTools:
     return tools
 
 
+FLOOR_SCALE = 1.8
+"""The largest text size (Windows' times the app's) every page fits the
+window's floor at: Windows' 150 % with the app's Larger, 125 % with its
+Largest. Larger still - Windows' 200 % - the Words tables and the caption
+preview are wider than the floor's page (polyglotic-hq 354's report)."""
+
+
+def sideways(window: MainWindow) -> list[str]:
+    """Every page of `window` - every Settings section - that scrolls
+    sideways, or has a part wider than its own (a table's columns past its
+    edge): "page: area by N px"."""
+    found = []
+    views: list[tuple[str, str]] = []
+    for key in window.pages:
+        if key == "settings":
+            views += [("settings", section) for section in SECTIONS]
+        else:
+            views.append((key, ""))
+    for key, section in views:
+        window.go_to(key)
+        if section:
+            shown = window.pages[key]
+            page = shown if isinstance(shown, SettingsPage) else None
+            page = page or shown.findChild(SettingsPage)
+            assert page is not None
+            page.show_section(section)
+        QCoreApplication.processEvents()
+        QCoreApplication.processEvents()  # the scroll areas' bars, after the layout
+        shown = window.pages[key]
+        areas = shown.findChildren(QAbstractScrollArea)
+        if isinstance(shown, QAbstractScrollArea):  # a page that scrolls itself
+            areas.insert(0, shown)
+        for area in areas:
+            bar = area.horizontalScrollBar()
+            if area.isVisible() and bar.maximum() > 0:
+                name = area.objectName() or type(area).__name__
+                found.append(
+                    f"{key}{'/' + section if section else ''}: {name} by {bar.maximum()}"
+                )
+    return found
+
+
+def at_floor(lab: Lab) -> QWidget:
+    """The main window at its floor (760 x 520: 1280 x 720 at 150 %, or
+    1366 x 768, has no more - `FLOOR`): no page, no Settings section,
+    scrolls sideways, in the interface language and text size the lab runs
+    at (polyglotic-hq 354: 16 of 21 languages did, by up to 153 px) - up to
+    FLOOR_SCALE. Words full, three apps captioned; shown on Home. Over
+    FLOOR_SCALE (CI's Windows 200 % run) it's photographed as tall as its
+    minimum, still at the floor's width: 520 px is shorter than its sidebar
+    there (354's report), which isn't what this state is about."""
+    built = hub(
+        lab,
+        {"apps": ["Discord", "Video Player", "Web Browser"], "learning": "zh"},
+        tools=full_tools(),
+    )
+    window = built.window
+    window.fit_to(QRect(0, 0, FLOOR[0] + FRAME, FLOOR[1] + FRAME))
+    lab.pump()
+    assert (window.width(), window.height()) == FLOOR, (window.width(), window.height())
+    found = sideways(window)
+    if style.text_scale() <= FLOOR_SCALE:
+        assert not found, f"pages scroll sideways at the floor: {'; '.join(found)}"
+    else:
+        window.fit_to(QRect(0, 0, FLOOR[0] + FRAME, minimum_size()[1] + FRAME))
+    window.go_to("home")
+    lab.pump()
+    return window
+
+
 def words_minimum(lab: Lab) -> QWidget:
     window, _page = _full_words(lab, minimum_size())
     assert (window.width(), window.height()) == minimum_size()
@@ -346,30 +472,53 @@ def words_minimum(lab: Lab) -> QWidget:
 
 
 def learning(
-    languages: LearningLanguages, choice: WordIntroductions, running: str = "zh"
+    languages: LearningLanguages,
+    choice: WordIntroductions,
+    running: tuple[str, ...] = ("zh",),
+    packs: Mapping[str, PackLine] | None = None,
+    installed: Sequence[InstalledPackLine] = (),
+    learning_window: WindowSize | None = None,
+    recorded: Mapping[str, tuple[int, str]] | None = None,
 ) -> Callable[[Lab], QWidget]:
     """Learning (polyglotic-hq 262): the languages being learned, each card
     saying what its dictionary gives and its level, and word introductions
-    with the caption they draw. `running`: the language whose learning data
-    runs now - the main one, or another until the next start."""
+    with the caption they draw. `running`: the full languages open now (306:
+    every one learned, open at once). `packs`: a basic language's pack line
+    on its card; `installed`: the packs on this PC (decision 0122).
+    `learning_window`: Chinese's level said in words (about 1,000) and this learning
+    window chosen (decision 0144); None: the level picked as HSK 3.
+    `recorded`: a full dictionary's recorded words, their size and credits
+    (decision 0197)."""
 
     def run(lab: Lab) -> QWidget:
         tools = full_tools()  # Chinese, the level picked
+        if learning_window is not None:
+            tools.vocabulary.set_known_words(1000)
         delete = QAction(QCoreApplication.translate("Account", "Delete learning data…"))
         delete.setObjectName("account.delete_learning")
         page = LearningPage(delete)
         page.keep = delete  # type: ignore[attr-defined]
 
-        def level_of(code: str) -> LevelCurve | None:
-            return tools.vocabulary.curve if code == running else None
+        def level_of(code: str) -> KnownLine | None:  # Chinese's picked; none else
+            return tools.vocabulary.line if code == "zh" and code in running else None
 
+        here = tuple(p.code for p in installed)
         page.show_learning(
             languages,
-            learning_cards(languages, running, level_of, ()),
+            learning_cards(
+                languages,
+                running,
+                level_of,
+                here,
+                pack_line=(packs or {}).get,
+                choices_of=lambda _code: LanguageChoices(window_size=learning_window),
+                recorded_of=lambda code: (recorded or {}).get(code, (0, "")),
+            ),
             choice,
-            running,
-            chinese=running == "zh",
+            running[0],
+            chinese=running[0] == "zh",
         )
+        page.show_installed(installed)
         window = window_with(lab, "learning", page)
         switches(lab, window, "learning")
         return window
@@ -404,12 +553,13 @@ def account(signed_in: bool) -> Callable[[Lab], QWidget]:
 
 
 def settings(
-    section: str, size: tuple[int, int] | None = None, at_lab: bool = False
+    section: str, size: tuple[int, int] | None = None, scrolled_into: int = -1
 ) -> Callable[[Lab], QWidget]:
-    """Settings on `section` (248's three: Captions, Learning, App; 261) -
-    at `size` if given (the window's minimum) - the views made up as a
-    learner might have them. `at_lab`: scrolled to Captions' Lab, some of
-    its values moved (284)."""
+    """Settings on `section` (one of `SECTIONS`: 304's six, and 470's Word
+    links and Readings) - at `size` if given (the window's minimum) - the views made
+    up as a learner might have them; on the Lab, some of its values moved
+    (284). `scrolled_into`: scrolled into the section's card of that index,
+    its own title under the pinned sections, which name it (470)."""
 
     def run(lab: Lab) -> QWidget:
         hotkeys = {}
@@ -417,7 +567,6 @@ def settings(
             ("L", _app("Lock all caption windows"), "Ctrl+Alt+L"),
             ("P", _app("Pause captions"), "Ctrl+Alt+P"),
             ("H", _app("Hide all caption windows"), "Ctrl+Alt+H"),
-            ("W", _app("Check the newest line with our best model"), "Ctrl+Alt+W"),
         ):
             action = QAction(text)
             action.setShortcut(QKeySequence(keys))
@@ -443,14 +592,8 @@ def settings(
         page.set_notices("Made-up notices for the lab.")
         window = window_with(lab, "settings", page, size)
         switches(lab, window, "settings")
-        others = [key for key in SECTIONS if key != section]
-        for key in [*others, section] * 2:
-            lab.time(
-                "section_switch",
-                partial(page.show_section, key),
-                budget=budgets.PAGE_SWITCH_WARM,
-            )
-        if section == "captions":  # the preview and the panels redrawn
+        section_switches(lab, page, section)
+        if section == "look":  # the preview and the panels redrawn
             order = [preset.key for preset in PRESETS]
             lab.time(
                 "preset",
@@ -462,19 +605,46 @@ def settings(
             )
             look.set_preset("classic")
             lab.pump()
-        if at_lab:
+        if section == "lab":  # its own section, at its top (304)
             look.set_lab(CaptionLab(new_for=3.0, new_fade=NewFade.GRADUAL, older=0.55))
             lab.pump()
-            # the Lab's card at the top: only its own controls in view
-            content = page.widget()
-            assert content is not None
-            top = page.lab.mapTo(content, QPoint(0, 0)).y()
-            page.verticalScrollBar().setValue(top - 8)
+        if scrolled_into >= 0:
+            card = page.cards(section)[scrolled_into]
+            inner = page.widget()
+            assert inner is not None
+            top = card.mapTo(inner, QPoint(0, 0)).y()
+            page.verticalScrollBar().setValue(top + 60)
             lab.pump()
         no_horizontal_scrollbar(window)
         return window
 
     return run
+
+
+def section_switches(lab: Lab, page: SettingsPage, section: str) -> None:
+    """Each section Settings hasn't shown yet, shown for the first time
+    (`section_first_show`, held to a first show's budget), ending on
+    `section`; then going round the sections twice, ending on it again
+    (`section_switch`, a section shown again: a warm switch's budget). Both
+    timed apart (polyglotic-hq 381): timed together, 5 of the 12 switches
+    were first shows (9-45 ms), so the median held to 8 ms was in effect
+    the slowest warm switches'."""
+    others = [key for key in SECTIONS if key != section]
+    shown = {key for key, box in page.section.items() if not box.isHidden()}
+    for key in [*others, section]:
+        if key not in shown:
+            lab.time(
+                "section_first_show",
+                partial(page.show_section, key),
+                budget=budgets.PAGE_SWITCH_COLD,
+            )
+            shown.add(key)
+    for key in [*others, section] * 2:
+        lab.time(
+            "section_switch",
+            partial(page.show_section, key),
+            budget=budgets.PAGE_SWITCH_WARM,
+        )
 
 
 def help_page(lab: Lab) -> QWidget:
@@ -678,82 +848,14 @@ def help_learning_set_aside(lab: Lab) -> QWidget:
     return window
 
 
-ZH = Language("zh")
-SEEN = (
-    Clause(
-        "Now widely available throughout the archipelago, Japanese cuisine "
-        "forms a part of the local diet and is enjoyed by most people.",
-        {
-            ZH: "日本料理如今在群岛各地随处可见，已成为当地饮食的一部分，深受大多数人喜爱。"
-        },
-    ),
-)
-BEST = (
-    Clause(
-        "Now widely available throughout the archipelago, Japanese cuisine's "
-        "forms are part of the local diet and enjoyed by most people.",
-        {
-            ZH: "日本料理如今在整个群岛广泛供应，其形式已成为当地饮食的一部分，深受大多数人的喜爱。"
-        },
-    ),
-)
-"""A made-up line of a real sentence's length, as 145 heard one, and the
-best model's version of it."""
-
-
-def looks_wrong_asking(lab: Lab) -> QWidget:
-    """ "Looks wrong?" before anything is sent: what checking does, the line,
-    what Send report sends, Send report and Cancel (F17, 249)."""
-    page = QWidget()
-    page.setObjectName("Page")
-    window = window_with(lab, "help", page)
-    card = ComparisonCard(window)
-    lab.closing.append(card.close)
-    now = datetime.now(UTC)
-    line = Caption(
-        1, CaptionId("c1"), SourceId("app-1"), False, False, SEEN,
-        Language("en"), (Language("en"),), now, now,
-    )  # fmt: skip
-    lab.time("click", partial(card.ask, line, [ZH]), budget=budgets.CLICK)
-    card.show()
-    lab.pump()
-    return card
-
-
-def looks_wrong(lab: Lab) -> QWidget:
-    """The comparison card over the main window: the line, then the best
-    model's answer (timed: a click's budget), both versions with their
-    translation and the answers."""
-    page = QWidget()
-    page.setObjectName("Page")
-    window = window_with(lab, "help", page)
-    card = ComparisonCard(window)
-    lab.closing.append(card.close)
-    now = datetime.now(UTC)
-    line = Caption(
-        1, CaptionId("c1"), SourceId("app-1"), False, False, SEEN,
-        Language("en"), (Language("en"),), now, now,
-    )  # fmt: skip
-    card.show_line(line, [ZH])
-    card.show()
-    lab.pump()
-    answer = RecheckResult(
-        CaptionId("c1"), RecheckOutcome.CHECKED, BEST, processing_ms=400
-    )
-    lab.time(
-        "click",
-        partial(card.show_result, line, answer, [ZH]),
-        budget=budgets.CLICK,
-    )
-    return card
-
-
 STATES = [
     State(f"ui_next.w4_{name}", run, gated=True)
     for name, run in (
         ("words_empty", words_empty),
         ("words_full", words_full),
+        ("words_sentences", words_sentences),
         ("words_minimum", words_minimum),
+        ("pages_at_floor", at_floor),
         ("words_two_languages", words_two_languages),
         ("words_heard_new", words_heard(NEW_LEARNER)),
         ("words_heard_month", words_heard(MONTH_IN)),
@@ -767,23 +869,177 @@ STATES = [
             learning(LearningLanguages("zh"), WordIntroductions.A_FEW),
         ),
         (
-            # switched to English from the next start; Japanese (basic, its
-            # pack not here) and Thai (no dictionary) learned too
+            # Chinese and English both open (306), each with its level
+            "learning_both_open",
+            learning(
+                LearningLanguages("zh", ("en",)),
+                WordIntroductions.A_FEW,
+                running=("zh", "en"),
+            ),
+        ),
+        (
+            # English main but not open (its learning data couldn't be: 306);
+            # Japanese (basic, its pack not here) and Thai (no dictionary) too
             "learning_several",
             learning(
                 LearningLanguages("en", ("zh", "ja", "th")), WordIntroductions.OFF
             ),
         ),
+        # the learning window with no end, and of the learner's own size (0144)
+        (
+            "learning_window_unlimited",
+            learning(
+                LearningLanguages("zh"),
+                WordIntroductions.A_FEW,
+                learning_window=UNLIMITED,
+            ),
+        ),
+        (
+            "learning_window_custom",
+            learning(
+                LearningLanguages("zh"), WordIntroductions.A_FEW, learning_window=3000
+            ),
+        ),
+        # a language's dictionary pack (decision 0122): offered, coming,
+        # stopped, and on this PC with the list of them
+        (
+            "learning_pack_offer",
+            learning(
+                LearningLanguages("zh", ("ru",)),
+                WordIntroductions.A_FEW,
+                packs={"ru": PackLine(size=13_131_253)},
+            ),
+        ),
+        (  # none in the list held (Vietnamese): no dictionary yet (330)
+            "learning_pack_none_yet",
+            learning(
+                LearningLanguages("zh", ("vi", "ru")),
+                WordIntroductions.A_FEW,
+                packs={
+                    "vi": PackLine(not_offered=True),
+                    "ru": PackLine(size=13_131_253),
+                },
+            ),
+        ),
+        (  # the list couldn't be read: no promise either way (330's addendum)
+            "learning_pack_unchecked",
+            learning(
+                LearningLanguages("zh", ("ru",)),
+                WordIntroductions.A_FEW,
+                packs={"ru": PackLine(unlisted=True)},
+            ),
+        ),
+        (
+            "learning_pack_downloading",
+            learning(
+                LearningLanguages("zh", ("ru",)),
+                WordIntroductions.A_FEW,
+                packs={
+                    "ru": PackLine(
+                        size=13_131_253,
+                        progress=PackProgress(
+                            "ru",
+                            PackStep.DOWNLOADING,
+                            4_500_000,
+                            13_131_253,
+                            tries=1,
+                            seconds_left=140.0,
+                        ),
+                    )
+                },
+            ),
+        ),
+        (
+            "learning_pack_failed",
+            learning(
+                LearningLanguages("zh", ("ru",)),
+                WordIntroductions.A_FEW,
+                packs={
+                    "ru": PackLine(
+                        size=13_131_253,
+                        progress=PackProgress(
+                            "ru",
+                            PackStep.DOWNLOADING,
+                            4_500_000,
+                            13_131_253,
+                            problem=Problem.OFFLINE,
+                            tries=2,
+                            retry_in=25.0,
+                        ),
+                    )
+                },
+            ),
+        ),
+        (
+            "learning_pack_installed",
+            learning(
+                LearningLanguages("zh", ("ru", "es")),
+                WordIntroductions.A_FEW,
+                packs={
+                    "ru": PackLine(
+                        installed_version="2026.11.14", installed_size=62_439_424
+                    ),
+                    "es": PackLine(
+                        installed_version="2026.11.14",
+                        installed_size=29_500_000,
+                        update_size=29_600_000,
+                    ),
+                },
+                installed=(
+                    InstalledPackLine("es", "2026.11.14", 29_500_000),
+                    InstalledPackLine("ru", "2026.11.14", 62_439_424),
+                ),
+            ),
+        ),
+        (  # recorded words come after it: the offer says both sizes (423)
+            "learning_pack_offer_recorded",
+            learning(
+                LearningLanguages("zh", ("es",)),
+                WordIntroductions.A_FEW,
+                packs={"es": PackLine(size=9_400_000, recorded_offered=29_002_130)},
+            ),
+        ),
+        (
+            "learning_pack_recorded",  # its commonest words recorded (418)
+            learning(
+                LearningLanguages("zh", ("es",)),
+                WordIntroductions.A_FEW,
+                packs={
+                    "es": PackLine(
+                        installed_version="2026.11.16",
+                        installed_size=29_500_000,
+                        recorded_size=30_277_632,
+                    )
+                },
+                installed=(InstalledPackLine("es", "2026.11.16", 59_777_632),),
+            ),
+        ),
+        (
+            "learning_built_in_recorded",  # CC-CEDICT's words recorded (424)
+            learning(
+                LearningLanguages("zh", ("es",)),
+                WordIntroductions.A_FEW,
+                recorded={
+                    "zh": (
+                        30_512_640,
+                        "Chatterbox Multilingual zh-cmn, built-in voice; MIT",
+                    )
+                },
+            ),
+        ),
         ("account_signed_out", account(False)),
         ("account_signed_in", account(True)),
-        ("settings", settings("captions")),
-        ("settings_learning", settings("learning")),
+        ("settings", settings("look")),
+        ("settings_links", settings("links")),
+        ("settings_readings", settings("readings")),
+        ("settings_timing", settings("timing")),
+        ("settings_speech", settings("speech")),
+        ("settings_dictation", settings("dictation")),
         ("settings_app", settings("app")),
-        ("settings_minimum", settings("captions", minimum_size())),
-        ("settings_lab", settings("captions", at_lab=True)),
+        ("settings_app_scrolled", settings("app", scrolled_into=2)),
+        ("settings_minimum", settings("look", minimum_size())),
+        ("settings_lab", settings("lab")),
         ("help", help_page),
         ("help_learning_set_aside", help_learning_set_aside),
-        ("looks_wrong", looks_wrong),
-        ("looks_wrong_asking", looks_wrong_asking),
     )
 ]

@@ -17,7 +17,9 @@ dictionary.
 
 Every change is published to listeners: learning data for the server
 (`core.shared`'s `LearningEvent`s - entry IDs and times only) and
-`VocabularyChanged` for views to redraw. What comes back from the server -
+`VocabularyChanged` for views to redraw. The learning load (`load`: a Lab
+viewing mode, polyglotic-hq 324) is told of finished captions, statuses
+and the line here, and changed through here. What comes back from the server -
 statuses and saved words set on another PC - is applied by
 `apply_from_server` without being published again; `delete_learning_data`
 empties the learner's data on this PC. Finished days' exposure counts are
@@ -34,7 +36,13 @@ from datetime import UTC, date, datetime, timedelta
 from enum import StrEnum
 
 from polyglotic_desktop.core.learning import exposures as exposure_rules
-from polyglotic_desktop.core.learning.anki import AnkiNote, anki_csv, deck_notes
+from polyglotic_desktop.core.learning.anki import (
+    AnkiNote,
+    anki_csv,
+    deck_notes,
+    deck_sentences,
+    sentence_note,
+)
 from polyglotic_desktop.core.learning.bands import MetWord
 from polyglotic_desktop.core.learning.coverage import (
     RECENT_DAYS,
@@ -52,9 +60,22 @@ from polyglotic_desktop.core.learning.highlights import (
     WordIntroductions,
     unfamiliar_words,
 )
-from polyglotic_desktop.core.learning.levels import LevelCurve
+from polyglotic_desktop.core.learning.knowledge import Knowledge
+from polyglotic_desktop.core.learning.levels import (
+    KnownLine,
+    LearningWindow,
+    LevelWords,
+    WindowSize,
+    place,
+)
 from polyglotic_desktop.core.learning.listening_time import ListeningCounter
-from polyglotic_desktop.core.learning.lookups import LookupContext
+from polyglotic_desktop.core.learning.load import LearningLoad, LoadRules, LoadStore
+from polyglotic_desktop.core.learning.lookups import (
+    DEEP_WITHIN,
+    TURNS_NEW_AFTER,
+    LookupContext,
+    LookupCount,
+)
 from polyglotic_desktop.core.learning.saved_words import (
     DEFAULT_CATEGORIES,
     NEW_CATEGORY_COLORS,
@@ -63,6 +84,15 @@ from polyglotic_desktop.core.learning.saved_words import (
     SavedSpan,
     SavedWord,
     SavedWordMatcher,
+)
+from polyglotic_desktop.core.learning.sentences import (
+    Found,
+    SavedSentence,
+    SentenceId,
+    SentenceLink,
+    SentencePart,
+    SentenceSearch,
+    saved_words_in,
 )
 from polyglotic_desktop.core.learning.statuses import (
     StatusRecord,
@@ -82,7 +112,7 @@ from polyglotic_desktop.core.shared import (
     WordStatusChanged,
     WordUnsaved,
 )
-from polyglotic_desktop.ports.anki_deck import DeckNote
+from polyglotic_desktop.ports.anki_deck import DeckNote, DeckSentence
 from polyglotic_desktop.ports.learning import (
     LearningStore,
     StoredAnkiExport,
@@ -92,7 +122,10 @@ from polyglotic_desktop.ports.learning import (
     StoredExposures,
     StoredLevel,
     StoredListening,
+    StoredLookups,
     StoredSavedWord,
+    StoredSentence,
+    StoredSentencePart,
     StoredStatus,
 )
 
@@ -120,6 +153,13 @@ class EntryText:
     meaning: str
 
 
+PlacedWords = Callable[[int, int, str], Sequence[tuple[int, EntryFacts]]]
+"""The dictionary's words placed past a place on the words scale
+(`levels.place`), each with its place, earliest first, about so many, with
+their facts in a level scheme (place, limit, scheme ID) - what the
+learning load takes in. Empty when there are no more, or for a dictionary
+without ranks."""
+
 Describe = Callable[[EntryId], EntryText | None]
 """An entry's text from this PC's dictionary - None if it hasn't got it."""
 
@@ -129,13 +169,19 @@ class Changed(StrEnum):
     STATUSES = "statuses"
     SAVED_WORDS = "saved_words"  # saved words or categories
     EXPOSURES = "exposures"  # exposures, or the days' coverage or listening
+    LOAD = "load"  # the learning load: its words, their stages, its rules
+    SENTENCES = "sentences"  # saved sentences (459)
 
 
 @dataclass(frozen=True)
 class VocabularyChanged:
-    """Something views show has changed; not sent anywhere."""
+    """Something views show has changed; not sent anywhere. For the
+    learning load (`Changed.LOAD`), `entries` are the words whose stage a
+    caption shows changed - none when only meetings were counted - or
+    None: every word's may have."""
 
     what: Changed
+    entries: frozenset[EntryId] | None = None
 
 
 Listener = Callable[[LearningEvent | VocabularyChanged], None]
@@ -171,6 +217,17 @@ class FactsRead:
     found: Mapping[EntryId, EntryFacts]
 
 
+class AnkiFormat(StrEnum):
+    """The kind of file an Anki export writes. Each remembers its own
+    exports (polyglotic-hq 368): "only words not exported yet" is the words
+    not yet in a file of that kind - a learner who keeps a deck file for
+    Anki and a CSV for something else wants each to get every word once,
+    and the CSV after a deck file came out empty."""
+
+    DECK = "deck"
+    CSV = "csv"
+
+
 @dataclass(frozen=True)
 class AnkiExport:
     """The words for Anki as a CSV file's text and as notes for a deck
@@ -180,10 +237,37 @@ class AnkiExport:
     text: str
     notes: tuple[DeckNote, ...]
     entry_ids: tuple[EntryId, ...]
+    """The words' entries, then each saved sentence's `sentence_key`."""
+    sentences: tuple[DeckSentence, ...] = ()
+
+    @property
+    def counts(self) -> tuple[int, int]:
+        """How many words, and how many sentences, it holds."""
+        return words_and_sentences(self.entry_ids)
+
+
+def sentence_key(sentence_id: SentenceId) -> EntryId:
+    """A saved sentence as Anki exports remember it, beside the words'
+    entries (`Vocabulary.mark_exported`): `sentence:<its ID>`, which no
+    dictionary entry ID is (they start with their dictionary's name)."""
+    return EntryId(f"sentence:{sentence_id}")
+
+
+def words_and_sentences(entry_ids: Iterable[EntryId]) -> tuple[int, int]:
+    """How many of `entry_ids` are words, and how many sentences
+    (`sentence_key`)."""
+    ids = tuple(entry_ids)
+    sentences = sum(1 for e in ids if e.startswith("sentence:"))
+    return len(ids) - sentences, sentences
 
 
 def _utc_now() -> datetime:
     return datetime.now(UTC)
+
+
+def _local_day(at: datetime) -> date:
+    """The day `at` falls on by the PC's own clock: the learner's day."""
+    return at.astimezone().date()
 
 
 _NEVER = datetime.min.replace(tzinfo=UTC)
@@ -202,10 +286,21 @@ class AnkiWords:
     saved: Mapping[EntryId, SavedWord]
     deck: Mapping[EntryId, DeckWord]
     leave_out: frozenset[EntryId]
+    sentences: Sequence[SavedSentence] = ()
+    """The saved sentences (polyglotic-hq 459), those exported already left
+    out if only new ones are wanted."""
 
-    def export(self, describe: Describe | None = None) -> AnkiExport:
+    def export(
+        self,
+        describe: Describe | None = None,
+        pack_language: str | None = None,
+        language: str = "",
+    ) -> AnkiExport:
         """The saved words and the words in the deck as a CSV file's text
-        for Anki (`anki`) and a deck file's notes. A word's sentence is the
+        for Anki (`anki`) and a deck file's notes - a pack language's
+        learning data's in that language's note type and sub-deck
+        (`pack_language`: its code; None for Chinese's and English's,
+        `anki.deck_note`). A word's sentence is the
         line it went into the deck with, else the one it was saved from.
         One put in the deck on another PC has none here, and its text comes
         from `describe` (this PC's dictionary); one `describe` doesn't know
@@ -256,10 +351,23 @@ class AnkiWords:
                     max(changes),
                 )
             )
+        saved_words = list(self.saved.values())
+        sentences = [
+            sentence_note(
+                s,
+                saved_words_in(s, saved_words),
+                self.category_names.get(s.category_id, ""),
+            )
+            for s in self.sentences
+        ]
         return AnkiExport(
-            anki_csv(notes),
-            deck_notes(notes),
-            tuple(EntryId(n.entry_id) for n in notes),
+            anki_csv(notes, sentences),
+            deck_notes(notes, pack_language),
+            (
+                *(EntryId(n.entry_id) for n in notes),
+                *(sentence_key(s.sentence_id) for s in sentences),
+            ),
+            deck_sentences(sentences, language or pack_language or "en"),
         )
 
 
@@ -270,11 +378,24 @@ class Vocabulary:
         facts: FactsLookup,
         default_scheme: str,
         clock: Callable[[], datetime] = _utc_now,
+        placed: PlacedWords | None = None,
+        day_of: Callable[[datetime], date] = _local_day,
+        level_words: LevelWords | None = None,
+        starting: KnownLine | None = None,
     ) -> None:
         """`default_scheme` is the level scheme for this learner until they
         pick a level (`hsk-2025` for Chinese learners, `en-frequency` for
-        English learners)."""
+        English learners). `placed`: the dictionary's words in the order
+        of their places, for the learning load (None: no load); `day_of`: the day a
+        time falls on for the learner - the PC's own - for meetings
+        counted once a day; `level_words`: about how many words a level of
+        a scheme stands for, so a line kept as a level places word links
+        by how common words are (`needs_no_link`; None: by level alone);
+        `starting`: the line words are estimated on until the learner sets
+        theirs (None: the scheme's middle level, `KnownLine.starting`) - a
+        number of words for a language with no levels (decision 0175)."""
         self._store = store
+        self._starting = starting or KnownLine.starting(default_scheme)
         self._facts = facts
         self._default_scheme = default_scheme
         self._clock = clock
@@ -287,8 +408,10 @@ class Vocabulary:
         app runs, and each a dictionary read - Words asks for every word
         met at each refresh (polyglotic-hq project 163)."""
         data = store.load()
-        self._curve = (
-            LevelCurve(data.level.scheme, data.level.midpoint) if data.level else None
+        self._line = (
+            KnownLine.stored(data.level.scheme, data.level.midpoint)
+            if data.level
+            else None
         )
         self._statuses = {
             EntryId(s.entry_id): StatusRecord(
@@ -337,7 +460,15 @@ class Vocabulary:
             )
             for w in data.deck_words
         }
-        self._exported = {EntryId(e.entry_id): e.exported_at for e in data.anki_exports}
+        self._exported: dict[AnkiFormat, dict[EntryId, datetime]] = {
+            file: {} for file in AnkiFormat
+        }
+        """When each word was last written to each kind of Anki file (368)."""
+        kinds = {file.value: file for file in AnkiFormat}
+        for export in data.anki_exports:
+            file = kinds.get(export.kind)  # None: a kind this app doesn't make
+            if file is not None:
+                self._exported[file][EntryId(export.entry_id)] = export.exported_at
         self._coverage = {
             c.day: Coverage(c.known, c.deck, c.new) for c in data.coverage
         }
@@ -346,6 +477,41 @@ class Vocabulary:
             key = (e.day, e.category)
             self._listening[key] = self._listening.get(key, 0.0) + e.seconds
         self._matcher = SavedWordMatcher(self._saved.values())
+        self._saved_sentences: SentenceSearch | None = None
+        """The saved sentences, read when first wanted (`_sentences`)."""
+        self.knowledge = Knowledge(
+            self._statuses.get,
+            lambda: self._line,
+            self._starting,
+            level_words,
+        )
+        """What the learner knows in this language (polyglotic-hq 349, 373):
+        the one answer per word. Word links read it (`needs_no_link`); the
+        other readers (`status`: marks, the load, coverage, Words) still
+        work theirs out until 349's step 3, which waits for the user's
+        word (DECISIONS #176)."""
+        self._lookups = {
+            EntryId(k.entry_id): LookupCount(
+                k.pinned, k.hovered, k.last_at, k.pinned_since_known
+            )
+            for k in data.lookups
+        }
+        for entry_id in [
+            e for e, own in self._statuses.items() if self._one_click(e, own)
+        ]:
+            del self._statuses[entry_id]  # kept in the file; not evidence (397)
+        self.load = LearningLoad(
+            data.load_words,
+            LoadStore(store.save_load_words, store.delete_load_words),
+            self._facts_of,
+            self.could_be_in_load,
+            lambda after, limit: placed(after, limit, self.scheme) if placed else (),
+            lambda: 0 if self._estimating.by_level else self._estimating.known,
+            day_of,
+        )
+        """The learning load (polyglotic-hq 324): read it here; change it
+        through `set_load_rules`, `check_word`, `add_to_load`,
+        `add_next_to_load` and `set_aside_from_load`."""
 
     def subscribe(self, listener: Listener) -> None:
         self._listeners.append(listener)
@@ -357,35 +523,78 @@ class Vocabulary:
     # -- the level ---------------------------------------------------------------
 
     @property
-    def curve(self) -> LevelCurve | None:
-        """The learner's level, or None until they set one (Learning's or
-        Words' Change your level; the first run doesn't ask - 293): words
-        are estimated at a middle level meanwhile."""
-        return self._curve
+    def line(self) -> KnownLine | None:
+        """The learner's known line, or None until they set one (Learning's
+        or Words' Change your level; the first run doesn't ask - 293):
+        words are estimated at a middle level meanwhile."""
+        return self._line
 
     @property
-    def _estimating(self) -> LevelCurve:
-        """The curve words' statuses are estimated on: the learner's level,
-        or until they set one a middle level (`LevelCurve.starting`) -
-        the first run doesn't ask (polyglotic-hq 293)."""
-        return self._curve or LevelCurve.starting(self._default_scheme)
+    def estimating(self) -> KnownLine:
+        """The line words' statuses are estimated on now: the learner's,
+        or the starting level until they set one."""
+        return self._estimating
+
+    @property
+    def _estimating(self) -> KnownLine:
+        """The line words' statuses are estimated on: the learner's, or
+        until they set one a middle level (`KnownLine.starting`) - the
+        first run doesn't ask (polyglotic-hq 293)."""
+        return self._line or self._starting
 
     @property
     def scheme(self) -> str:
-        """The level scheme words are placed on for this learner."""
-        return self._curve.scheme if self._curve else self._default_scheme
+        """The level scheme words' levels are read in for this learner:
+        the one their line is kept in, or - for a line said in words, or
+        none yet - the language's own."""
+        if self._line is not None and self._line.by_level:
+            return self._line.scale
+        return self._default_scheme
+
+    def window(self, size: WindowSize | None = None) -> LearningWindow:
+        """The learning window past the learner's line: its next `size`
+        words (None: the default size), or every word past it."""
+        return self._estimating.window(size)
 
     def set_level(self, level: Level) -> None:
         """The level picker's choice: words at or below `level` count as
         known from now on, unless the learner set them otherwise."""
-        self._curve = LevelCurve.picked(level)
-        self._store.save_level(StoredLevel(self._curve.scheme, self._curve.midpoint))
+        self._set_line(KnownLine.picked(level))
+
+    def set_known_words(self, known: int) -> None:
+        """ "I know about the `known` most common words": they count as
+        known from now on, unless the learner set them otherwise."""
+        self._set_line(KnownLine.words(known))
+
+    def restore_line(self, line: KnownLine | None) -> None:
+        """The line as it was before a quick mark (`first_known`: Undo or
+        Reset): `line`, or None - none set, words estimated at the
+        starting level again. Statuses set by hand are kept, as always."""
+        self._set_line(line)
+
+    def _set_line(self, line: KnownLine | None) -> None:
+        self._line = line
+        if line is None:
+            self._store.clear_level()
+        else:
+            self._store.save_level(StoredLevel(line.scale, line.midpoint))
+        moved = self.load.line_moved()
+        if self.load.refill(self._clock()) or moved:
+            self._load_changed()
         self._publish(VocabularyChanged(Changed.LEVEL))
 
     # -- statuses -------------------------------------------------------------------
 
     def status(self, facts: EntryFacts) -> StatusRecord:
         return status_of(facts, self._statuses.get(facts.entry_id), self._estimating)
+
+    def needs_no_link(self, facts: EntryFacts, links_from: int | None = None) -> bool:
+        """Whether the word is one the learner knows too well to link to
+        its translation (word links "past what I know", polyglotic-hq 323):
+        what `knowledge` answers - known or ignored - as if their line
+        were at `links_from`, if they moved where links start. A name is
+        placed as any word is (338); a number in numerals is known (360)."""
+        return self.knowledge.of(facts, links_from).known
 
     def status_of_entry(self, entry_id: EntryId) -> StatusRecord:
         """A word's status by its entry ID alone; an entry the dictionary no
@@ -406,19 +615,96 @@ class Vocabulary:
         """Sets a word's status explicitly - one click in a caption or the
         lookup, or a correction in the vocabulary list. A word going into
         the deck starts counting its exposures in the deck from zero."""
+        self.set_statuses((entry_id,), status, source)
+
+    def set_statuses(
+        self,
+        entry_ids: Iterable[EntryId],
+        status: WordStatus,
+        source: StatusSource = StatusSource.LEARNER,
+    ) -> None:
+        """Sets several words' status at once - words picked together in a
+        list (polyglotic-hq 342): each as `set_status` would, each sent to
+        the server as its own, but views hear of it once and the learning
+        load refills once."""
         at = self._clock()
+        left = False
+        for entry_id in dict.fromkeys(entry_ids):
+            self._set_one(entry_id, status, source, at)
+            left = self.load.status_set(entry_id, status, at) or left
+        self._publish(VocabularyChanged(Changed.STATUSES))
+        if self.load.refill(at) or left:
+            self._load_changed()
+
+    def _set_one(
+        self, entry_id: EntryId, status: WordStatus, source: StatusSource, at: datetime
+    ) -> None:
         before = self.status_of_entry(entry_id).status
         self._statuses[entry_id] = StatusRecord(status, source, at)
         self._store.save_status(StoredStatus(entry_id, status.value, source.value, at))
         if status is WordStatus.LEARNING and before is not WordStatus.LEARNING:
             count = self._exposures.get(entry_id)
             if count is not None and count.heard_in_deck:
-                self._save_counts({entry_id: replace(count, heard_in_deck=0)}, [])
+                self._save_counts({entry_id: count._replace(heard_in_deck=0)}, [])
         if status is not WordStatus.LEARNING:
             self._leave_deck(entry_id)
+        looked = self._lookups.get(entry_id)
+        if source is StatusSource.LEARNER and looked and looked.pinned_since_known:
+            self._keep_lookups(entry_id, looked.said())  # the check starts again
         if source is not StatusSource.ESTIMATED:
             self._publish(WordStatusChanged(entry_id, status, at))
-        self._publish(VocabularyChanged(Changed.STATUSES))
+
+    # -- the learning load (polyglotic-hq 324) -------------------------------------
+
+    def _load_changed(self) -> None:
+        self._publish(VocabularyChanged(Changed.LOAD, self.load.take_touched()))
+
+    def could_be_in_load(self, facts: EntryFacts) -> bool:
+        """Whether a word may be in the load: not a name, and new or in
+        the deck - not known (by the line or by hand), not ignored."""
+        if facts.is_name:
+            return False
+        return self.status(facts).status in (WordStatus.NEW, WordStatus.LEARNING)
+
+    def set_load_rules(self, rules: LoadRules | None) -> None:
+        """The load's rules for this language, or None: the mode is off -
+        what it holds is kept, and nothing is counted."""
+        if self.load.set_rules(rules, self._clock()):
+            self._load_changed()
+
+    def check_word(self, entry_id: EntryId, knows: bool) -> None:
+        """The check's answer for a word ready to check: "I know this"
+        graduates it (its status known, set by the learner, and the next
+        word takes its place); "Not yet" sends it back."""
+        if not self.load.check(entry_id, knows, self._clock()):
+            return
+        if knows:
+            self.set_status(entry_id, WordStatus.KNOWN)  # refills, and says so
+        else:
+            self._load_changed()
+
+    def add_to_load(self, entry_id: EntryId) -> bool:
+        """One word into the load by hand; the load's size (`load.rules`)
+        goes up by it. False if it can't be in it (known, ignored, a name,
+        in it already, or the load is off)."""
+        facts = self._facts_of(entry_id)
+        if facts is None or not self.load.add(facts, self._clock()):
+            return False
+        self._load_changed()
+        return True
+
+    def add_next_to_load(self, count: int) -> None:
+        """The next `count` words by frequency into the load now; its size
+        (`load.rules`) goes up by them."""
+        if self.load.add_next(count, self._clock()):
+            self._load_changed()
+
+    def set_aside_from_load(self, entry_id: EntryId) -> None:
+        """ "Not now": the word leaves the load, the next takes its place,
+        and it comes back only by hand."""
+        if self.load.set_aside(entry_id):
+            self.load.refill(self._clock())
+            self._load_changed()
 
     def learn(self, entry_id: EntryId, text: EntryText, context: LookupContext) -> None:
         """Puts a word in the deck from a caption or a lookup ("Learn"),
@@ -463,15 +749,82 @@ class Vocabulary:
     # -- lookups ----------------------------------------------------------------------
 
     def looked_up(self, facts: EntryFacts, pinned: bool) -> None:
-        """A lookup was shown. A pinned one (a click) is good evidence the
-        learner doesn't know the word: one only estimated known turns back
-        to new. The learner's own choices are never changed."""
-        self._publish(WordLookedUp(facts.entry_id, self._clock()))
-        if not pinned:
-            return
+        """A lookup was shown: counted, with its time, on this PC
+        (`lookups`; polyglotic-hq 373). Pinned lookups (clicks) are
+        evidence the learner doesn't know the word, from the
+        `TURNS_NEW_AFTER`th: one only estimated known turns back to new
+        then. One click alone isn't - it selects a word, opens its card to
+        hear it, or misses (polyglotic-hq 397: "the", "that" and "you",
+        clicked once each, were dotted as new) - and no number of clicks
+        is, for a word deep within the line (`_deep_within`): "the" for
+        someone who knows 2,000 words. The learner's own choices are never
+        changed: a word they said they know, looked up pinned again, is
+        offered in a check instead (`to_check`)."""
+        at = self._clock()
+        self._publish(WordLookedUp(facts.entry_id, at))
         current = self.status(facts)
+        said_known = current.source is StatusSource.LEARNER and (
+            current.status is WordStatus.KNOWN
+        )
+        before = self._lookups.get(facts.entry_id, LookupCount())
+        after = before.looked_up(pinned, at, said_known)
+        self._keep_lookups(facts.entry_id, after)
+        if not pinned or after.pinned < TURNS_NEW_AFTER or self._deep_within(facts):
+            return
         if not current.is_learners_own and current.status is WordStatus.KNOWN:
             self.set_status(facts.entry_id, WordStatus.NEW, StatusSource.ESTIMATED)
+
+    def _deep_within(self, facts: EntryFacts) -> bool:
+        """Whether the word is placed in the first `DEEP_WITHIN` of the
+        learner's line (the starting line's until they set one): clicks
+        don't make it new (397). A line that says no number of words
+        (HSK 3.0's 2021 standard) has no such part."""
+        known, at = self.knowledge.known_words, place(facts)
+        return known is not None and at is not None and at <= known * DEEP_WITHIN
+
+    def _one_click(self, entry_id: EntryId, own: StatusRecord) -> bool:
+        """A status "new" kept from fewer pinned lookups than
+        `TURNS_NEW_AFTER`: what one click did before 397 (and every such
+        status from before lookups were counted, which the learning file's
+        version 8 counted as one each). Not read as evidence - the word is
+        as the line says - and left in the file as it is."""
+        return (
+            own.source is StatusSource.ESTIMATED
+            and own.status is WordStatus.NEW
+            and self._lookups.get(entry_id, LookupCount()).pinned < TURNS_NEW_AFTER
+        )
+
+    def lookups(self, entry_id: EntryId) -> LookupCount:
+        """How often the word was looked up on this PC, and when last."""
+        return self._lookups.get(entry_id, LookupCount())
+
+    def to_check(self) -> list[EntryId]:
+        """Words the learner said they know and has since looked up, pinned,
+        `lookups.CHECK_AFTER` times: offered in a check ("Still know
+        it?"), most recently looked up first. Their status stays known
+        until the learner says otherwise (DECISIONS #176 (d))."""
+        found = [
+            (count.last, entry_id)
+            for entry_id, count in self._lookups.items()
+            if count.to_check
+            and (own := self._statuses.get(entry_id)) is not None
+            and own.source is StatusSource.LEARNER
+            and own.status is WordStatus.KNOWN
+        ]
+        return [entry_id for _, entry_id in sorted(found, key=_latest_first)]
+
+    def _keep_lookups(self, entry_id: EntryId, count: LookupCount) -> None:
+        self._lookups[entry_id] = count
+        if count.last is not None:
+            self._store.save_lookups(
+                StoredLookups(
+                    entry_id,
+                    count.pinned,
+                    count.hovered,
+                    count.last,
+                    count.pinned_since_known,
+                )
+            )
 
     # -- saved words and categories ------------------------------------------------------
 
@@ -573,7 +926,98 @@ class Vocabulary:
             del self._saved[entry_id]
             self._publish(WordUnsaved(entry_id, at))
         self._matcher = SavedWordMatcher(self._saved.values())
+        gone_too: list[SentenceId] = []
+        kept = self._saved_sentences
+        if kept is not None:  # not read yet: they went from the store with it
+            gone_too = [s.id for s in kept.sentences() if s.category_id == category_id]
+            for sentence_id in gone_too:
+                kept.remove(sentence_id)
         self._publish(VocabularyChanged(Changed.SAVED_WORDS))
+        if gone_too:
+            self._publish(VocabularyChanged(Changed.SENTENCES))
+
+    # -- saved sentences (polyglotic-hq 459) -------------------------------------------
+
+    def _sentences(self) -> SentenceSearch:
+        """The saved sentences, read from the store the first time they're
+        wanted - never at the start (`LearningStore.saved_sentences`)."""
+        if self._saved_sentences is None:
+            self._saved_sentences = SentenceSearch(
+                _sentence(s) for s in self._store.saved_sentences()
+            )
+        return self._saved_sentences
+
+    @property
+    def sentences(self) -> list[SavedSentence]:
+        """Newest first."""
+        return self._sentences().sentences()
+
+    def sentence(self, sentence_id: SentenceId) -> SavedSentence | None:
+        return self._sentences().get(sentence_id)
+
+    def save_sentence(
+        self,
+        parts: Sequence[SentencePart],
+        original: str,
+        translation: str,
+        category_id: CategoryId,
+        translation_language: str = "",
+    ) -> SavedSentence:
+        """Saves what the learner selected - `parts`, each a clause, and the
+        text of each side joined - into a category. Kept on this PC only:
+        nothing is published to the server."""
+        if self.category(category_id) is None:
+            raise ValueError(f"no category {category_id!r}")
+        if not original.strip() and not translation.strip():
+            raise ValueError("an empty sentence")
+        sentence = SavedSentence(
+            uuid.uuid4().hex,
+            original,
+            translation,
+            tuple(parts),
+            category_id,
+            self._clock(),
+            translation_language,
+        )
+        self._keep_sentence(sentence)
+        return sentence
+
+    def move_sentence(self, sentence_id: SentenceId, category_id: CategoryId) -> None:
+        """Moves a saved sentence into another category."""
+        old = self._sentences().get(sentence_id)
+        if old is None or old.category_id == category_id:
+            return
+        if self.category(category_id) is None:
+            raise ValueError(f"no category {category_id!r}")
+        self._keep_sentence(replace(old, category_id=category_id))
+
+    def _keep_sentence(self, sentence: SavedSentence) -> None:
+        self._sentences().add(sentence)
+        self._store.save_sentence(_stored_sentence(sentence))
+        self._publish(VocabularyChanged(Changed.SENTENCES))
+
+    def unsave_sentence(self, sentence_id: SentenceId) -> None:
+        sentences = self._sentences()
+        if sentences.get(sentence_id) is None:
+            return
+        sentences.remove(sentence_id)
+        self._store.delete_sentence(sentence_id)
+        self._publish(VocabularyChanged(Changed.SENTENCES))
+
+    def find_sentences(
+        self,
+        query: str = "",
+        category_id: CategoryId | None = None,
+        word: EntryId | None = None,
+    ) -> list[Found]:
+        """The saved sentences `query` finds, best first - with at least half
+        of its words (each Chinese character a word) in what was said or
+        its translation (`SentenceSearch.search`); only a category's, or
+        only those with the saved `word` in them, if given."""
+        saved = self._saved.get(word) if word is not None else None
+        if word is not None and saved is None:
+            return []
+        return self._sentences().search(query, category_id, saved)
 
     def _store_category(self, category: Category) -> None:
         position = self._categories.index(category)
@@ -587,7 +1031,7 @@ class Vocabulary:
         """Moves what the learner has under an entry ID that a dictionary
         update merged into another entry (decision 0007) to that entry:
         its status and saved word - unless the entry has its own, then the
-        later one wins - and its exposure counts, added together. The
+        later one wins - and its exposure and lookup counts, added together. The
         learner's own statuses and saves are published again under the
         new ID, with their old times, so the server's latest-wins rule
         keeps the right state. Returns how many entries moved. Call it
@@ -596,6 +1040,7 @@ class Vocabulary:
         are looked up - every word met's took 0.35 s before the window at
         30,000 words met on CC-CEDICT (polyglotic-hq 220)."""
         met = set(self._statuses) | set(self._saved) | set(self._exposures)
+        met |= set(self._lookups)
         moved = 0
         for old_id in sorted(met.intersection(merged_ids)):
             facts = self._facts(old_id, self.scheme)
@@ -605,8 +1050,10 @@ class Vocabulary:
             moved += 1
         if moved:
             self._matcher = SavedWordMatcher(self._saved.values())
+            self.load.refill(self._clock())
             for what in (Changed.STATUSES, Changed.SAVED_WORDS, Changed.EXPOSURES):
                 self._publish(VocabularyChanged(what))
+            self._load_changed()
         return moved
 
     def _move(self, old_id: EntryId, new_id: EntryId) -> None:
@@ -628,11 +1075,14 @@ class Vocabulary:
                 moved_deck = replace(deck, entry_id=new_id)
                 self._deck[new_id] = moved_deck
                 self._store.save_deck_word(_stored_deck_word(moved_deck))
-        exported = self._exported.pop(old_id, None)
-        if exported is not None:
-            kept = max(exported, self._exported.get(new_id, exported))
-            self._exported[new_id] = kept
-            self._store.save_anki_exports([StoredAnkiExport(new_id, kept)])
+        for file, exports in self._exported.items():
+            exported = exports.pop(old_id, None)
+            if exported is not None:
+                kept = max(exported, exports.get(new_id, exported))
+                exports[new_id] = kept
+                self._store.save_anki_exports(
+                    [StoredAnkiExport(new_id, kept, file.value)]
+                )
         word = self._saved.pop(old_id, None)
         if word is not None:
             current_word = self._saved.get(new_id)
@@ -659,6 +1109,10 @@ class Vocabulary:
                 },
                 [],
             )
+        looked = self._lookups.pop(old_id, None)
+        if looked is not None:
+            self._keep_lookups(new_id, looked.joined(self.lookups(new_id)))
+        self.load.moved(old_id, new_id)
         self._store.forget_entry(old_id)
 
     # -- learning data from the server, and deleting it --------------------------------
@@ -692,10 +1146,18 @@ class Vocabulary:
             if applied:
                 changed.add(what)
                 count += 1
+                if isinstance(event, WordStatusChanged) and self.load.status_set(
+                    event.entry_id, event.status, event.at
+                ):
+                    changed.add(Changed.LOAD)
+        if Changed.STATUSES in changed and self.load.refill(self._clock()):
+            changed.add(Changed.LOAD)
         if Changed.SAVED_WORDS in changed:
             self._matcher = SavedWordMatcher(self._saved.values())
-        for what in sorted(changed):
+        for what in sorted(changed - {Changed.LOAD}):
             self._publish(VocabularyChanged(what))
+        if Changed.LOAD in changed:
+            self._load_changed()
         return count
 
     def _status_from_server(self, event: WordStatusChanged) -> bool:
@@ -767,24 +1229,36 @@ class Vocabulary:
 
     def delete_learning_data(self) -> None:
         """Deletes the learner's learning data on this PC - statuses, saved
-        words, exposure counts, the days' coverage and listening, and any
-        copy of it set aside after damage - once they've confirmed; nothing
+        words and sentences, exposure counts, lookups, the days' coverage and listening, and any
+        copy of it set aside after damage, the learning load's words - once
+        they've confirmed; nothing
         is published (the server's copy goes by its own request). The level
         and the categories stay."""
         self._store.delete_learning_data()
         self._statuses.clear()
         self._saved.clear()
         self._deck.clear()
-        self._exported.clear()
+        for exports in self._exported.values():
+            exports.clear()
         self._exposures.clear()
+        self._lookups.clear()
         self._counter = ExposureCounter()
         self._coverage.clear()
         self._covering = CoverageCounter()
         self._listening.clear()
         self._listening_runs = ListeningCounter()
         self._matcher = SavedWordMatcher(())
-        for what in (Changed.STATUSES, Changed.SAVED_WORDS, Changed.EXPOSURES):
+        self._saved_sentences = SentenceSearch()
+        self.load.clear()
+        self.load.refill(self._clock())  # the mode still on: a new load
+        for what in (
+            Changed.STATUSES,
+            Changed.SAVED_WORDS,
+            Changed.SENTENCES,
+            Changed.EXPOSURES,
+        ):
             self._publish(VocabularyChanged(what))
+        self._load_changed()
 
     def take_finished_exposure_days(self, today: date) -> dict[date, Mapping[str, int]]:
         """The daily counts of every UTC day before `today` not handed over
@@ -802,37 +1276,54 @@ class Vocabulary:
         return {day: counts for day, counts in taken.items() if counts}
 
     def export_anki(
-        self, describe: Describe | None = None, only_new: bool = False
+        self,
+        describe: Describe | None = None,
+        only_new: bool = False,
+        file: AnkiFormat = AnkiFormat.DECK,
     ) -> AnkiExport:
         """The saved words and the words in the deck as a CSV file's text
-        for Anki (`anki`) - only those not exported yet if `only_new`
-        (`AnkiWords.export` says how each note is made)."""
-        return self.anki_words(only_new).export(describe)
+        for Anki (`anki`) - only those not in a `file` of that kind yet if
+        `only_new` (`AnkiWords.export` says how each note is made)."""
+        return self.anki_words(only_new, file).export(describe)
 
-    def anki_words(self, only_new: bool = False) -> AnkiWords:
+    def anki_words(
+        self, only_new: bool = False, file: AnkiFormat = AnkiFormat.DECK
+    ) -> AnkiWords:
         """What an Anki export is made from, as it is now - copied, so it
         can be made into the file on another thread while this vocabulary
         changes (polyglotic-hq 273: the deck file took 5.4 s on the
-        interface thread). Quick: no dictionary, no store."""
+        interface thread). Quick: no dictionary, no store. `only_new`: the
+        words not yet written to that kind of `file` (368) - and the
+        sentences (459)."""
+        leave_out = frozenset(self._exported[file]) if only_new else frozenset()
         return AnkiWords(
             {c.id: c.name for c in self._categories},
             dict(self._statuses),
             dict(self._saved),
             dict(self._deck),
-            frozenset(self._exported) if only_new else frozenset(),
+            leave_out,
+            tuple(
+                s
+                for s in reversed(self._sentences().sentences())
+                if sentence_key(s.id) not in leave_out
+            ),
         )
 
-    def mark_exported(self, entry_ids: Iterable[EntryId]) -> None:
-        """Remembers that these words were written to an Anki file, so
-        "only words not exported yet" leaves them out next time."""
+    def mark_exported(
+        self, entry_ids: Iterable[EntryId], file: AnkiFormat = AnkiFormat.DECK
+    ) -> None:
+        """Remembers that these words were written to that kind of Anki
+        `file`, so its "only words not exported yet" leaves them out next
+        time - the other kind's still has them (368)."""
         at = self._clock()
         ids = list(entry_ids)
         for entry_id in ids:
-            self._exported[entry_id] = at
-        self._store.save_anki_exports(StoredAnkiExport(e, at) for e in ids)
+            self._exported[file][entry_id] = at
+        self._store.save_anki_exports(StoredAnkiExport(e, at, file.value) for e in ids)
 
     def is_exported(self, entry_id: EntryId) -> bool:
-        return entry_id in self._exported
+        """Whether the word was written to an Anki file of either kind."""
+        return any(entry_id in exports for exports in self._exported.values())
 
     # -- finished captions ------------------------------------------------------------
 
@@ -840,18 +1331,21 @@ class Vocabulary:
         self,
         lines: Sequence[tuple[str, Sequence[WordInLine]]],
         introductions: WordIntroductions = WordIntroductions.A_FEW,
+        window_size: WindowSize | None = None,
     ) -> list[LineHighlights]:
         """For a finished caption - each line with its words - what each
-        line shows. `introductions`: how many new words it points out
-        (none, a few, or every one); saved words and words in the deck
-        show whichever it is."""
+        line shows. `introductions`: how many of the new words in the
+        learning window it points out (none, a few, or every one);
+        `window_size`: that window's size (None: the default; a number,
+        or unlimited). Saved words
+        and words in the deck show whichever it is."""
         unfamiliar: list[list[WordInLine]] = (
             [[] for _ in lines]
             if introductions is WordIntroductions.OFF
             else unfamiliar_words(
                 [words for _, words in lines],
                 lambda facts: self.status(facts).status,
-                self._estimating,
+                self.window(window_size),
                 lambda entry_id: self.exposures(entry_id).heard,
                 introductions is WordIntroductions.A_FEW,
             )
@@ -880,17 +1374,24 @@ class Vocabulary:
         day's coverage (by their statuses now), once per caption (a join
         finishing it again counts only the difference). `by_you`: from the
         user's own mic - no coverage."""
-        day = self._clock().date()
+        now = self._clock()
+        day = now.date()
         covered = Coverage() if by_you else coverage_of(words, self._status_now)
         self._counted(
             self._covering.finished(caption_id, covered, day),
             self._counter.finished(caption_id, words, by_you, day),
         )
+        # the load's meetings: what the PC played only; a caption finished
+        # again as the user's own speech takes back what it counted
+        if self.load.caption_finished(caption_id, () if by_you else words, now):
+            self._load_changed()
 
     def caption_withdrawn(self, caption_id: str) -> None:
         self._counted(
             self._covering.withdrawn(caption_id), self._counter.withdrawn(caption_id)
         )
+        if self.load.caption_withdrawn(caption_id, self._clock()):
+            self._load_changed()
 
     def _counted(
         self, coverage: Mapping[date, Coverage], exposures: Sequence[ExposureChange]
@@ -988,7 +1489,7 @@ class Vocabulary:
             if count.heard >= KEEP_HEARING_MIN
         ]
         often.sort()  # most heard first: the counts never compare (IDs differ)
-        explicit, curve = self._statuses, self._estimating
+        explicit, line = self._statuses, self._estimating
         for _, entry_id, count in often:
             if len(found) >= limit:
                 break
@@ -996,9 +1497,7 @@ class Vocabulary:
             if facts is None or facts.is_name:
                 continue
             own = explicit.get(facts.entry_id)  # `status`, without a record each
-            if (
-                own.status if own else estimated_status(facts, curve)
-            ) is WordStatus.NEW:
+            if (own.status if own else estimated_status(facts, line)) is WordStatus.NEW:
                 found.append((entry_id, count))
         return found
 
@@ -1052,7 +1551,7 @@ class Vocabulary:
         played; names never are - that the dictionary has, with its status
         now: for the words-met count and the bands (`bands`)."""
         found = []
-        explicit, curve = self._statuses, self._estimating
+        explicit, line = self._statuses, self._estimating
         for entry_id, count in self._exposures.items():
             if count.heard <= 0:
                 continue
@@ -1060,7 +1559,7 @@ class Vocabulary:
             if facts is None or facts.is_name:
                 continue
             own = explicit.get(facts.entry_id)  # `status`, without a record each
-            found.append((facts, own.status if own else estimated_status(facts, curve)))
+            found.append((facts, own.status if own else estimated_status(facts, line)))
         return found
 
     def vocabulary_list(self, status: WordStatus | None = None) -> list[VocabularyRow]:
@@ -1101,6 +1600,11 @@ class Vocabulary:
         return estimated_status(facts, self._estimating) if facts else WordStatus.NEW
 
 
+def _latest_first(found: tuple[datetime | None, EntryId]) -> tuple[float, str]:
+    at, entry_id = found
+    return (-(at.timestamp() if at else 0.0), entry_id)
+
+
 def _stored_deck_word(word: DeckWord) -> StoredDeckWord:
     return StoredDeckWord(
         word.entry_id,
@@ -1125,4 +1629,44 @@ def _stored_word(word: SavedWord) -> StoredSavedWord:
         word.source_sentence,
         word.source_translation,
         word.saved_at,
+    )
+
+
+def _stored_sentence(sentence: SavedSentence) -> StoredSentence:
+    return StoredSentence(
+        sentence.id,
+        sentence.original,
+        sentence.translation,
+        tuple(
+            StoredSentencePart(
+                p.original,
+                p.translation,
+                tuple((*k.original, *k.translation, k.key) for k in p.links),
+                p.speaker,
+            )
+            for p in sentence.parts
+        ),
+        sentence.translation_language,
+        sentence.category_id,
+        sentence.saved_at,
+    )
+
+
+def _sentence(stored: StoredSentence) -> SavedSentence:
+    return SavedSentence(
+        stored.id,
+        stored.original,
+        stored.translation,
+        tuple(
+            SentencePart(
+                p.original,
+                p.translation,
+                tuple(SentenceLink((a, b), (c, d), key) for a, b, c, d, key in p.links),
+                p.speaker,
+            )
+            for p in stored.parts
+        ),
+        stored.category_id,
+        stored.saved_at,
+        stored.translation_language,
     )

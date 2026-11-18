@@ -227,6 +227,30 @@ def test_a_restart_is_said_until_the_server_is_back() -> None:
             back.stop()
 
 
+def test_a_close_1001_the_server_didnt_announce_isnt_said_as_a_restart() -> None:
+    """368: a close 1001 with no `server_restarting` before it - not our
+    server's way of restarting - read as "restarting" for three minutes of
+    refused tries. Now: tried again first, then each refused try is what it
+    is (can't reach), never a restart."""
+    first = FakeServer()
+    first.script = [welcome_then_close(1001)]
+    with Harness(first, timings=SLOW_REFUSAL) as app:
+        wait_until(app.listener.listening)
+        first.stop()
+        wait_until(
+            lambda: (
+                sum(s.state is SessionState.WAITING for s in app.listener.statuses) >= 2
+            ),
+            15,
+        )
+        waits = [s for s in app.listener.statuses if s.state is SessionState.WAITING]
+        assert waits[0].close_code == 1001 and waits[0].unreachable is None
+        assert waits[1].close_code is None
+        assert waits[1].unreachable is Unreachable.DOWN
+        assert Unreachable.RESTARTING not in {s.unreachable for s in waits}
+        app.session.stop()
+
+
 def test_the_server_failing_the_session(server: FakeServer) -> None:
     error = {"type": "error", "code": "server_error", "fatal": True}
     server.script = [refuse(error, 1011)]

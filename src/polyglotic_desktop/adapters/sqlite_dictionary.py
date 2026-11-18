@@ -7,7 +7,8 @@
 sources' share-alike licences require: anyone can open them.
 
 Tables:
-- `info`: the dictionary's name, format version, sources and their versions.
+- `info`: the dictionary's name, format version, sources and their versions,
+  and what its frequency ranks mean (`RANKS`).
 - `entries`: one row per entry - entry ID, headword, traditional form,
   reading as the source gives it, meanings (one per line), frequency rank,
   levels (`scheme:level` pairs, space-separated).
@@ -40,6 +41,16 @@ log = logging.getLogger(__name__)
 
 FORMAT = "1"
 
+RANKS = "1"
+"""What a file's frequency ranks mean, as its `info` says it under "ranks"
+(decision 0120): each entry's `frequency_rank` is its word's place, 1 the
+commonest, by the lists `info` names under "frequency_source" - a
+headword's entries share one rank, so a rank is a word; an inflected form
+counts for its lemma's entry; None where the lists never met the word (a
+name, a rare word). "ranked_entries" says how many entries have one. A file
+without "ranks" (built before polyglotic-hq 325) has ranks if any entry has
+one, and a basic pack's then counted entries, not words."""
+
 SCHEMA = """
 CREATE TABLE info (key TEXT PRIMARY KEY, value TEXT NOT NULL) WITHOUT ROWID;
 CREATE TABLE entries (
@@ -61,6 +72,12 @@ CREATE TABLE lemmas (form TEXT PRIMARY KEY, lemma TEXT NOT NULL) WITHOUT ROWID;
 CREATE TABLE merged (old_id TEXT PRIMARY KEY, id TEXT NOT NULL) WITHOUT ROWID;
 CREATE TABLE form_readings (form TEXT PRIMARY KEY, reading TEXT NOT NULL) WITHOUT ROWID;
 """
+
+_OWN_FIRST = (
+    "entries e JOIN forms f ON f.form = e.headword AND f.n = e.n AND f.position = 0"
+)
+"""The entries that are the first for their own headword: the one a
+caption counts the word for (`records(headword)[0]`)."""
 
 _COLUMNS = (
     "e.id, e.headword, e.traditional, e.reading, e.meanings, e.frequency_rank, e.levels"
@@ -245,6 +262,28 @@ class SqliteDictionary:
             )
         ]
 
+    def headwords_ranked(self, after: int, limit: int) -> Sequence[tuple[str, int]]:
+        return list(
+            self._db.execute(
+                f"SELECT e.headword, e.frequency_rank FROM {_OWN_FIRST} "
+                "WHERE e.frequency_rank > ? ORDER BY e.frequency_rank, e.n LIMIT ?",
+                (after, limit),
+            )
+        )
+
+    def headwords_at_levels(self, scheme: str) -> Sequence[tuple[str, int, int | None]]:
+        prefix = f"{scheme}:"
+        found = []
+        for headword, levels, rank in self._db.execute(
+            f"SELECT e.headword, e.levels, e.frequency_rank FROM {_OWN_FIRST} "
+            "WHERE instr(e.levels, ?) > 0",
+            (prefix,),
+        ):
+            for pair in levels.split():
+                if pair.startswith(prefix):
+                    found.append((headword, int(pair.removeprefix(prefix)), rank))
+        return found
+
     def words_at_levels(self, scheme: str) -> Mapping[int, int]:
         prefix = f"{scheme}:"
         headwords: dict[int, set[str]] = {}
@@ -350,6 +389,12 @@ class GuardedDictionary:
 
     def words_ranked(self, last: int) -> Sequence[int]:
         return self._ask(lambda file: file.words_ranked(last), [])
+
+    def headwords_ranked(self, after: int, limit: int) -> Sequence[tuple[str, int]]:
+        return self._ask(lambda file: file.headwords_ranked(after, limit), [])
+
+    def headwords_at_levels(self, scheme: str) -> Sequence[tuple[str, int, int | None]]:
+        return self._ask(lambda file: file.headwords_at_levels(scheme), [])
 
     def words_at_levels(self, scheme: str) -> Mapping[int, int]:
         return self._ask(lambda file: file.words_at_levels(scheme), {})

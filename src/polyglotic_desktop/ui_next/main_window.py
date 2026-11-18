@@ -1,7 +1,8 @@
 """W4, the new main window: a sidebar and one page at a time (polyglotic-hq
 project 109's structure, sections 7 and 10.5; wireframes 6 and 6.1).
 
-- **The sidebar** (200 px; 184 at the window's minimum): the logo; Home,
+- **The sidebar** (200 px; 184 when narrow - and under SIZE's width at a
+  large text size, only as wide as its words need, 354): the logo; Home,
   Words, Account; Settings and Help at its foot; the line saying captions
   and translations are made by machine; Quit.
 - **The pages** sit in one column at most 720 px wide, centred - the
@@ -12,15 +13,27 @@ project 109's structure, sections 7 and 10.5; wireframes 6 and 6.1).
   horizontal scrollbar. Switching pages keeps each page's scroll
   position.
 - **Text size** is Windows' times the app's own (`style.text_scale`):
-  the text, the sidebar, the columns and the minimum all grow with it -
+  the text, the sidebar (when wide), the columns and the minimum all grow with it -
   the minimum is 960 x 680 times the text size, kept to the screen
   (`fit_to`). While `main` lets it follow Windows (`follows_text_size`),
   a change Qt reports restyles the window and is announced
   (`text_size_changed`); so does the app's own, chosen in Settings
   (`set_app_text_size`) - at once, no restart.
-- **The theme** is a stylesheet on this window alone, from the theme's
-  tokens (`style`) - no app-wide stylesheet repolishing every widget in
-  the app. Painted parts read the tokens when they paint.
+- **The theme** is a stylesheet from the theme's tokens (`style`), on
+  this window's parts, not on the window: on the sidebar, on each page
+  from when it's first shown (decision 0149: the first page added has it
+  at once), and on each dialog the window opens - no app-wide stylesheet
+  repolishing every widget in the app. A theme or text size change
+  restyles the sidebar and the page on show at once, and each other page
+  as it's next shown (`go_to`): Qt restyles every widget under a changed
+  stylesheet, shown or not, and Home is 128 of the window's 857 widgets
+  (decision 0148, polyglotic-hq 355). The window paints its own
+  background; painted parts read the tokens when they paint. A page that
+  shows one part of itself at a time (Settings' sections) can take the
+  stylesheet on its parts instead (`InParts`, decision 0152). After the
+  start (`main` waits a second), each page not on show gets the stylesheet
+  ahead, one page per turn of the event loop (`style_ahead`), so a first
+  click on it doesn't wait for it (decision 0158, polyglotic-hq 367).
 
 `add_page` takes any widget: Home is the new interface's; until Words,
 Account, Settings and Help move over (109's step 6), `main` hands today's
@@ -29,12 +42,16 @@ says so (`hidden_to_tray`: `main` has the tray say it, once).
 """
 
 from itertools import pairwise
+from typing import Protocol, runtime_checkable
 
-from PySide6.QtCore import QEvent, QObject, QRect, Qt, Signal
+from PySide6.QtCore import QChildEvent, QEvent, QObject, QRect, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QAction,
     QCloseEvent,
+    QColor,
     QKeyEvent,
+    QPainter,
+    QPaintEvent,
     QPixmap,
     QResizeEvent,
 )
@@ -75,6 +92,16 @@ SIDEBAR_AT_MINIMUM = 184
 NARROW = 820
 """Below this window width the sidebar is at its narrower width."""
 WORDS_COLUMN = 960
+
+
+@runtime_checkable
+class InParts(Protocol):
+    """A page that takes the window's stylesheet on its parts, not on
+    itself: Settings shows one section in six, and a stylesheet on the page
+    restyled all 481 of its widgets (polyglotic-hq 355, decision 0152)."""
+
+    def use_sheet(self, sheet: str) -> None:
+        """`sheet` on what it shows now; on any other part when it's shown."""
 
 
 def minimum_size() -> tuple[int, int]:
@@ -210,7 +237,11 @@ class MainWindow(QMainWindow):
         self.pages: dict[str, QWidget] = {}
         self.current = ""
         self.theme = style.current()
-        self.setStyleSheet(style.stylesheet(self.theme))
+        self.sheet = style.stylesheet(self.theme)
+        """The stylesheet its parts have, or have when next shown."""
+        self.sidebar.setStyleSheet(self.sheet)
+        self._ahead: list[str] = []
+        """The pages `style_ahead` has still to look at, next first."""
 
     # -- pages ---------------------------------------------------------------------------
 
@@ -226,6 +257,11 @@ class MainWindow(QMainWindow):
         "foot", or None: reached only through `go_to`). `width`: kept to a
         centred column this wide (a page that scrolls by itself)."""
         shown = Centred(page, width) if width else page
+        if not self.stack.count():  # the page on show until `go_to`
+            self._give(shown)  # not yet polished: nothing restyled
+        # each other page gets it when `go_to` first shows it (`_styled`):
+        # every page with a sheet of its own, polished when the window is
+        # first shown, cost the start about 30 ms (polyglotic-hq 357)
         self.pages[key] = shown
         self.stack.addWidget(shown)
         if place is None:
@@ -262,7 +298,7 @@ class MainWindow(QMainWindow):
         while (
             last is not None
             and last is not self
-            and last.focusPolicy() == Qt.FocusPolicy.NoFocus
+            and not last.focusPolicy() & Qt.FocusPolicy.TabFocus  # a label's
         ):
             last = last.previousInFocusChain()
         if last is not None:
@@ -279,6 +315,7 @@ class MainWindow(QMainWindow):
             return
         with spans.span("main_window.page"):
             self.current = key
+            self._styled(self.pages[key])
             self.stack.setCurrentWidget(self.pages[key])
 
     # -- theme ---------------------------------------------------------------------------
@@ -293,8 +330,78 @@ class MainWindow(QMainWindow):
         with spans.span("main_window.theme"):
             self.theme = theme
             style.use(theme)
-            self.setStyleSheet(style.stylesheet(theme))
+            self._restyle_shown()
             self.update()
+
+    def _restyle_shown(self) -> None:
+        """The stylesheet now (theme and text size) on the parts shown: the
+        sidebar, the page on show and the dialogs it has; each other page
+        gets it when next shown (`go_to`)."""
+        before, self.sheet = self.sheet, style.stylesheet(self.theme)
+        self.sidebar.setStyleSheet(self.sheet)
+        shown = self.stack.currentWidget()
+        if shown is not None:
+            self._styled(shown)
+        for child in self.children():
+            if (
+                isinstance(child, QWidget)
+                and child.isWindow()
+                and child.styleSheet() == before
+            ):
+                child.setStyleSheet(self.sheet)
+
+    def _styled(self, part: QWidget) -> None:
+        """`part` with the stylesheet now, if it has another (a page not
+        shown since the theme or text size changed)."""
+        if isinstance(part, InParts) or part.styleSheet() != self.sheet:
+            with spans.span("main_window.page_restyle"):
+                self._give(part)
+
+    def style_ahead(self) -> None:
+        """Each page not on show with the stylesheet now, one page per turn
+        of the event loop, so no turn waits for them all: `main` calls it a
+        second after the start (decision 0158). Its first show then restyles
+        nothing - Words' took 20 ms more with it at 10,000 words met
+        (polyglotic-hq 367). A page shown first got it then (`go_to`); one
+        added later, or restyled by a theme change later, gets it as before."""
+        self._ahead = list(self.pages)
+        self._style_next()
+
+    def _style_next(self) -> None:
+        while self._ahead:
+            page = self.pages[self._ahead.pop(0)]
+            # a page in parts says itself whether it has it (`use_sheet`)
+            stale = isinstance(page, InParts) or page.styleSheet() != self.sheet
+            if stale and page is not self.stack.currentWidget():
+                self._styled(page)
+                break
+        if self._ahead:
+            QTimer.singleShot(0, self, self._style_next)
+
+    def _give(self, part: QWidget) -> None:
+        if isinstance(part, InParts):
+            part.use_sheet(self.sheet)
+        else:
+            part.setStyleSheet(self.sheet)
+
+    def childEvent(self, event: QChildEvent) -> None:
+        """A dialog over this window (a question, the level picker) in its
+        stylesheet, as the window's parts are: given it when Qt has
+        polished it, before it's sized and shown."""
+        super().childEvent(event)
+        child = event.child()
+        if (
+            event.type() == QEvent.Type.ChildPolished
+            and isinstance(child, QWidget)
+            and child.isWindow()
+            and not child.styleSheet()
+        ):
+            child.setStyleSheet(self.sheet)
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        """Its background, in the theme's (no stylesheet on the window
+        itself to paint it): behind the pages' margins."""
+        QPainter(self).fillRect(event.rect(), QColor(self.theme["BG"]))
 
     # -- text size -----------------------------------------------------------------------
 
@@ -331,8 +438,9 @@ class MainWindow(QMainWindow):
 
     def restyle(self) -> None:
         """The window at the text size now: its stylesheet (its pages follow
-        it: Home's column, Words' rows), its sidebar and minimum."""
-        self.setStyleSheet(style.stylesheet(self.theme))
+        it: Home's column, Words' rows - each as it's next shown), its
+        sidebar and minimum."""
+        self._restyle_shown()
         screen = self.screen()
         if screen is not None:
             self._keep_minimum_to(screen.availableGeometry())
@@ -373,8 +481,21 @@ class MainWindow(QMainWindow):
         super().resizeEvent(event)
 
     def _fit_sidebar(self, width: int) -> None:
-        narrow = width < style.px(NARROW)
-        self.sidebar.setFixedWidth(style.px(SIDEBAR_AT_MINIMUM if narrow else SIDEBAR))
+        """The sidebar's width for a window `width` wide: SIDEBAR, at the
+        text size; narrower than NARROW, SIDEBAR_AT_MINIMUM. And on a small
+        screen - narrower than the usual first size (`SIZE`) - at a large
+        text size only as wide as its words need, at least 184, so the page
+        keeps the room to fit without scrolling sideways (polyglotic-hq
+        354: at the Largest text size it took 267 of the 760 px floor).
+        Wider, the page's column keeps its lines to a readable length."""
+        if width >= style.px(NARROW):
+            self.sidebar.setFixedWidth(style.px(SIDEBAR))
+            return
+        narrow = style.px(SIDEBAR_AT_MINIMUM)
+        if width < SIZE[0]:
+            needs = max(SIDEBAR_AT_MINIMUM, self.sidebar.minimumSizeHint().width())
+            narrow = min(narrow, needs)
+        self.sidebar.setFixedWidth(narrow)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         # captions are the point, not this window: it keeps running in the tray

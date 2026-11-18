@@ -86,6 +86,10 @@ several short ones in Live updates.
 
 ## Settled text (added 2026-11-13, with its own pull request)
 
+*Amended 2026-11-14 by
+[0099](0099-how-long-shown-text-may-change-is-the-learners-choice.md):
+the 3 s below is the default of a setting, 0 to 3 s.*
+
 Pieces make the rewriting rare; they don't rule it out. A piece runs up
 to 6 s and its finished caption re-hears all of it; a fragment joins the
 caption before it; a slow answer can arrive seconds late. So the caption

@@ -70,6 +70,27 @@ Tables:
   heard; NULL before), and `handed_over_days`: the days whose daily counts
   were handed over for sharing - kept 8 weeks, not deleted at once
   (decision 0041).
+- version 6: `load_words`: entry ID -> a word of the learning load - its
+  standing, stage, meetings, whether added by hand, its place, and when it
+  entered, last counted and graduated (polyglotic-hq 324, decision 0117);
+  never sent.
+- version 7: `anki_csv_exports`: entry ID -> when it was last written to a
+  CSV file; `anki_exports` is the deck file's from then on - each kind of
+  file remembers its own exports (polyglotic-hq 368). It starts as a copy
+  of `anki_exports`: which kind wrote a word before is unknown, so both
+  remember it, as "only words not exported yet" did.
+- version 8: `lookups`: entry ID -> how often the word was looked up on
+  this PC, pinned (a click) and on hover, when last, and how many pinned
+  lookups since the learner last said they know it (polyglotic-hq 373,
+  DECISIONS #176 (c), (d)); never sent - the server already gets each
+  lookup as an entry ID and a time. It starts with one pinned lookup for
+  every word a pinned lookup had turned back to new (a status "new" whose
+  source is "estimated": the only lookups kept before).
+- version 9: `saved_sentences`: id -> a saved sentence - what was said,
+  its translation and that translation's language, its parts (each
+  clause's text, links and speaker, as JSON: `_parts_json`), its category
+  (shared with saved words: deleting a category deletes its sentences)
+  and when it was saved (polyglotic-hq 459, decision 0216); never sent.
 """
 
 from __future__ import annotations
@@ -101,7 +122,11 @@ from polyglotic_desktop.ports.learning import (
     StoredExposures,
     StoredLevel,
     StoredListening,
+    StoredLoadWord,
+    StoredLookups,
     StoredSavedWord,
+    StoredSentence,
+    StoredSentencePart,
     StoredStatus,
 )
 
@@ -186,6 +211,50 @@ _MIGRATIONS: tuple[tuple[str, ...], ...] = (
             day TEXT PRIMARY KEY
         ) WITHOUT ROWID""",
     ),
+    (  # version 6: the learning load's words (polyglotic-hq 324, 0117)
+        """CREATE TABLE load_words (
+            entry_id TEXT PRIMARY KEY,
+            standing TEXT NOT NULL,
+            stage INTEGER NOT NULL,
+            meetings INTEGER NOT NULL,
+            by_hand INTEGER NOT NULL,
+            place INTEGER,
+            entered_at TEXT NOT NULL,
+            last_met TEXT,
+            graduated_at TEXT
+        ) WITHOUT ROWID""",
+    ),
+    (  # version 7: a CSV's exports apart from a deck file's (polyglotic-hq 368)
+        """CREATE TABLE anki_csv_exports (
+            entry_id TEXT PRIMARY KEY,
+            exported_at TEXT NOT NULL
+        ) WITHOUT ROWID""",
+        "INSERT INTO anki_csv_exports SELECT entry_id, exported_at FROM anki_exports",
+    ),
+    (  # version 8: lookups kept, with counts and the last time (373)
+        """CREATE TABLE lookups (
+            entry_id TEXT PRIMARY KEY,
+            pinned INTEGER NOT NULL,
+            hovered INTEGER NOT NULL,
+            last_at TEXT NOT NULL,
+            pinned_since_known INTEGER NOT NULL
+        ) WITHOUT ROWID""",
+        (
+            "INSERT INTO lookups SELECT entry_id, 1, 0, at, 0 FROM statuses"
+            " WHERE source = 'estimated' AND status = 'new'"
+        ),
+    ),
+    (  # version 9: saved sentences (polyglotic-hq 459, decision 0216)
+        """CREATE TABLE saved_sentences (
+            id TEXT PRIMARY KEY,
+            original TEXT NOT NULL,
+            translation TEXT NOT NULL,
+            parts TEXT NOT NULL,
+            translation_language TEXT NOT NULL,
+            category_id TEXT NOT NULL REFERENCES categories (id) ON DELETE CASCADE,
+            saved_at TEXT NOT NULL
+        ) WITHOUT ROWID""",
+    ),
 )
 VERSION = len(_MIGRATIONS)
 _TABLES = tuple(
@@ -205,6 +274,8 @@ KEEP_SET_ASIDE = 3
 """Files set aside kept per learning store, the newest: an older one goes
 when a newer is set aside, so a file damaged at every start can't fill the
 disk."""
+_ANKI_TABLES = {"deck": "anki_exports", "csv": "anki_csv_exports"}
+"""Where each kind of Anki file's exports are kept (`StoredAnkiExport.kind`)."""
 UNREADABLE_AT_MOST = 2
 UNREADABLE_SHARE = 0.05
 """Rows of a table that can't be read, left out at the start: up to
@@ -523,6 +594,30 @@ class SqliteLearningStore:
             )
         return days
 
+    def saved_sentences(self) -> Sequence[StoredSentence]:
+        """Read apart from `load`, when first wanted (polyglotic-hq 459): a
+        row that can't be read is left out, kept in the file, and logged by
+        count - however many, since nothing here is written back from what
+        was read."""
+        kept: list[StoredSentence] = []
+        unreadable = 0
+        for row in self._db.execute(
+            "SELECT id, original, translation, parts, translation_language, "
+            "category_id, saved_at FROM saved_sentences"
+        ):
+            try:
+                kept.append(_sentence(row))
+            except (ValueError, TypeError):
+                unreadable += 1
+        if unreadable:
+            log.warning(
+                "saved sentences: %d of %d that can't be read left out, kept in"
+                " the file",
+                unreadable,
+                unreadable + len(kept),
+            )
+        return kept
+
     # -- writing ----------------------------------------------------------------------
 
     @_then_scrub
@@ -530,6 +625,19 @@ class SqliteLearningStore:
         self._insert_level(level)
         if isinstance(self._path, Path):
             _write_level_file(self._path, level)  # decision 0048
+
+    @_then_scrub
+    def clear_level(self) -> None:
+        """The level gone from the store and from its copy beside it, so a
+        store started again doesn't take the copy's (decision 0048)."""
+        self._db.execute("DELETE FROM level")
+        if isinstance(self._path, Path):
+            try:
+                level_file(self._path).unlink(missing_ok=True)
+            except OSError as error:
+                log.warning(
+                    "the level's copy couldn't be removed (%s)", type(error).__name__
+                )
 
     def _insert_level(self, level: StoredLevel) -> None:
         self._db.execute(
@@ -596,6 +704,36 @@ class SqliteLearningStore:
             self._scrub()
 
     @_then_scrub
+    def save_sentence(self, sentence: StoredSentence) -> None:
+        replacing = (
+            self._db.execute(
+                "SELECT 1 FROM saved_sentences WHERE id = ?", (sentence.id,)
+            ).fetchone()
+            is not None
+        )
+        self._db.execute(
+            "INSERT OR REPLACE INTO saved_sentences VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                sentence.id,
+                sentence.original,
+                sentence.translation,
+                _parts_json(sentence.parts),
+                sentence.translation_language,
+                sentence.category_id,
+                sentence.saved_at.isoformat(),
+            ),
+        )
+        if replacing:
+            self._scrub()  # its old text goes
+
+    @_then_scrub
+    def delete_sentence(self, sentence_id: str) -> None:
+        if self._db.execute(
+            "DELETE FROM saved_sentences WHERE id = ?", (sentence_id,)
+        ).rowcount:
+            self._scrub()
+
+    @_then_scrub
     def save_deck_word(self, word: StoredDeckWord) -> None:
         replacing = self._has("deck_words", word.entry_id)
         self._db.execute(
@@ -623,10 +761,59 @@ class SqliteLearningStore:
 
     @_then_scrub
     def save_anki_exports(self, exports: Iterable[StoredAnkiExport]) -> None:
+        # each kind of file in its own table (368): the deck file's, the CSV's
+        rows = [(_ANKI_TABLES.get(e.kind), e) for e in exports]
+        with _Transaction(self._db):
+            for table in _ANKI_TABLES.values():
+                self._db.executemany(
+                    f"INSERT OR REPLACE INTO {table} VALUES (?, ?)",
+                    [
+                        (e.entry_id, e.exported_at.isoformat())
+                        for t, e in rows
+                        if t == table
+                    ],
+                )
+
+    @_then_scrub
+    def save_load_words(self, words: Sequence[StoredLoadWord]) -> None:
         with _Transaction(self._db):
             self._db.executemany(
-                "INSERT OR REPLACE INTO anki_exports VALUES (?, ?)",
-                [(e.entry_id, e.exported_at.isoformat()) for e in exports],
+                "INSERT OR REPLACE INTO load_words VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    (
+                        w.entry_id,
+                        w.standing,
+                        w.stage,
+                        w.meetings,
+                        int(w.by_hand),
+                        w.place,
+                        w.entered_at.isoformat(),
+                        w.last_met.isoformat() if w.last_met else None,
+                        w.graduated_at.isoformat() if w.graduated_at else None,
+                    )
+                    for w in words
+                ],
+            )
+
+    @_then_scrub
+    def save_lookups(self, lookups: StoredLookups) -> None:
+        self._db.execute(
+            "INSERT OR REPLACE INTO lookups VALUES (?, ?, ?, ?, ?)",
+            (
+                lookups.entry_id,
+                lookups.pinned,
+                lookups.hovered,
+                lookups.last_at.isoformat(),
+                lookups.pinned_since_known,
+            ),
+        )
+
+    @_then_scrub
+    def delete_load_words(self, entry_ids: Sequence[str]) -> None:
+        with _Transaction(self._db):
+            self._db.executemany(
+                "DELETE FROM load_words WHERE entry_id = ?",
+                [(entry_id,) for entry_id in entry_ids],
             )
 
     @_then_scrub
@@ -639,6 +826,9 @@ class SqliteLearningStore:
                 "exposures",
                 "deck_words",
                 "anki_exports",
+                "anki_csv_exports",
+                "load_words",
+                "lookups",
             ):
                 deleted += self._db.execute(
                     f"DELETE FROM {table} WHERE entry_id = ?", (entry_id,)
@@ -714,13 +904,17 @@ class SqliteLearningStore:
             for table in (
                 "statuses",
                 "saved_words",
+                "saved_sentences",
                 "deck_words",
                 "anki_exports",
+                "anki_csv_exports",
                 "exposures",
                 "daily_exposures",
                 "daily_coverage",
                 "daily_listening",
                 "handed_over_days",
+                "load_words",
+                "lookups",
             ):
                 self._db.execute(f"DELETE FROM {table}")
         self.delete_set_aside()
@@ -785,6 +979,40 @@ def is_damage(error: BaseException) -> bool:
         isinstance(error, sqlite3.DatabaseError)
         and getattr(error, "sqlite_errorname", None) in _DAMAGED
     )
+
+
+def delete_learning_data_at(path: Path) -> bool:
+    """Empties the learning store at `path` - one no app has open - and
+    deletes the copies set aside from it, as `delete_learning_data` does
+    for an open one; the level and the categories
+    stay. False, logged, when it couldn't be: from a newer app
+    (`LearningStoreFormatError`), in use, out of reach."""
+    try:
+        store = open_learning_store(path)
+    except (
+        LearningStoreFormatError,
+        LearningStoreDamagedError,
+        OSError,
+        sqlite3.Error,
+    ) as error:
+        log.warning(
+            "the learning data in %s couldn't be deleted: %s",
+            path.name,
+            type(error).__name__,
+        )
+        return False
+    try:
+        store.delete_learning_data()  # and the copies set aside
+    except (OSError, sqlite3.Error) as error:
+        log.warning(
+            "the learning data in %s couldn't be deleted: %s",
+            path.name,
+            type(error).__name__,
+        )
+        return False
+    finally:
+        store.close()
+    return True
 
 
 def open_learning_store(path: Path) -> SqliteLearningStore:
@@ -1034,18 +1262,17 @@ def _read(db: sqlite3.Connection) -> tuple[LearningSnapshot, _Tally]:
             "source_sentence, source_translation, saved_at",
             _saved_word,
         ),
-        exposures=rows(
-            "exposures",
-            "entry_id, heard, heard_by_you, heard_in_deck, first_heard",
-            _exposures,
-        ),
+        exposures=_read_exposures(db, tally),
         deck_words=rows(
             "deck_words",
             "entry_id, headword, traditional, reading, meaning, sentence, "
             "translation, learned_at",
             _deck_word,
         ),
-        anki_exports=rows("anki_exports", "entry_id, exported_at", _anki_export),
+        anki_exports=[
+            *rows("anki_exports", "entry_id, exported_at", _anki_export),
+            *rows("anki_csv_exports", "entry_id, exported_at", _anki_csv_export),
+        ],
         coverage=sorted(
             rows("daily_coverage", "day, known, deck, new", _coverage),
             key=lambda each: each.day,
@@ -1053,6 +1280,17 @@ def _read(db: sqlite3.Connection) -> tuple[LearningSnapshot, _Tally]:
         listening=sorted(
             rows("daily_listening", "day, category, seconds", _listening),
             key=lambda each: (each.day, each.category),
+        ),
+        load_words=rows(
+            "load_words",
+            "entry_id, standing, stage, meetings, by_hand, place, entered_at, "
+            "last_met, graduated_at",
+            _load_word,
+        ),
+        lookups=rows(
+            "lookups",
+            "entry_id, pinned, hovered, last_at, pinned_since_known",
+            _lookups,
         ),
     )
     return snapshot, tally
@@ -1150,22 +1388,118 @@ def _saved_word(row: tuple[object, ...]) -> StoredSavedWord:
     )
 
 
-def _exposures(row: tuple[object, ...]) -> StoredExposures:
-    entry_id, heard, heard_by_you, heard_in_deck, first_heard = row
-    if (
-        type(entry_id) is not str
-        or type(heard) is not int
-        or type(heard_by_you) is not int
-        or type(heard_in_deck) is not int
+def _parts_json(parts: Sequence[StoredSentencePart]) -> str:
+    """A saved sentence's parts as the text of its `parts` column: a list
+    of `[original, translation, speaker, [[o start, o end, t start, t end,
+    key], ...]]` (`_parts` reads it)."""
+    return json.dumps(
+        [
+            [p.original, p.translation, p.speaker, [list(link) for link in p.links]]
+            for p in parts
+        ],
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+
+
+def _parts(value: object) -> tuple[StoredSentencePart, ...]:
+    """`_parts_json`'s text read back - ValueError or TypeError for any
+    value not of its shape (the row is left out, 207)."""
+    parts = json.loads(_text(value))
+    if not isinstance(parts, list):
+        raise TypeError("not a list of parts")
+    found = []
+    for part in parts:
+        original, translation, speaker, links = part
+        found.append(
+            StoredSentencePart(
+                _text(original),
+                _text(translation),
+                tuple(_link(link) for link in links),
+                _text(speaker),
+            )
+        )
+    return tuple(found)
+
+
+def _link(value: object) -> tuple[int, int, int, int, bool]:
+    if not isinstance(value, list) or len(value) != 5:
+        raise TypeError("not a link")
+    o_start, o_end, t_start, t_end, key = value
+    if not isinstance(key, bool):
+        raise TypeError("not a link")
+    return _whole(o_start), _whole(o_end), _whole(t_start), _whole(t_end), key
+
+
+def _sentence(row: tuple[object, ...]) -> StoredSentence:
+    sentence_id, original, translation, parts, language, category, saved_at = row
+    return StoredSentence(
+        _text(sentence_id),
+        _text(original),
+        _text(translation),
+        _parts(parts),
+        _text(language),
+        _text(category),
+        _time(saved_at),
+    )
+
+
+def _read_exposures(db: sqlite3.Connection, tally: _Tally) -> list[StoredExposures]:
+    """The exposure counts that can be read, the rest counted in `tally`
+    like every table's. The one table with a row for every word met -
+    30,000 for a long-time learner, all read before the window shows - so
+    its rows are checked here in the loop, with no call a row, and each
+    day is parsed once. With the records as named tuples, the start's
+    read of a learner of 30,000 words met went from about 137 ms to 115
+    (polyglotic-hq 314)."""
+    kept: list[StoredExposures] = []
+    unreadable = 0
+    # None for words heard before version 5 (polyglotic-hq 163)
+    days: dict[object, date | None] = {None: None}
+    for entry_id, heard, heard_by_you, heard_in_deck, first_heard in db.execute(
+        "SELECT entry_id, heard, heard_by_you, heard_in_deck, first_heard"
+        " FROM exposures"
     ):
-        raise TypeError("not exposure counts")
-    return StoredExposures(
-        entry_id,
-        heard,
-        heard_by_you,
-        heard_in_deck,
-        # None for words heard before version 5 (polyglotic-hq 163)
-        None if first_heard is None else _day(first_heard),
+        if (
+            type(entry_id) is not str
+            or type(heard) is not int
+            or type(heard_by_you) is not int
+            or type(heard_in_deck) is not int
+        ):
+            unreadable += 1
+            continue
+        if first_heard in days:
+            day = days[first_heard]
+        else:
+            try:
+                day = days[first_heard] = _day(first_heard)
+            except (ValueError, TypeError):
+                unreadable += 1
+                continue
+        kept.append(StoredExposures(entry_id, heard, heard_by_you, heard_in_deck, day))
+    tally["exposures"] = (unreadable, unreadable + len(kept))
+    return kept
+
+
+def _load_word(row: tuple[object, ...]) -> StoredLoadWord:
+    entry_id, standing, stage, meetings, by_hand, place, entered, met, graduated = row
+    return StoredLoadWord(
+        _text(entry_id),
+        _text(standing),
+        _whole(stage),
+        _whole(meetings),
+        bool(_whole(by_hand)),
+        None if place is None else _whole(place),
+        _time(entered),
+        None if met is None else _time(met),
+        None if graduated is None else _time(graduated),
+    )
+
+
+def _lookups(row: tuple[object, ...]) -> StoredLookups:
+    entry_id, pinned, hovered, last, since = row
+    return StoredLookups(
+        _text(entry_id), _whole(pinned), _whole(hovered), _time(last), _whole(since)
     )
 
 
@@ -1208,4 +1542,9 @@ def _listening(row: tuple[object, ...]) -> StoredListening:
 
 def _anki_export(row: tuple[object, ...]) -> StoredAnkiExport:
     entry_id, at = row
-    return StoredAnkiExport(_text(entry_id), _time(at))
+    return StoredAnkiExport(_text(entry_id), _time(at), "deck")
+
+
+def _anki_csv_export(row: tuple[object, ...]) -> StoredAnkiExport:
+    entry_id, at = row
+    return StoredAnkiExport(_text(entry_id), _time(at), "csv")

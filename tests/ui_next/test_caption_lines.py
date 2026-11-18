@@ -1,6 +1,8 @@
 """One app's captions as lines: the new interface's caption window and
 transcript view, without Qt."""
 
+from dataclasses import replace
+
 from tests.ui_next.made_up import (
     EN,
     OTHER_APP,
@@ -10,6 +12,7 @@ from tests.ui_next.made_up import (
     withdrawn,
 )
 
+from polyglotic_desktop.core.listening.captions import Clause
 from polyglotic_desktop.core.listening.display import DisplayOptions, RowKind
 from polyglotic_desktop.ui.recorded_captions import APP, MIC
 from polyglotic_desktop.ui_next.views.captions import (
@@ -199,3 +202,21 @@ def test_a_captions_delay_is_on_its_label_only_when_asked() -> None:
     assert view.lines[1].label == ""
     view.set_labels(Labels(show_language=True, spoken=lambda _: "English", delay=said))
     assert view.lines[0].label == "English  4/1/0.4"
+
+
+def test_a_views_text_settles_after_the_time_chosen() -> None:
+    """polyglotic-hq 309: at 0s a later hearing only adds to what the
+    view shows - at 3s (as it was) it rewrote words just shown."""
+    said = Clause("We walked to this")
+    again = Clause("He went to this door and")
+
+    def shown(seconds: float) -> str:
+        view = CaptionLines((APP,), None, keep=10)
+        view.set_settle_after(seconds)
+        first = replace(live_update("app-00000"), clauses=(said,))
+        view.apply(first)
+        view.apply(replace(first, clauses=(again,)))
+        return view.lines[0].rows[0].text
+
+    assert shown(3.0).startswith("He went to this door and")
+    assert shown(0.0).startswith("We walked to this door and")

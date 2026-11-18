@@ -9,9 +9,9 @@ from collections.abc import Iterator
 from functools import partial
 
 import pytest
-from PySide6.QtCore import QEvent, QPointF, Qt
+from PySide6.QtCore import QEvent, QObject, QPointF, Qt
 from PySide6.QtGui import QEnterEvent, QMouseEvent
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QWidget
 from tests.budget_judge import sampled, within
 from tests.ui.fakes import chinese_tools
 from tests.ui_next.made_up import finished_updates
@@ -550,6 +550,66 @@ def test_a_resize_step_with_three_columns(
     steps = [partial(window.resize_by, drag, -15 * n, 0) for n in range(20)]
     steps += [partial(window.resize_by, top, 0, -4 * n) for n in range(20)]
     within(budgets.FRAME, lambda: sampled(qapp, steps))
+
+
+class Paints(QObject):
+    """How many times each watched widget painted."""
+
+    def __init__(self, watched: list[QWidget]) -> None:
+        super().__init__()
+        self.count = {id(w): 0 for w in watched}
+        for widget in watched:
+            widget.installEventFilter(self)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.Paint and id(watched) in self.count:
+            self.count[id(watched)] += 1
+        return False
+
+
+def test_a_resize_step_paints_each_column_once(
+    full: CaptionWindows, qapp: QApplication
+) -> None:
+    """The window resized, then painted once: one column's repaint had
+    painted all three - the resize had left the whole window to paint - and
+    the next two painted again, five paints a step for three columns, over
+    the frame on the Linux runner (polyglotic-hq 355)."""
+    full.join()
+    window = joined(full)
+    window.repaint()
+    qapp.processEvents()
+    canvases: list[QWidget] = [column.canvas for column in window.columns]
+    paints = Paints(canvases)
+    drag = _Drag(Edge.RIGHT, QPointF(), place(window))
+    for n in range(1, 4):
+        paints.count = dict.fromkeys(paints.count, 0)
+        window.resize_by(drag, -15 * n, 0)
+        assert list(paints.count.values()) == [1, 1, 1], n
+    for canvas in canvases:
+        canvas.removeEventFilter(paints)
+
+
+def test_a_divider_step_paints_each_column_once(
+    full: CaptionWindows, qapp: QApplication
+) -> None:
+    """A divider step lays the columns out and paints the window once: each
+    column's own repaint painted a neighbour that had moved too - four
+    paints a step for three columns (polyglotic-hq 355, 360)."""
+    full.join()
+    window = joined(full)
+    window.repaint()
+    qapp.processEvents()
+    canvases: list[QWidget] = [column.canvas for column in window.columns]
+    paints = Paints(canvases)
+    divider = window.width() // 3
+    window.press_divider(0, QPointF(divider, 10))
+    for n in range(1, 4):
+        paints.count = dict.fromkeys(paints.count, 0)
+        window.drag_to(QPointF(divider + 10 * n, 10))
+        assert list(paints.count.values()) == [1, 1, 1], n
+    window.release()
+    for canvas in canvases:
+        canvas.removeEventFilter(paints)
 
 
 def test_join_and_separate(full: CaptionWindows, qapp: QApplication) -> None:

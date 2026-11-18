@@ -37,7 +37,7 @@ import urllib.request
 import uuid
 from dataclasses import dataclass
 
-from polyglotic_desktop.connection import protocol
+from polyglotic_desktop.connection import protocol, tls
 from polyglotic_desktop.connection.addresses import server_address
 from polyglotic_desktop.connection.app import AppInfo
 from polyglotic_desktop.connection.failures import why_answered, why_not_opened
@@ -174,7 +174,7 @@ def redeem(
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        with tls.urlopen(request, timeout) as response:
             answer = protocol.validate(protocol.RedeemResponse, json.load(response))
     except urllib.error.HTTPError as error:
         return _refused(error)

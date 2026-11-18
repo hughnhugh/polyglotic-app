@@ -9,6 +9,7 @@ release's publish job uses `GH_TOKEN` for `gh release create`), so every
 checkout says `persist-credentials: false`. Read as the YAML GitHub reads.
 """
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -49,8 +50,22 @@ def test_the_tests_run_on_linux_too() -> None:
     assert linux["runs-on"] == ["self-hosted", "linux"]
     runs = [str(step.get("run", "")) for step in linux["steps"]]
     assert any("tools/linux_qt_libs.sh" in run for run in runs)
-    assert any(run.startswith("uv run --no-sync pytest") for run in runs)
+    assert any("uv run --no-sync pytest" in run for run in runs)  # in ci_memory (344)
     assert (WORKFLOWS.parents[1] / "tools" / "linux_qt_libs.sh").is_file()
+
+
+def test_the_linux_tests_draw_chinese_with_a_real_font() -> None:
+    """polyglotic-hq 386: with DejaVu alone the runner drew Chinese as empty
+    boxes, and timed every Chinese layout through Qt's search for a font
+    that has it - the pinyin budgets measured what no learner sees. The
+    libraries the Linux job unpacks include a font with Chinese in it."""
+    script = (WORKFLOWS.parents[1] / "tools" / "linux_qt_libs.sh").read_text(
+        encoding="utf-8"
+    )
+    wanted = re.search(r"^wanted=\(([^)]*)\)", script, re.MULTILINE)
+    assert wanted, "linux_qt_libs.sh's list of packages"
+    cjk = {"fonts-wqy-microhei", "fonts-wqy-zenhei", "fonts-noto-cjk"}
+    assert cjk & set(wanted[1].split()), "a CJK font among the packages"
 
 
 def test_the_install_test_runs_only_in_a_runners_own_account() -> None:
@@ -185,3 +200,313 @@ def test_the_store_package_is_the_same_build_recorded_beside_the_installer() -> 
     )
     assert 'tools.package.msix pack "${TAG#v}" build/promote/app' in release
     assert 'files+=("$store")' in release
+
+
+def test_the_start_is_timed_alone_and_the_heavy_steps_share_the_pc() -> None:
+    """polyglotic-hq 312: the two Windows runners share one PC, and the
+    start went over its budget while the other ran its tests or the UI
+    lab's four-at-a-time language walk. The start's step holds the PC's
+    lock alone (`tools/ci_lock.py`); those heavy steps hold it shared."""
+    windows = workflow("windows.yml")  # called by ci.yml and windows-parts.yml (379)
+    runs = {
+        job: [str(step.get("run", "")) for step in windows["jobs"][job]["steps"]]
+        for job in ("checks", "ui-lab")
+    }
+    every = [run for steps in runs.values() for run in steps]
+    start = [run for run in every if "test_start_with_a_big_learner" in run]
+    assert start and all(
+        r.startswith("uv run --no-sync python -m tools.ci_lock alone -- ")
+        for r in start
+    )
+    shared = [
+        run for run in every if "ui_lab languages " in run or run.endswith(" pytest")
+    ]
+    assert len(shared) == 2
+    assert all(
+        r.startswith("uv run --no-sync python -m tools.ci_lock shared -- ")
+        for r in shared
+    )
+
+
+MOST_DAYS_KEPT = 7
+"""The longest any workflow keeps what it uploads. GitHub's Free plan has
+500 MB of artifact storage for the whole account (all three repos), counted
+as storage over time: 55 packed builds kept 3 days used November's share by
+2026-11-08, and every upload was refused until 2026-12-01 (polyglotic-hq
+225, 312). An upload that names no `retention-days` is kept the repo's 90.
+The UI lab's timings (about 60 KB, 7 days) are the longest kept today."""
+
+
+def test_every_upload_is_kept_a_week_at_most_and_can_fail_nothing() -> None:
+    """polyglotic-hq 344: what fills the storage is time, not size, so
+    every upload names how long it's kept - never the repo's 90 days - and
+    a full storage fails no check (the upload's `continue-on-error`). The
+    secret scan uploads nothing of its own (1,327 empty SARIF reports, kept
+    90 days, until it stopped on 2026-11-08)."""
+    uploads = [
+        (path.name, step)
+        for path in sorted(WORKFLOWS.glob("*.y*ml"))
+        for job in yaml.safe_load(path.read_text(encoding="utf-8"))["jobs"].values()
+        for step in job.get("steps", [])
+        if uses(step, "actions/upload-artifact@")
+    ]
+    assert uploads
+    for name, step in uploads:
+        kept = step.get("with", {}).get("retention-days")
+        assert isinstance(kept, int) and 1 <= kept <= MOST_DAYS_KEPT, (name, step)
+        assert step.get("continue-on-error") is True, (name, step)
+    scans = [
+        step
+        for job in workflow("secrets.yml")["jobs"].values()
+        for step in job.get("steps", [])
+        if uses(step, "gitleaks/gitleaks-action@")
+    ]
+    assert scans and all(
+        s["env"]["GITLEAKS_ENABLE_UPLOAD_ARTIFACT"] == "false" for s in scans
+    )
+
+
+def runs(
+    workflow_name: str, job: str, event: str, *labels: str, draft: bool = False
+) -> bool:
+    """Whether a job's `if` lets it run for this event, read as GitHub would
+    for the few forms the workflows use: `github.event_name`, the pull
+    request's `draft` and `contains(...labels.*.name, '...')`, with `!`,
+    `&&`, `||`, `!=` and `==`. A job without an `if` always runs."""
+    condition = str(workflow(workflow_name)["jobs"][job].get("if", "${{ true }}"))
+    expression = condition.strip().removeprefix("${{").removesuffix("}}")
+    expression = re.sub(
+        r"contains\(github\.event\.pull_request\.labels\.\*\.name,\s*'([^']+)'\)",
+        r"('\1' in labels)",
+        expression,
+    )
+    expression = expression.replace("github.event.pull_request.draft", "draft")
+    expression = expression.replace("github.event_name", "event")
+    expression = expression.replace("&&", " and ").replace("||", " or ")
+    expression = expression.replace("!=", " NOT_EQUAL ").replace("==", " EQUAL ")
+    expression = expression.replace("!", " not ")
+    expression = expression.replace(" NOT_EQUAL ", " != ").replace(" EQUAL ", " == ")
+    expression = expression.replace("true", "True")
+    assert "github" not in expression, f"a form runs() doesn't read: {condition}"
+    pull_request = event == "pull_request"
+    # the repo's own workflow, translated above, with no builtins
+    found = eval(
+        expression,
+        {"__builtins__": {}},
+        {
+            "event": event,
+            "labels": list(labels) if pull_request else [],
+            "draft": draft if pull_request else None,
+        },
+    )
+    return bool(found)
+
+
+def test_a_pull_request_runs_the_quick_checks_and_the_train_the_windows_jobs() -> None:
+    """Decision 0167 (polyglotic-hq 379, the release train, DECISIONS #177):
+    2026-11-15's desktop queue reached 18-27 runs on three runners, and the
+    two Windows jobs (20-30 min each, one runner each) were what it waited
+    for. A pull request runs Checks (Linux); the Windows jobs run on a push
+    to main, on the train's pull request (labelled `train`) and by hand.
+    A draft runs nothing, and a lower branch of a stack (`stacked`, 344)
+    runs nothing."""
+    for event in ("push", "workflow_dispatch"):
+        assert runs("ci.yml", "linux", event) and runs("ci.yml", "windows", event)
+    assert runs("ci.yml", "linux", "pull_request")
+    assert not runs("ci.yml", "windows", "pull_request")
+    assert runs("ci.yml", "windows", "pull_request", "train")
+    assert runs("ci.yml", "linux", "pull_request", "train")
+    for job in ("linux", "windows"):
+        assert not runs("ci.yml", job, "pull_request", "stacked")
+        assert not runs("ci.yml", job, "pull_request", "train", "stacked")
+        assert not runs("ci.yml", job, "pull_request", "train", draft=True)
+    assert not runs("secrets.yml", "secrets", "pull_request", draft=True)
+    assert runs("secrets.yml", "secrets", "pull_request")
+    assert runs("secrets.yml", "secrets", "push")
+    # the train opens as a draft with its label, then is marked ready: that
+    # event starts its checks, with the label already on it
+    for name in ("ci.yml", "windows-parts.yml", "secrets.yml"):
+        types = workflow(name)[True]["pull_request"]["types"]
+        assert "ready_for_review" in types and "synchronize" in types, name
+        assert "labeled" not in types, f"{name}: a label starts nothing"
+    assert "workflow_dispatch" in workflow("ci.yml")[True]
+
+
+def test_the_windows_jobs_are_written_once() -> None:
+    """Both callers run the one definition, which never runs on its own; the
+    Windows parts' pull request skips a train (ci.yml has it), drafts and
+    stacks, as ci.yml does."""
+    assert set(workflow("windows.yml")[True]) == {"workflow_call"}
+    assert set(workflow("windows.yml")["jobs"]) == {"checks", "ui-lab"}
+    for name in ("ci.yml", "windows-parts.yml"):
+        caller = workflow(name)["jobs"]["windows"]
+        assert caller["uses"] == "./.github/workflows/windows.yml", name
+    assert runs("windows-parts.yml", "windows", "pull_request")
+    for labels in (("train",), ("stacked",)):
+        assert not runs("windows-parts.yml", "windows", "pull_request", *labels)
+    assert not runs("windows-parts.yml", "windows", "pull_request", draft=True)
+
+
+def test_lint_and_types_run_on_every_pull_request_once() -> None:
+    """They need no Windows (mypy checks as win32 on any machine,
+    pyproject.toml), so they moved from Checks (Windows) to Checks (Linux):
+    every pull request gets them, and the Windows runner doesn't repeat
+    them."""
+    quick = [
+        str(s.get("run", "")) for s in workflow("ci.yml")["jobs"]["linux"]["steps"]
+    ]
+    heavy = [
+        str(s.get("run", ""))
+        for s in workflow("windows.yml")["jobs"]["checks"]["steps"]
+    ]
+    for command in (
+        "uv run --no-sync ruff check --output-format=github",
+        "uv run --no-sync ruff format --check",
+        "uv run --no-sync mypy",
+        "uv run --no-sync python -m tools.mypy_platforms",
+        "uv run --no-sync lint-imports",
+    ):
+        assert command in quick and command not in heavy, command
+
+
+def github_path(pattern: str) -> re.Pattern[str]:
+    """A workflow `paths` pattern as GitHub matches it: `**` any characters,
+    `*` any but `/`, `?` one character."""
+    regex = ""
+    for part in re.split(r"(\*\*/?|\*|\?)", pattern):
+        if part in ("**", "**/"):
+            regex += "(?:.*/)?" if part == "**/" else ".*"
+        elif part == "*":
+            regex += "[^/]*"
+        elif part == "?":
+            regex += "[^/]"
+        else:
+            regex += re.escape(part)
+    return re.compile(regex + r"\Z")
+
+
+def test_a_pull_request_that_changes_ci_itself_runs_the_windows_jobs() -> None:
+    """windows-parts.yml's `paths`: what only CI's own Windows runs show -
+    the workflows, CI's machinery on the runners and the dependencies. Not
+    the interface or the UI lab: the agents run those on Windows before they
+    push, and on 2026-11-15 a list with the UI lab and main.py in it matched
+    52 of 80 pull requests (polyglotic-hq 379)."""
+    paths = workflow("windows-parts.yml")[True]["pull_request"]["paths"]
+    patterns = [github_path(p) for p in paths]
+
+    def matched(path: str) -> bool:
+        return any(p.match(path) for p in patterns)
+
+    for path in [
+        ".github/workflows/ci.yml",
+        ".github/workflows/windows.yml",
+        ".github/workflows/windows-parts.yml",
+        "tools/ci_lock.py",
+        "tools/timing_record.py",
+        "tools/start_record.py",
+        "uv.lock",
+        "pyproject.toml",
+    ]:
+        assert matched(path), path
+    for path in (
+        "src/polyglotic_desktop/ui_next/home.py",
+        "src/polyglotic_desktop/main.py",
+        "tools/ui_lab/goldens/home.png",
+        "tests/test_windows_hotkeys.py",
+        "translations/polyglotic_ja.ts",
+    ):
+        assert not matched(path), path
+    assert github_path("tests/**/test_*.py").match("tests/ui/test_x.py")
+    assert not github_path("tools/*.py").match("tools/ui_lab/lab.py")
+
+
+def test_the_linux_tests_say_their_memory_against_the_cap() -> None:
+    """polyglotic-hq 350: the Linux runners are capped (the desktop's at
+    2,200 MB, 2026-11-15); a kill for memory names the step and what it
+    reached (`tools/ci_memory.py`, 344)."""
+    steps = workflow("ci.yml")["jobs"]["linux"]["steps"]
+    tests = next(s for s in steps if str(s.get("name", "")).startswith("Tests"))
+    assert tests["run"].startswith(
+        'uv run --no-sync python -m tools.ci_memory --step "'
+    )
+    assert tests["run"].endswith("-- uv run --no-sync pytest -p no:cacheprovider")
+
+
+def test_the_macos_job_runs_only_by_hand_on_githubs_mac_and_keeps_a_day() -> None:
+    """polyglotic-hq 408, 410: GitHub's macOS minutes are paid for on this
+    private repo (DECISIONS #190), so the job runs only when Claude starts
+    it on the user's word - never on a push, a pull request or a schedule -
+    with a time limit, and keeps what it uploads one day."""
+    macos = workflow("macos.yml")
+    assert set(macos[True]) == {"workflow_dispatch"}
+    (job,) = macos["jobs"].values()
+    assert job["runs-on"] == "macos-26"
+    assert 0 < job["timeout-minutes"] <= 90
+    uploads = [s for s in job["steps"] if uses(s, "actions/upload-artifact@")]
+    assert uploads and all(s["with"]["retention-days"] == 1 for s in uploads)
+    app = [s for s in uploads if "Polyglotic-macos-arm64.zip" in s["with"]["path"]]
+    assert app and all("inputs.keep_app" in s["if"] for s in app)
+    measured = [s for s in job["steps"] if "macos_measure" in s.get("run", "")]
+    assert measured and all(s["continue-on-error"] is True for s in measured)
+
+
+def test_the_macos_job_checks_capture_after_measure_and_keeps_what_it_found() -> None:
+    """polyglotic-hq 412: 411's checks run after measure (BlackHole, the
+    permission written) and after pack (the packed app's own capture). A
+    fail fails the job - so no continue-on-error - while an unknown never
+    does (the script's exit code)."""
+    (job,) = workflow("macos.yml")["jobs"].values()
+    names = [s.get("run", "") for s in job["steps"]]
+    measure = next(i for i, r in enumerate(names) if "tools.macos_measure" in r)
+    pack = next(i for i, r in enumerate(names) if "tools.package.build" in r)
+    capture = next(i for i, r in enumerate(names) if "tools.macos_capture_checks" in r)
+    assert measure < capture and pack < capture
+    step = job["steps"][capture]
+    assert "inputs.capture" in step["if"] and "continue-on-error" not in step
+    assert "--app dist/Polyglotic.app" in step["run"]
+    assert "${{" not in step["run"]  # inputs reach the shell through env
+    (kept,) = [
+        s
+        for s in job["steps"]
+        if uses(s, "actions/upload-artifact@") and "measure.json" in s["with"]["path"]
+    ]
+    assert "${{ env.OUT }}/capture/" in kept["with"]["path"]
+
+
+def test_the_macos_job_signs_with_the_release_certificate_in_a_keychain_it_deletes() -> (
+    None
+):
+    """polyglotic-hq 422 (decision 0196): the self-signed certificate comes
+    from the repo's secrets into a temporary keychain, through env only
+    (never `${{` in a script, never printed), sets the identity the build
+    signs with, and the keychain is deleted whatever happened. Without the
+    secrets the app is signed ad hoc, as before, but a release refuses to.
+    A release keeps its zip and .sha256 for publish-mac.sh."""
+    (job,) = workflow("macos.yml")["jobs"].values()
+    steps = job["steps"]
+    runs = [s.get("run", "") for s in steps]
+    signing = next(i for i, r in enumerate(runs) if "security import" in r)
+    pack = next(i for i, r in enumerate(runs) if "tools.package.build" in r)
+    deleted = next(i for i, r in enumerate(runs) if "security delete-keychain" in r)
+    assert signing < pack < deleted
+    step = steps[signing]
+    assert "${{" not in step["run"]
+    assert step["env"]["P12"] == "${{ secrets.MACOS_SIGNING_P12 }}"
+    assert step["env"]["P12_PASSWORD"] == "${{ secrets.MACOS_SIGNING_PASSWORD }}"
+    assert "POLYGLOTIC_CODESIGN_IDENTITY=" in step["run"]
+    assert "a release needs the signing certificate" in step["run"]
+    assert "set-key-partition-list" in step["run"] and "rm -f" in step["run"]
+    assert (
+        'echo "$P12' not in step["run"]
+        and 'cat "$RUNNER_TEMP/signing.p12' not in step["run"]
+    )
+    assert steps[deleted]["if"] == "${{ always() }}"
+    (kept,) = [
+        s
+        for s in steps
+        if uses(s, "actions/upload-artifact@") and "release" in s["name"]
+    ]
+    assert kept["with"]["path"] == "build/package/release/"
+    assert "inputs.release" in kept["if"]
+    inputs = workflow("macos.yml")[True]["workflow_dispatch"]["inputs"]
+    assert inputs["release"]["default"] is False and inputs["version"]["default"] == ""

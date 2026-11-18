@@ -37,8 +37,12 @@ from polyglotic_desktop.core.listening.display import (
     LinkDetail,
     LinkGap,
     LinkLine,
+    ReadingColour,
+    ReadingSize,
+    ReadingSystem,
     WordLinks,
 )
+from polyglotic_desktop.core.listening.settling import SETTLE_AFTER_SEC
 from polyglotic_desktop.core.listening.timing import (
     BREATH_CUTS,
     GROWING_OFFSETS_SEC,
@@ -60,16 +64,24 @@ never be followed (polyglotic-hq 295)."""
 WAIT_CHOICES = (2.0, 2.5, 3.0, 4.0, 5.0, 6.0)
 """The longest waits for text offered, in seconds: MAX_WAIT_RANGE, with the
 user's "2.5-3 seconds" (polyglotic-hq 270's feedback) among them."""
+SETTLE_CHOICES = (0.0, 1.0, 2.0, 3.0)
+"""How long shown text may still change, as offered, in seconds: the user's
+"0s - 3seconds" (polyglotic-hq 309), each one measured on the recordings
+(decision 0099). 0: a word stays as first shown (but a live caption's
+last word, which may be half said)."""
 FADE_CHOICES: tuple[float | None, ...] = (None, 5.0, 8.0, 15.0, 30.0)
 """Fade after quiet, in seconds; None: never (today's)."""
 ORIGINAL_CHOICES = ("#ffffff", "#e6e6e6", "#cfe8ff", "#d8ffd0", "#fff4c2")
 TRANSLATION_CHOICES = ("#ffd76e", "#ffb347", "#7fe3ff", "#a5f28a", "#ff9ecf")
 BACKGROUND_CHOICES = ("#0a0c10", "#000000", "#1b2a41", "#1f2d22", "#2d1f2f")
 """The colours that read on a caption window, the defaults first (today's)."""
+READING_CHOICES = ("#9ad0ff", "#ffffff", "#ffd76e", "#a5f28a", "#ff9ecf")
+"""Pinyin's own colours that read on a caption window (395)."""
 COLOUR_CHOICES = {
     "original": ORIGINAL_CHOICES,
     "translation": TRANSLATION_CHOICES,
     "background": BACKGROUND_CHOICES,
+    "reading": READING_CHOICES,
 }
 
 
@@ -128,6 +140,21 @@ class SessionLanguages:
     spelling_hints: tuple[str, ...] = ()
     in_use: tuple[str, ...] = ()
     live_updates: bool = False
+    recent_spoken: tuple[str, ...] = ()
+    """The spoken languages named last, newest first (the caption windows'):
+    first in the list (polyglotic-hq 317)."""
+    mandarin_script: str | None = None
+    """Mandarin's captions in "simplified" or "traditional" characters, as
+    chosen; None: as this PC reads Chinese (`traditional_here`; 375)."""
+    traditional_here: bool = False
+    """This PC reads Chinese in Traditional (Taiwan's or Hong Kong's)."""
+
+    @property
+    def traditional(self) -> bool:
+        """Mandarin's captions are shown in Traditional characters."""
+        if self.mandarin_script is None:
+            return self.traditional_here
+        return self.mandarin_script == "traditional"
 
 
 HINT_SEPARATORS = re.compile("[,，、;；]")
@@ -163,6 +190,10 @@ class LanguagesView(Shared[SessionLanguages]):
     def set_hints(self, text: str) -> None:
         self.change(replace(self.value, spelling_hints=hints_from(text)))
 
+    def set_traditional(self, on: bool) -> None:
+        script = "traditional" if on else "simplified"
+        self.change(replace(self.value, mandarin_script=script))
+
 
 @dataclass(frozen=True, slots=True)
 class WindowLanguage:
@@ -192,13 +223,15 @@ class WindowLanguageView(Shared[WindowLanguage]):
 
 @dataclass(frozen=True, slots=True)
 class Timing:
-    """The caption timing, how often Live updates update, and the longest
+    """The caption timing, how often Live updates update, the longest
     wait for text in every mode (seconds; core.listening.timing's
-    `max_wait`, polyglotic-hq 277)."""
+    `max_wait`, polyglotic-hq 277), and how long shown text may still
+    change (`settle_after`, seconds; core.listening.settling, 309)."""
 
     mode: CaptionMode = CaptionMode.STEADY
     live_interval: float = 1.5
     max_wait: float = MAX_WAIT_FOR_TEXT_SEC
+    settle_after: float = SETTLE_AFTER_SEC
 
     @property
     def live_every(self) -> float:
@@ -233,6 +266,12 @@ def wait_choices(current: float) -> list[float]:
     return sorted({*WAIT_CHOICES, current})
 
 
+def settle_choices(current: float) -> list[float]:
+    """The times to settle to offer: SETTLE_CHOICES, and the current one
+    in order if it isn't among them (one set by hand)."""
+    return sorted({*SETTLE_CHOICES, current})
+
+
 class TimingView(Shared[Timing]):
     def set_mode(self, mode: CaptionMode) -> None:
         self.change(replace(self.value, mode=mode))
@@ -243,19 +282,76 @@ class TimingView(Shared[Timing]):
     def set_max_wait(self, seconds: float) -> None:
         self.change(replace(self.value, max_wait=seconds))
 
+    def set_settle_after(self, seconds: float) -> None:
+        self.change(replace(self.value, settle_after=seconds))
+
 
 # -- Look ------------------------------------------------------------------------------
 
 
-def look_defaults(now: CaptionLook) -> CaptionLook:
-    """The look as Polyglotic first had it - Quick preview's line is the
-    timing's, so it stays as it is, and the Lab has its own reset."""
-    return CaptionLook(preview=now.preview, lab=now.lab)
+def look_defaults(now: CaptionLook, first: CaptionLook | None = None) -> CaptionLook:
+    """The look as Polyglotic first had it - `first`, the app's defaults
+    (`main`'s; 478: word links on), or the plain look - but Quick
+    preview's line is the timing's, so it stays as it is, and the Lab has
+    its own reset; what happens to a hidden window isn't the look
+    (polyglotic-hq 335)."""
+    return replace(
+        first if first is not None else CaptionLook(),
+        preview=now.preview,
+        lab=now.lab,
+        pause_hidden_after=now.pause_hidden_after,
+        show_on_speech=now.show_on_speech,
+    )
 
 
-LINKS_WHEN_ON = WordLinks.COLOURS
+LINKS_WHEN_ON = WordLinks.ARROWS
 """What a caption window's word links button turns on when no other way
-of showing them was chosen (249, F9)."""
+of showing them was chosen (249, F9): the links with their lines (the
+user, 2026-11-17, polyglotic-hq 446: "default switch on with arrows")."""
+
+
+def learning_view(
+    look: CaptionLook,
+    on: bool,
+    links: WordLinks,
+    readings: tuple[str, ...] = (),
+    before: CaptionLook | None = None,
+) -> CaptionLook:
+    """The look with the whole learning view on, in one click - a caption
+    window's word links button (polyglotic-hq 446; the user, 2026-11-17:
+    "essentially this should be the one click default"): word links shown
+    as `links`, linked words in their link's colour in what was said and
+    in the translation, pinyin in its word link's colour (a colour the
+    learner picked stays theirs), and the reading lines of the window's
+    languages (`readings`: "zh" for a Chinese window) - so a word, its
+    pinyin and its translation all match.
+
+    Off again: word links off, and the rest back to what it was in
+    `before` (the look when the one click turned them on), as the
+    filled lines button does (372); not known (turned on in Settings, or
+    before a restart), only word links go off."""
+    if on:
+        colour = look.reading_colour
+        return replace(
+            look,
+            word_links=links,
+            said_in_link_colours=True,
+            translation_in_link_colours=True,
+            reading_colour=colour
+            if colour is ReadingColour.CUSTOM
+            else ReadingColour.LINK,
+            reading_lines=tuple(sorted({*look.reading_lines, *readings})),
+        )
+    if before is None:
+        return replace(look, word_links=WordLinks.OFF)
+    return replace(
+        look,
+        word_links=WordLinks.OFF,
+        said_in_link_colours=before.said_in_link_colours,
+        translation_in_link_colours=before.translation_in_link_colours,
+        reading_colour=before.reading_colour,
+        reading_lines=before.reading_lines,
+    )
 
 
 class LookView(Shared[CaptionLook]):
@@ -265,19 +361,36 @@ class LookView(Shared[CaptionLook]):
         self,
         value: CaptionLook,
         on_change: Callable[[CaptionLook], None] | None = None,
+        first: CaptionLook | None = None,
     ) -> None:
         super().__init__(value, on_change)
+        self.first = first
+        """The look as Polyglotic first has it - the app's defaults, which
+        Reset to defaults goes back to (`look_defaults`); None: the plain
+        look."""
         self.links_when_on = LINKS_WHEN_ON
         """How word links show when a caption window's button turns them on:
         the way last chosen in Look, while the app runs."""
+        self.unfilled: CaptionLab | None = None
+        """The Lab as it was when a caption window's filled lines button
+        turned them on (372), while the app runs: off puts it back."""
+        self.unlined: CaptionLab | None = None
+        """...and when its parts lined up button turned them on."""
+        self.unlinked: CaptionLook | None = None
+        """The look as it was when a caption window's word links button
+        turned the learning view on (446), while the app runs: off puts it
+        back (`learning_view`)."""
         self.started_from: str | None = None
         """The colour preset the look's colours last were (`presets`), while
         the app runs: custom colours are "Custom, from" it."""
-        self._remember()
+        self._remember(saved=True)
 
-    def _remember(self) -> None:
-        if self.value.word_links is not WordLinks.OFF:
-            self.links_when_on = self.value.word_links
+    def _remember(self, saved: bool = False) -> None:
+        links = self.value.word_links
+        # a saved Underline is what the button itself turned on before 446,
+        # not a way chosen: the button's next click shows the lines (446)
+        if links is not WordLinks.OFF and not (saved and links is WordLinks.COLOURS):
+            self.links_when_on = links
         preset = preset_of(self.value)
         if preset is not None:
             self.started_from = preset.key
@@ -330,10 +443,21 @@ class LookView(Shared[CaptionLook]):
     def set_word_links(self, links: WordLinks) -> None:
         self.change(replace(self.value, word_links=links))
 
-    def set_links_shown(self, on: bool) -> None:
-        """A caption window's word links button (249, F9): off, or on the
-        way they were last shown - Colours if they never were."""
-        self.set_word_links(self.links_when_on if on else WordLinks.OFF)
+    def set_links_shown(self, on: bool, readings: tuple[str, ...] = ()) -> None:
+        """A caption window's word links button (249, F9): the whole
+        learning view in one click (`learning_view`, 446) - word links the
+        way they were last shown, with their lines if they never were, and
+        `readings`, the reading lines of the window clicked - or off,
+        back to how it was before."""
+        if on == (self.value.word_links is not WordLinks.OFF):
+            return
+        if on:
+            self.unlinked = self.value
+        self.change(
+            learning_view(self.value, on, self.links_when_on, readings, self.unlinked)
+        )
+        if not on:
+            self.unlinked = None
 
     def set_link_detail(self, detail: LinkDetail) -> None:
         self.change(replace(self.value, link_detail=detail))
@@ -350,8 +474,58 @@ class LookView(Shared[CaptionLook]):
     def set_link_gap(self, gap: LinkGap) -> None:
         self.change(replace(self.value, link_gap=gap))
 
+    def set_reading_line(self, language: str, on: bool) -> None:
+        """`language`'s reading line on or off - pinyin above Chinese, in
+        captions and translations alike (369, decision 0155)."""
+        now = set(self.value.reading_lines)
+        now = now | {language} if on else now - {language}
+        self.change(replace(self.value, reading_lines=tuple(sorted(now))))
+
+    def set_reading_size(self, size: ReadingSize) -> None:
+        self.change(replace(self.value, reading_size=size))
+
+    def set_reading_past(self, past: bool) -> None:
+        """Pinyin over every word, or only over those past what the
+        learner knows."""
+        self.change(replace(self.value, reading_past=past))
+
+    def set_reading_system(self, system: ReadingSystem) -> None:
+        """Chinese's readings in pinyin or zhuyin (395)."""
+        self.change(replace(self.value, reading_system=system))
+
+    def set_reading_colour(self, colour: ReadingColour) -> None:
+        """Pinyin in its line's colour, its word link's, or the one picked
+        (395)."""
+        self.change(replace(self.value, reading_colour=colour))
+
+    def set_reading_custom(self, colour: str) -> None:
+        """The colour picked for pinyin ("#rrggbb"): chosen as it's picked."""
+        self.change(
+            replace(
+                self.value, reading_custom=colour, reading_colour=ReadingColour.CUSTOM
+            )
+        )
+
+    def set_said_in_link_colours(self, on: bool) -> None:
+        """Linked words in what was said in their link's colour, or their
+        line's (395, 431)."""
+        self.change(replace(self.value, said_in_link_colours=on))
+
+    def set_translation_in_link_colours(self, on: bool) -> None:
+        """Linked words in the translation in their link's colour, or their
+        line's (431)."""
+        self.change(replace(self.value, translation_in_link_colours=on))
+
     def set_fade_after(self, seconds: float | None) -> None:
         self.change(replace(self.value, fade_after=seconds))
+
+    def set_pause_hidden_after(self, minutes: int | None) -> None:
+        """How long a hidden window listens (None: always; 335)."""
+        self.change(replace(self.value, pause_hidden_after=minutes))
+
+    def set_show_on_speech(self, on: bool) -> None:
+        """A hidden window comes back when its app's speech starts (335)."""
+        self.change(replace(self.value, show_on_speech=on))
 
     def set_arrival(self, arrival: str) -> None:
         """How new captions arrive (an `Arrival`'s value; 267)."""
@@ -360,11 +534,39 @@ class LookView(Shared[CaptionLook]):
     def reset(self) -> None:
         """The look as Polyglotic first had it - the look only: the
         windows' places are Home's "Reset positions" (248's section 2.2)."""
-        self.change(look_defaults(self.value))
+        self.change(look_defaults(self.value, self.first))
 
     def set_lab(self, lab: CaptionLab) -> None:
         """Settings > Captions > Lab's values (`views.lab`, 284)."""
         self.change(replace(self.value, lab=lab))
+
+    def set_filled(self, on: bool) -> None:
+        """A caption window's filled lines button (372): New layout, Line by
+        line and captions run on, together - off again, back to what they
+        were before it turned them on (`CaptionLab.with_filled`), as kept
+        while the app runs."""
+        lab = self.value.lab
+        if on == lab.filled:
+            return
+        if on:
+            self.unfilled = lab
+        self.set_lab(lab.with_filled(on, self.unfilled))
+        if not on:
+            self.unfilled = None
+
+    def set_lined_up(self, on: bool) -> None:
+        """A caption window's parts lined up button (372): on, with New
+        layout - however captions fill the width; off again, New layout
+        back to what it was before (`CaptionLab.with_lined_up`), as kept
+        while the app runs."""
+        lab = self.value.lab
+        if on == lab.lined_up:
+            return
+        if on:
+            self.unlined = lab
+        self.set_lab(lab.with_lined_up(on, self.unlined))
+        if not on:
+            self.unlined = None
 
     def reset_lab(self) -> None:
         """ "Reset the lab": every Lab value back to the app without it."""

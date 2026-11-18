@@ -1,4 +1,12 @@
-"""Words for Anki as a CSV file (MVP.md; projects 015 and 089).
+"""Words for Anki as a CSV file (MVP.md; projects 015 and 089) - and
+saved sentences (polyglotic-hq 459: "Anki card Front and back should be
+similar to how words works now"): a sentence's note has its own GUID
+(`sentence_guid`), what was said on the front with its saved words in
+`<b>`, and on the back the same with its key word links underlined, each
+link its own colour on both sides (`LINK_COLOURS`), then the translation
+and who said it. In the CSV, a sentence is a row after the words, as
+Basic's front and back; in the deck file, a note type of its own per
+language (`ports.anki_deck.DeckSentence`).
 
 Anki imports UTF-8 text with fields separated by commas, a field holding a
 comma, a quote or a line break in quotation marks, and (from Anki 2.1.54)
@@ -68,11 +76,13 @@ import csv
 import html
 import io
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
-from polyglotic_desktop.ports.anki_deck import DeckNote
+from polyglotic_desktop.core.learning.saved_words import SavedWord
+from polyglotic_desktop.core.learning.sentences import SavedSentence
+from polyglotic_desktop.ports.anki_deck import DeckNote, DeckSentence
 
 HEADERS = (
     "#separator:Comma",
@@ -110,8 +120,8 @@ class AnkiNote:
     the word last changed in the app (its text or its line)."""
 
     entry_id: str
-    headword: str  # simplified Chinese, or the English word
-    traditional: str  # "" for English
+    headword: str  # simplified Chinese, or the word in any other language
+    traditional: str  # "" for every language but Chinese
     reading: str
     meaning: str
     sentence: str
@@ -136,18 +146,21 @@ def display_headword(note: AnkiNote) -> str:
 def marked_sentence(note: AnkiNote) -> str:
     """The sentence as HTML with the word in `<b>`: its simplified or
     traditional form where it occurs (a Chinese form anywhere; an English
-    one as a whole word, any case). Unchanged if the word isn't found in
-    it - an inflected English form, say."""
+    one as a whole word, any case; a word of any other language as a
+    whole word in any case - "Дом" for дом, never the дом in домой -
+    unless it is written without spaces between words, as Japanese and
+    Thai are: then anywhere). Unchanged if the word isn't found in it -
+    an inflected form, say."""
     sentence = note.sentence
     for form in sorted({note.headword, note.traditional} - {""}, key=len, reverse=True):
-        if form.isascii():
-            found = re.search(
-                rf"(?<!\w){re.escape(form)}(?!\w)", sentence, re.IGNORECASE
-            )
-            span = found.span() if found else None
-        else:
+        if _unspaced(form):
             at = sentence.find(form)
             span = (at, at + len(form)) if at >= 0 else None
+        else:
+            whole = re.search(
+                rf"(?<!\w){re.escape(form)}(?!\w)", sentence, re.IGNORECASE
+            )
+            span = whole.span() if whole else None
         if span:
             start, end = span
             return (
@@ -160,18 +173,41 @@ def marked_sentence(note: AnkiNote) -> str:
     return html.escape(sentence, quote=False)
 
 
+def _has_han(text: str) -> bool:
+    return any("一" <= c <= "鿿" for c in text)
+
+
+# scripts written without spaces between words: kana, Han, Thai, Lao,
+# Burmese, Khmer
+_UNSPACED = (
+    ("぀", "ヿ"),
+    ("一", "鿿"),
+    ("฀", "໿"),
+    ("က", "႟"),
+    ("ក", "៿"),
+)
+
+
+def _unspaced(text: str) -> bool:
+    return any(low <= c <= high for c in text for low, high in _UNSPACED)
+
+
 def language(note: AnkiNote) -> str:
-    """`zh` for a Chinese word (it has a Han character), else `en`."""
-    return "zh" if any("一" <= c <= "鿿" for c in note.headword) else "en"
+    """`zh` for a Chinese word (it has a Han character), else `en` - a
+    word of Chinese's or English's learning data."""
+    return "zh" if _has_han(note.headword) else "en"
 
 
-def deck_note(note: AnkiNote) -> DeckNote:
+def deck_note(note: AnkiNote, pack_language: str | None = None) -> DeckNote:
     """The word as a note for the deck file: the same escaped text and the
-    same GUID and tags as the CSV."""
+    same GUID and tags as the CSV. `pack_language`: the language the word
+    is learned in, for a pack language's learning data (`ru`; decision
+    0175) - a Japanese word has Han characters and isn't Chinese; None:
+    Chinese's or English's, told by the word (`language`)."""
     escape = html.escape
     return DeckNote(
         guid(note.entry_id),
-        language(note),
+        pack_language or language(note),
         escape(note.headword, quote=False),
         escape(note.traditional, quote=False)
         if note.traditional != note.headword
@@ -186,10 +222,14 @@ def deck_note(note: AnkiNote) -> DeckNote:
     )
 
 
-def deck_notes(notes: Iterable[AnkiNote]) -> tuple[DeckNote, ...]:
-    """The words as deck notes, oldest first - the CSV's order."""
+def deck_notes(
+    notes: Iterable[AnkiNote], pack_language: str | None = None
+) -> tuple[DeckNote, ...]:
+    """The words as deck notes, oldest first - the CSV's order; each in
+    `pack_language` if one is given (`deck_note`)."""
     return tuple(
-        deck_note(n) for n in sorted(notes, key=lambda n: (n.added, n.entry_id))
+        deck_note(n, pack_language)
+        for n in sorted(notes, key=lambda n: (n.added, n.entry_id))
     )
 
 
@@ -217,9 +257,11 @@ def _cell(text: str) -> str:
     return text
 
 
-def anki_csv(notes: Iterable[AnkiNote]) -> str:
-    """The words as the text of a CSV file for Anki, oldest first. Write it
-    as UTF-8."""
+def anki_csv(
+    notes: Iterable[AnkiNote], sentences: Iterable["SentenceNote"] = ()
+) -> str:
+    """The words as the text of a CSV file for Anki, oldest first, then the
+    saved sentences (`sentence_csv_rows`). Write it as UTF-8."""
     out = io.StringIO()
     out.write("\n".join(HEADERS) + "\n")
     writer = csv.writer(out, lineterminator="\n")
@@ -241,4 +283,186 @@ def anki_csv(notes: Iterable[AnkiNote]) -> str:
                 guid(note.entry_id),
             )
         )
+    writer.writerows(sentence_csv_rows(sentences))
     return out.getvalue()
+
+
+# -- saved sentences (polyglotic-hq 459) ---------------------------------------------
+
+SENTENCE_TAG = f"{TAG}::sentence"
+"""A saved sentence's tag, besides `TAG` and its category's: Anki's browser
+finds every sentence with `tag:polyglotic::sentence`."""
+LINK_COLOURS = ("#e0559a", "#2f9e8f", "#d98a1c", "#6a7fdb", "#8e5bd8", "#3f9e4d")
+"""The underlines of linked words, by link, in turn: a word and what it
+is in the translation share one. Mid-tone, so each shows on Anki's day
+and night backgrounds alike; inline, so a CSV's Basic cards show them
+too."""
+
+
+def sentence_guid(sentence_id: str) -> str:
+    """A saved sentence's note's stable ID: from the sentence's own ID."""
+    return f"polyglotic:sentence:{sentence_id}"
+
+
+@dataclass(frozen=True)
+class SentenceNote:
+    """A saved sentence as a note: `front` - what was said, its saved words
+    in `<b>` - `original` and `translation` with their linked words
+    underlined in the link's colour (all three HTML, escaped), the
+    speakers' labels, its category's name, when it was saved."""
+
+    sentence_id: str
+    front: str
+    original: str
+    translation: str
+    speakers: str
+    category: str
+    saved_at: datetime
+
+
+def sentence_note(
+    sentence: SavedSentence, words: Sequence[SavedWord], category: str
+) -> SentenceNote:
+    """`sentence` as a note: its saved `words` (those of its learning data)
+    marked on the front, its key links underlined on the back."""
+    originals: list[tuple[str, list[tuple[int, int, str]]]] = []
+    translations: list[tuple[str, list[tuple[int, int, str]]]] = []
+    link = 0
+    for part in sentence.parts:
+        on_original: list[tuple[int, int, str]] = []
+        on_translation: list[tuple[int, int, str]] = []
+        for each in part.links:
+            if not each.key:
+                continue
+            style = _underline(LINK_COLOURS[link % len(LINK_COLOURS)])
+            on_original.append((*each.original, style))
+            on_translation.append((*each.translation, style))
+            link += 1
+        originals.append((part.original, on_original))
+        translations.append((part.translation, on_translation))
+    return SentenceNote(
+        sentence.id,
+        _with_words(sentence.original, words),
+        _rendered(sentence.original, originals),
+        _rendered(sentence.translation, translations),
+        " · ".join(html.escape(s, quote=False) for s in sentence.speakers),
+        category,
+        sentence.saved_at,
+    )
+
+
+def _underline(colour: str) -> str:
+    return f'<span style="border-bottom: 2px solid {colour}">'
+
+
+def _with_words(text: str, words: Sequence[SavedWord]) -> str:
+    """`text` as HTML, each saved word's form in it in `<b>` - a Chinese
+    or Japanese form anywhere, any other a whole word in any case - longest
+    first, never overlapping."""
+    spans: list[tuple[int, int]] = []
+    forms = sorted({f for w in words for f in w.forms if f}, key=len, reverse=True)
+    for form in forms:
+        if _unspaced(form):
+            pattern = re.escape(form)
+        else:
+            pattern = rf"(?<!\w){re.escape(form)}(?!\w)"
+        for found in re.finditer(pattern, text, re.IGNORECASE):
+            start, end = found.span()
+            if not any(a < end and start < b for a, b in spans):
+                spans.append((start, end))
+    return _spanned(text, [(a, b, "<b>") for a, b in sorted(spans)])
+
+
+def _spanned(text: str, spans: Sequence[tuple[int, int, str]]) -> str:
+    """`text` as HTML with each `[start, end)` in the tag given (`<b>` or a
+    `<span ...>`): escaped, and overlapping or out-of-range spans left
+    out."""
+    out = []
+    at = 0
+    for start, end, tag in sorted(spans):
+        if start < at or end > len(text) or start >= end:
+            continue
+        close = "</b>" if tag == "<b>" else "</span>"
+        out.append(html.escape(text[at:start], quote=False))
+        out.append(tag + html.escape(text[start:end], quote=False) + close)
+        at = end
+    out.append(html.escape(text[at:], quote=False))
+    return "".join(out)
+
+
+def _rendered(
+    joined: str, pieces: Sequence[tuple[str, list[tuple[int, int, str]]]]
+) -> str:
+    """`joined` (the parts' text as the sentence joined it) as HTML, each
+    part's spans in place: each part found in it in turn. A part not found
+    there (it shouldn't be) leaves the rest unmarked."""
+    out = []
+    at = 0
+    for text, spans in pieces:
+        trimmed = text.strip()
+        if not trimmed:
+            continue
+        lead = len(text) - len(text.lstrip())
+        start = joined.find(trimmed, at)
+        if start < 0:
+            break
+        out.append(html.escape(joined[at:start], quote=False))
+        shifted = [(a - lead, b - lead, tag) for a, b, tag in spans]
+        out.append(_spanned(trimmed, shifted))
+        at = start + len(trimmed)
+    out.append(html.escape(joined[at:], quote=False))
+    return "".join(out)
+
+
+def _sentence_tags(note: SentenceNote) -> str:
+    tags = [TAG, SENTENCE_TAG]
+    if note.category:
+        tags.append(f"{TAG}::" + "_".join(note.category.split()))
+    return " ".join(tags)
+
+
+def sentence_csv_rows(notes: Iterable[SentenceNote]) -> list[tuple[str, ...]]:
+    """The sentences as rows of the CSV (`COLUMNS`), oldest first: Basic's
+    front is what was said, its saved words in bold; the back the same with
+    its links underlined, the translation, and who said it. Reading and
+    Meaning empty."""
+    rows: list[tuple[str, ...]] = []
+    for note in sorted(notes, key=lambda n: (n.saved_at, n.sentence_id)):
+        back = f"<div>{note.original}</div><div>{note.translation}</div>"
+        if note.speakers:
+            back += f"<div>{note.speakers}</div>"
+        rows.append(
+            (
+                _cell(note.front),
+                _cell(back),
+                _sentence_tags(note),
+                "",
+                "",
+                _cell(note.original),
+                _cell(note.translation),
+                sentence_guid(note.sentence_id),
+            )
+        )
+    return rows
+
+
+def deck_sentences(
+    notes: Iterable[SentenceNote], language: str
+) -> tuple[DeckSentence, ...]:
+    """The sentences as notes for the deck file, oldest first, in
+    `language`'s sentence note type and sub-deck (the language they were
+    spoken in)."""
+    return tuple(
+        DeckSentence(
+            sentence_guid(note.sentence_id),
+            language,
+            note.front,
+            note.original,
+            note.translation,
+            note.speakers,
+            note.sentence_id,
+            tuple(_sentence_tags(note).split()),
+            note.saved_at,
+        )
+        for note in sorted(notes, key=lambda n: (n.saved_at, n.sentence_id))
+    )

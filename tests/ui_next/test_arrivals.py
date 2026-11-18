@@ -135,9 +135,20 @@ def tops(window: CaptionWindow) -> dict[int, float]:
     return {line.key: top + rect.top() for line, _, rect in window.canvas.placed}
 
 
-@pytest.fixture
-def window(qapp: QApplication, clock: Clock) -> Iterator[CaptionWindow]:
-    shown = opened(qapp, clock)
+@pytest.fixture(
+    params=[1.0, 0.5, 2.0],
+    ids=["translation-100", "translation-50", "translation-200"],
+)
+def window(
+    qapp: QApplication, clock: Clock, request: pytest.FixtureRequest
+) -> Iterator[CaptionWindow]:
+    """At a translation the size of what was said, at half of it and at
+    twice it (polyglotic-hq 305): every slide and step holds at each."""
+    shown = opened(qapp, clock, translation_size=request.param)
+    if request.param > 1.0:  # taller: still two captions or more in view
+        shown.resize(shown.width(), 460)
+        qapp.processEvents()
+        shown.canvas.repaint()
     yield shown
     shown.close()
 

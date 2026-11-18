@@ -106,7 +106,9 @@ def unpack(build: Path, channel: str, out: Path, expected: str | None) -> Path:
                 raise NotTheBuild(f"{info.filename} would land outside the app folder")
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(z.read(info))
-    (app / STAMP).write_text(stamp.stamp(built["version"], channel), encoding="utf-8")
+    (app / STAMP).write_text(
+        stamp.stamp(built["version"], channel, built.get("built")), encoding="utf-8"
+    )
     from tools.package.build import write_icon  # Qt, only here
 
     write_icon(out / "Polyglotic.ico")

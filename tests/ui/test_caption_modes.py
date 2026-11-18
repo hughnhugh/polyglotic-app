@@ -7,6 +7,7 @@ tests/ui_next)."""
 
 import pytest
 
+from polyglotic_desktop.core.listening.settling import SETTLE_AFTER_SEC
 from polyglotic_desktop.core.listening.timing import (
     MAX_WAIT_FOR_TEXT_SEC,
     PREVIEW_AFTER_SEC,
@@ -166,3 +167,16 @@ def test_steady_s_lines_are_translated_and_dim_as_quick_preview_s() -> None:
     live = AppSettings(caption_mode_chosen="live", translate_live=False)
     assert not caption_look(live).preview
     assert not listening_settings(live).translate_live
+
+
+def test_how_long_text_may_still_change_is_3s_and_kept_within_0_to_3s() -> None:
+    """polyglotic-hq 309: 3s (decision 0088's) unless the learner chooses
+    less, down to none; a stored value out of range (or not a number)
+    takes the default."""
+    assert AppSettings.from_stored({}).text_settles_after == SETTLE_AFTER_SEC == 3.0
+    for kept in (0.0, 1.0, 2.5):
+        stored = AppSettings(text_settles_after=kept).to_stored()
+        assert AppSettings.from_stored(stored).text_settles_after == kept
+    for wrong in (-1.0, 3.5, "1", None):
+        stored = {"text_settles_after": wrong}
+        assert AppSettings.from_stored(stored).text_settles_after == 3.0

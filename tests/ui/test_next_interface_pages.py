@@ -19,6 +19,7 @@ from polyglotic_desktop.core.listening.sources import MIC
 from polyglotic_desktop.core.shared import Level
 from polyglotic_desktop.main import Hub, Panels, QtListener
 from polyglotic_desktop.ui.app import DesktopApp
+from polyglotic_desktop.ui.settings import TRANSCRIPT_LENGTHS
 from polyglotic_desktop.ui_next import style
 from polyglotic_desktop.ui_next.account_page import AccountPage
 from polyglotic_desktop.ui_next.caption_windows import CaptionWindows
@@ -26,6 +27,7 @@ from polyglotic_desktop.ui_next.help_page import HelpPage
 from polyglotic_desktop.ui_next.learning_page import LearningPage
 from polyglotic_desktop.ui_next.settings_page import SettingsPage
 from polyglotic_desktop.ui_next.views.placement import Rect
+from polyglotic_desktop.ui_next.views.transcript import TranscriptLength
 from polyglotic_desktop.ui_next.words_page import WordsPage
 
 
@@ -111,13 +113,6 @@ def test_words_follows_learning(hub: tuple[DesktopApp, Hub]) -> None:
     assert built.words.first.hearing.words.items
 
 
-def test_looks_wrongs_card_opens_over_the_new_window(
-    hub: tuple[DesktopApp, Hub],
-) -> None:
-    desktop, built = hub
-    assert desktop.looks_wrong.window is built.window
-
-
 def test_the_app_text_size_is_the_settings_both_ways_and_applies_at_once(
     hub: tuple[DesktopApp, Hub],
 ) -> None:
@@ -137,12 +132,33 @@ def test_the_app_text_size_is_the_settings_both_ways_and_applies_at_once(
         built.settings.text_size.choose("largest")
         assert desktop.settings.value.app_text_size == "largest"
         assert sizes == [1.45]
-        assert "font-size: 19px" in built.window.styleSheet()  # 13 px text
+        assert "font-size: 19px" in built.window.sidebar.styleSheet()  # 13 px text
         desktop.settings.update(app_text_size="normal")  # e.g. a settings reset
         assert built.settings.text_size.value() == "normal"
         assert sizes == [1.45, 1.0]
     finally:
         style.use_app_text_size("normal")
+
+
+def test_how_far_back_transcripts_go_is_the_settings_both_ways(
+    hub: tuple[DesktopApp, Hub],
+) -> None:
+    """Settings > App > Transcripts (polyglotic-hq 334): the newest 1,000
+    lines until chosen; chosen, it's saved; changed elsewhere, shown."""
+    desktop, built = hub
+    choice = built.settings.transcript_length
+    assert choice.value() == "newest"
+    choice.choose("three_hours")
+    assert desktop.settings.value.transcript_length == "three_hours"
+    desktop.settings.update(transcript_length="session")
+    assert choice.value() == "session"
+    ask = built.settings.transcript_ask.switch
+    assert ask.isChecked()  # Quit asks, until "Don't ask again"
+    ask.click()
+    assert desktop.settings.value.transcript_ask_at_quit is False
+    desktop.settings.update(transcript_ask_at_quit=True)
+    assert ask.isChecked()
+    assert tuple(length.value for length in TranscriptLength) == TRANSCRIPT_LENGTHS
 
 
 def test_words_says_whose_words_until_the_chosen_language_starts(

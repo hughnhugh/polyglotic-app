@@ -6,11 +6,12 @@ import json
 import logging
 import stat
 import threading
-from datetime import datetime
 from pathlib import Path
 
 import pytest
+from tests.stopped_clock import AFTER_MIDNIGHT_IN_MELBOURNE, stopped_at
 
+from polyglotic_desktop.adapters import json_settings
 from polyglotic_desktop.adapters.json_settings import JsonSettingsStore
 
 
@@ -39,13 +40,17 @@ def test_no_file_or_a_broken_one_gives_no_settings(tmp_path: Path) -> None:
 
 
 def test_a_broken_file_is_set_aside_and_said_so_not_written_over(
-    tmp_path: Path,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A corrupt settings file reset everything without a word and was then
     overwritten (polyglotic-hq 133, item 10). Now it's kept beside the
     settings, with the time, and `set_aside` names it for the interface."""
     path = tmp_path / "settings.json"
     path.write_text("{not json", encoding="utf-8")
+    # the clock stopped: a "today" read after the name was made was the next
+    # day when the PC's midnight fell between (polyglotic-hq 344)
+    now = AFTER_MIDNIGHT_IN_MELBOURNE
+    monkeypatch.setattr(json_settings, "datetime", stopped_at(now))
     store = JsonSettingsStore(path)
     assert store.load() == {}
     aside = store.set_aside
@@ -53,9 +58,8 @@ def test_a_broken_file_is_set_aside_and_said_so_not_written_over(
     assert aside.name.startswith("settings.unreadable-") and aside.suffix == ".json"
     # named in this PC's time, with its offset - not UTC's, which Home's
     # banner showed as yesterday in Australia (polyglotic-hq 184, 203)
-    today = datetime.now().astimezone()
-    assert aside.stem.startswith(f"settings.unreadable-{today:%Y%m%d}")
-    assert aside.stem.endswith(today.strftime("%z"))
+    here = now.astimezone()  # this PC's time and offset
+    assert aside.stem == f"settings.unreadable-{here:%Y%m%dT%H%M%S%z}"
     assert aside.read_text(encoding="utf-8") == "{not json"
     assert not path.exists()
     store.save({"theme": "ink"})

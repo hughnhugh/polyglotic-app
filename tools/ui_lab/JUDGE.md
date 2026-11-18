@@ -17,7 +17,9 @@ interface offscreen and writes `build/ui-lab/judge/`:
 | `judge.md` | Start here. Each surface's states and verdicts, the states 109 draws that the lab lacks, the interface's own words on screen (with any the glossary avoids), the checks' notes (Tab order, exemptions, elided text), and the checklist. |
 | `sheets/<surface>.png` | The contact sheet: every state of a surface on one image, labelled with its verdict, scaled down. |
 | `<state>.png` | Each state full size. Open one when a detail matters: a sheet halves the text. |
+| `annotated/<state>.png` | A state's picture with its findings drawn on it: a numbered box around each one that has a place (the design detector's), and every finding listed under the picture by its number. Only for states with findings. Read it beside `design.md`: the box shows at once whether a finding is the thing you think it is. |
 | `findings.md` | The code checks' findings: clipped and small text, contrast, accessible names, keyboard reach, horizontal scrollbars, squashed layouts. |
+| `design.md` | The design detector's findings (Impeccable's rules for Qt, `design.py`), by rule; **new** marks one not in the baseline, which fails the gate. The rest are the backlog to work down: fix one, then `design --accept` in the same pull request. |
 | `timings.md` | Every timed action against its budget. |
 | `goldens.md` | Each picture against its approved golden. |
 

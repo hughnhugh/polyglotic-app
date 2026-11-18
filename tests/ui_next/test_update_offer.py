@@ -44,13 +44,21 @@ class Rig:
         self.desktop = DesktopApp(MemorySettingsStore(), None, FakeAppList())
         self.settings, _keys = settings_page()
         self.restarts = 0
-        self.shown = UpdateShown(self.home, self.desktop, self.settings, self._restart)
+        self.anyway = 0
+        self.shown = UpdateShown(
+            self.home, self.desktop, self.settings, self._restart, self._anyway
+        )
 
     def _restart(self) -> None:
         self.restarts += 1
 
-    def found(self, found: Found, downloaded: Update | None) -> None:
-        self.shown.found(found, downloaded)  # as from the updates' thread
+    def _anyway(self) -> None:
+        self.anyway += 1
+
+    def found(
+        self, found: Found, downloaded: Update | None, held: Update | None = None
+    ) -> None:
+        self.shown.found(found, downloaded, held)  # as from the updates' thread
         QApplication.processEvents()
 
     def close(self) -> None:
@@ -155,12 +163,12 @@ def test_the_first_look_reaches_the_interface_built_after_it(
     updates = BackgroundUpdates(Updates(updater, ALPHA))
     updates.check()
     settle(updates)
-    told: list[tuple[Found, Update | None]] = []
-    updates.tell(lambda found, update: told.append((found, update)))
-    assert told == [(Found.READY, READY)]
+    told: list[tuple[Found, Update | None, Update | None]] = []
+    updates.tell(lambda found, update, held: told.append((found, update, held)))
+    assert told == [(Found.READY, READY, None)]
     updates.check()
     settle(updates)
-    assert told[-1] == (Found.READY, READY) and len(told) == 2
+    assert told[-1] == (Found.READY, READY, None) and len(told) == 2
 
 
 def test_restart_now_applies_it_as_the_app_quits(qapp: QApplication) -> None:
@@ -177,3 +185,101 @@ def test_restart_now_applies_it_as_the_app_quits(qapp: QApplication) -> None:
         "download 0.2.0",
         "apply at exit 0.2.0 and start",
     ]
+
+
+HELD = Update("0.2.0", notes=NOTES, size=91_960_000)
+
+
+def test_on_a_metered_connection_home_offers_download_anyway_with_its_size(
+    qapp: QApplication,
+) -> None:
+    """polyglotic-hq 345: found, not downloaded - Home says how big it is
+    and offers Download anyway; once it's downloaded, Restart now."""
+    rig = Rig()
+    try:
+        rig.found(Found.METERED, None, HELD)
+        assert not rig.home.update_card.isHidden()
+        assert rig.home.update_title.text() == (
+            "Version 0.2.0 is available: 92.0 MB to download."
+        )
+        assert rig.home.update_then.text().startswith("Your connection is metered")
+        anyway = button(rig, "home.update.download_anyway")
+        assert not anyway.isHidden() and anyway.isEnabled()
+        assert button(rig, "home.update.restart").isHidden()
+        assert rig.home.whats_new[0].text().startswith("• Hear a word")
+        assert not rig.desktop.install_update.isVisible()  # nothing to install yet
+        assert rig.settings.update_found.text().startswith(
+            "Version 0.2.0 is available. Your connection is metered"
+        )
+
+        anyway.click()
+        assert rig.anyway == 1
+        assert not anyway.isEnabled()
+        assert rig.home.update_then.text().startswith("Downloading.")
+
+        rig.found(Found.NOT_DOWNLOADED, None, HELD)  # it failed: again
+        assert anyway.isEnabled() and not anyway.isHidden()
+
+        rig.found(Found.READY, HELD)  # downloaded: Restart now
+        assert rig.home.update_title.text() == (
+            "Version 0.2.0 is ready. Restart to install it."
+        )
+        assert anyway.isHidden()
+        assert not button(rig, "home.update.restart").isHidden()
+        assert rig.desktop.install_update.isVisible()
+    finally:
+        rig.close()
+
+
+def test_a_size_not_known_isnt_said(qapp: QApplication) -> None:
+    rig = Rig()
+    try:
+        rig.found(Found.METERED, None, Update("0.2.0"))
+        assert rig.home.update_title.text() == "Version 0.2.0 is available."
+    finally:
+        rig.close()
+
+
+def test_later_stops_the_metered_offer_until_the_next_start(
+    qapp: QApplication,
+) -> None:
+    rig = Rig()
+    try:
+        rig.found(Found.METERED, None, HELD)
+        button(rig, "home.update.later").click()
+        rig.found(Found.METERED, None, HELD)
+        assert rig.home.update_card.isHidden()
+    finally:
+        rig.close()
+
+
+def test_download_anyway_runs_on_the_updates_thread_and_tells(
+    qapp: QApplication,
+) -> None:
+    updater = FakeUpdater({UpdateCheck(): HELD})
+    updates = BackgroundUpdates(Updates(updater, ALPHA, lambda: True))
+    told: list[tuple[Found, Update | None, Update | None]] = []
+    updates.tell(lambda found, update, held: told.append((found, update, held)))
+    updates.check()
+    settle(updates)
+    assert told[-1] == (Found.METERED, None, HELD)
+    updates.download_anyway()
+    settle(updates)
+    assert told[-1] == (Found.READY, HELD, None)
+    assert updater.calls == ["find None False", "download 0.2.0"]
+
+
+def test_the_update_card_is_framed_as_a_card_like_whats_new_beside_it(
+    qapp: QApplication,
+) -> None:
+    """The stylesheet draws a card's frame by its object name, `Card`: the
+    update card had another name, so on Home it was drawn bare beside
+    What's new's framed card (345's pictures, 361's rehearsal)."""
+    rig = Rig()
+    try:
+        rig.found(Found.READY, READY)
+        rig.home.show_whats_new("0.2.0", ("A line",))
+        assert rig.home.update_card.objectName() == "Card"
+        assert rig.home.update_card.objectName() == rig.home.whats_new_card.objectName()
+    finally:
+        rig.close()

@@ -9,4 +9,6 @@ outside core, behind `ports.updates.Updater`.
 
 - `updates`: when to look for, download and apply an update; which channel
   to follow (decision 0017).
+- `notes`: the release notes the app carries, and which of them show after
+  an update - once per version (decision 0137).
 """

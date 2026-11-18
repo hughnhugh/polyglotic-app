@@ -20,6 +20,7 @@ from polyglotic_desktop.ui.consent import WINDOW_FRAME, ConsentDialog
 from polyglotic_desktop.ui.level_picker import LevelPicker
 from polyglotic_desktop.ui.sign_in import SignInDialog
 from polyglotic_desktop.ui_next import style
+from polyglotic_desktop.ui_next.views import known_words
 
 WORK_AREA = QRect(0, 0, 1280, 672)
 
@@ -32,8 +33,12 @@ class LaptopScreen:
 
 
 FIRST_RUN: dict[str, Callable[[], QDialog]] = {
-    "the level, learning Chinese": lambda: LevelPicker(True),
-    "the level, learning English": lambda: LevelPicker(False),
+    "the level, learning Chinese": lambda: LevelPicker(
+        "Chinese", known_words.choices("zh"), known_words.not_sure("zh")
+    ),
+    "the level, learning English": lambda: LevelPicker(
+        "English", known_words.choices("en"), known_words.not_sure("en")
+    ),
     "the first screen": ConsentDialog,
     "the code": lambda: SignInDialog(lambda typed: None),
 }

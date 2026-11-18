@@ -123,7 +123,7 @@ def test_back_on_every_screen_after_the_first_keeping_what_was_entered(
     assert [with_back for _, with_back in seen] == [False, True, False, True]
     assert store.values.get("learning") is None  # none asked: chosen on Learning
     assert started.tools.is_chinese and started.tools is built.made[False]
-    assert started.tools.vocabulary.curve is None  # none asked: Home's line asks
+    assert started.tools.vocabulary.line is None  # none asked: Home's line asks
     assert built.closed == []  # the one built is the window's
     assert started.first is not None and started.first.choices == (True, False, False)
     assert started.first.agreement is not None
@@ -167,7 +167,7 @@ def test_no_level_is_asked(qapp: QApplication, monkeypatch: pytest.MonkeyPatch) 
     started = first_run(
         MemorySettingsStore({"learning": "en"}), Built(), AGREED, never_code
     )
-    assert not started.tools.is_chinese and started.tools.vocabulary.curve is None
+    assert not started.tools.is_chinese and started.tools.vocabulary.line is None
     assert started.first is None and not started.code_asked
 
 
@@ -177,6 +177,7 @@ def test_signed_in_the_code_isnt_asked(
     scripted(monkeypatch, [("ConsentDialog", agree())])
     started = first_run(MemorySettingsStore(), Built(), None, None)
     assert not started.code_asked
+    assert started.new  # nothing saved before: no What's new (345)
 
 
 def test_a_returning_learner_is_asked_nothing_not_even_the_code(
@@ -188,6 +189,7 @@ def test_a_returning_learner_is_asked_nothing_not_even_the_code(
     store = MemorySettingsStore({"learning": "zh"})
     started = first_run(store, Built(level_picked=True), AGREED, never_code)
     assert started.tools.is_chinese and not started.code_asked
+    assert not started.new  # an update's start: What's new can show (345)
 
 
 def test_a_screen_shown_again_doesnt_open_with_the_focus_on_back(

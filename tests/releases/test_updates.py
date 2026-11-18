@@ -240,3 +240,88 @@ def test_whats_new_cuts_a_long_line_at_a_word() -> None:
 def test_no_notes_no_whats_new() -> None:
     assert whats_new("") == ()
     assert whats_new("### New\n\nJust a paragraph.") == ()
+
+
+# -- on a metered connection (polyglotic-hq 345) -----------------------------------------
+
+
+def test_on_a_metered_connection_an_update_is_found_not_downloaded() -> None:
+    updater = FakeUpdater({UpdateCheck(): NEWER})
+    metered = [True]
+    updates = Updates(updater, ALPHA, lambda: metered[0])
+
+    assert updates.look() is Found.METERED
+    assert updates.held == NEWER and updates.downloaded is None
+    assert updater.calls == ["find None False"]  # nothing downloaded
+
+    metered[0] = False  # the next look, on a connection that isn't
+    assert updates.look() is Found.READY
+    assert updates.held is None and updates.downloaded == NEWER
+    assert updater.calls[-1] == "download 0.2.0"
+
+
+def test_download_anyway_downloads_what_was_held() -> None:
+    updater = FakeUpdater({UpdateCheck(): NEWER})
+    updates = Updates(updater, ALPHA, lambda: True)
+    assert updates.look() is Found.METERED
+
+    updater.fails = "download"
+    assert updates.download_anyway() is Found.NOT_DOWNLOADED
+    assert updates.held == NEWER  # still held: Download anyway again
+    updater.fails = ""
+    assert updates.download_anyway() is Found.READY
+    assert updates.downloaded == NEWER and updates.held is None
+    assert updates.look() is Found.READY  # still metered: already downloaded
+    assert updater.calls.count("download 0.2.0") == 2
+
+
+def test_download_anyway_with_nothing_held_does_nothing() -> None:
+    updater = FakeUpdater({})
+    updates = Updates(updater, ALPHA, lambda: True)
+    assert updates.look() is Found.UP_TO_DATE
+    assert updates.download_anyway() is Found.UP_TO_DATE
+    assert Updates(None, ALPHA).download_anyway() is Found.UP_TO_DATE  # the Store's
+    assert updater.calls == ["find None False"]
+
+
+def test_update_required_downloads_even_on_a_metered_connection() -> None:
+    """Without it there are no captions at all."""
+    updater = FakeUpdater({UpdateCheck(): NEWER})
+    updates = Updates(updater, ALPHA, lambda: True)
+    assert updates.update_now() is UpdateNow.RESTARTING
+    assert updater.calls == ["find None False", "download 0.2.0", "restart into 0.2.0"]
+
+
+def test_nothing_on_the_feed_any_more_nothing_held() -> None:
+    updater = FakeUpdater({UpdateCheck(): NEWER})
+    updates = Updates(updater, ALPHA, lambda: True)
+    updates.look()
+    updater.feed = {}
+    assert updates.look() is Found.UP_TO_DATE and updates.held is None
+
+
+def test_unmetered_the_connection_isnt_asked_about_once_downloaded() -> None:
+    asked: list[int] = []
+
+    def metered() -> bool:
+        asked.append(1)
+        return False
+
+    updater = FakeUpdater({UpdateCheck(): NEWER})
+    updates = Updates(updater, ALPHA, metered)
+    updates.check()
+    updates.check()
+    assert len(asked) == 1  # only before a download
+
+
+def test_the_offer_asks_to_download_anyway_until_one_is_ready_or_later() -> None:
+    offer = RestartOffer()
+    assert offer.found(None, held=NEWER)
+    assert offer.asking is None and offer.asking_to_download == NEWER
+    assert not offer.found(None, held=NEWER)  # the next look: nothing new
+    assert offer.found(NEWER)  # downloaded: Restart now instead
+    assert offer.asking == NEWER and offer.asking_to_download is None
+    later = RestartOffer()
+    later.found(None, held=NEWER)
+    later.later()
+    assert later.asking_to_download is None

@@ -7,6 +7,10 @@
   request, and the user may overrule it. Amends
   [0004](0004-mic-bleed-reference-is-system-audio.md): the reference is
   still the whole system's audio; how the mic is compared with it changes.
+- **Amended by:** [0154](0154-the-mic-bleed-check-cancels-what-played.md)
+  (the loudness correlation is no longer the only verdict: what played is
+  cancelled out of the mic, and what's left is judged; the lag and the
+  silence threshold stay)
 
 ## Situation
 

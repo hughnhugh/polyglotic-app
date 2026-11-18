@@ -62,7 +62,9 @@ def tools_for(
 
     if ready and isinstance(dictionary, ChineseDictionary):
         dictionary.prepare()
-    vocabulary = Vocabulary(MemoryLearningStore(), facts, scheme, Clock())
+    vocabulary = Vocabulary(
+        MemoryLearningStore(), facts, scheme, Clock(), placed=dictionary.words_past
+    )
     told = problem if callable(problem) else (lambda: problem)
     return LearningTools(vocabulary, dictionary, dictionary_problem=told)
 

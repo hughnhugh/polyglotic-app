@@ -212,6 +212,25 @@ class JsonSettingsStore:
             log.info("settings saved again")
 
 
+class ReadOnlySettings:
+    """The settings file read as it is, never written or set aside: for a
+    start that found another copy running, which owns the file
+    (polyglotic-hq 310) - its interface language, to say so in."""
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+
+    def load(self) -> dict[str, object]:
+        try:
+            values = json.loads(self.path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+        return values if isinstance(values, dict) else {}
+
+    def save(self, values: Mapping[str, object]) -> None:
+        """Nothing is written."""
+
+
 def _stamp(path: Path) -> tuple[int, int]:
     found = os.stat(path)
     return found.st_mtime_ns, found.st_size

@@ -14,6 +14,7 @@ the app's side testable in CI.
 
 import asyncio
 import json
+import ssl
 import threading
 import time
 from collections.abc import Awaitable, Callable
@@ -85,7 +86,8 @@ async def replacing(server: "FakeServer", websocket: ServerConnection) -> None:
 
 
 class FakeServer:
-    def __init__(self, port: int = 0) -> None:
+    def __init__(self, port: int = 0, tls: ssl.SSLContext | None = None) -> None:
+        """`tls`: a server context, for `https://` (wss) - 313's tests."""
         self.script: list[Behaviour] = []
         self.welcome = welcome_message()
         self.hellos: list[dict[str, Any]] = []
@@ -104,6 +106,7 @@ class FakeServer:
         """Each connection's User-Agent, as its handshake said (287)."""
         self._open: set[ServerConnection] = set()
         self._port = port
+        self._tls = tls
         self._loop = asyncio.new_event_loop()
         self._ready = threading.Event()
         self._server: Server | None = None
@@ -112,14 +115,19 @@ class FakeServer:
         self._ready.wait(5)
         assert self._server is not None
         self.port: int = self._server.sockets[0].getsockname()[1]
-        self.url: str = f"http://127.0.0.1:{self.port}"
+        scheme = "https" if tls is not None else "http"
+        self.url: str = f"{scheme}://127.0.0.1:{self.port}"
 
     def _run(self) -> None:
         asyncio.set_event_loop(self._loop)
 
         async def start() -> None:
             self._server = await serve(
-                self._handle, "127.0.0.1", self._port, ping_interval=None
+                self._handle,
+                "127.0.0.1",
+                self._port,
+                ping_interval=None,
+                ssl=self._tls,
             )
             self._ready.set()
 

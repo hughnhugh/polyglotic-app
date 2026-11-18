@@ -5,9 +5,10 @@ One transcript per app captioned (the user, 2026-11-06: "a different
 transcript per app"): that app's finished captions this session - and the
 user's own ("You") while its caption window shows my speech - in its
 caption window's language (or Original only: no translation lines), up
-to `TRANSCRIPT_LINES` listed - and the whole session (`SESSION_LINES`)
-kept for Copy all and Save, the list's foot saying so once they differ
-(polyglotic-hq 137). It collects from the moment the app is captioned,
+to `TRANSCRIPT_LINES` listed - or as far back as the learner chooses
+(`TranscriptLength`: three hours, the whole session; polyglotic-hq 334) -
+and the whole session (`SESSION_LINES`) kept for Copy all and Save, the
+list's foot saying so once they differ (polyglotic-hq 137). It collects from the moment the app is captioned,
 whether its window is open or not, so closing the window loses nothing.
 
 - **Search** filters the lines to those that match (in any row, any case)
@@ -19,6 +20,9 @@ whether its window is open or not, so closing the window loses nothing.
 - **What it remembers, per app** (`TranscriptChoices`): its own text size
   (A- / A+; 100 % at first) and whether its settings rail is open - one
   setting, `transcripts`, beside today's.
+- **Saved or not** (`needs_saving`): more than `ASK_FROM_LINES` lines
+  kept and some arrived since the learner last saved the whole session -
+  what Quit asks about (polyglotic-hq 334).
 - **Where it opens** (`beside`): beside its caption window - right, left,
   above or below - if there's room on that screen, else centred on it;
   720 x 520 at first, 520 x 320 at least. Never exactly over another open
@@ -32,10 +36,12 @@ style (decided in project 116; see `ui_next.transcript_window`).
 Holds caption text: never log it. Not thread-safe - the interface thread.
 """
 
+import bisect
 import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import datetime
+from enum import StrEnum
 
 from polyglotic_desktop.core.listening.captions import CaptionUpdate, Clause, Language
 from polyglotic_desktop.core.listening.delays import CaptionDelay
@@ -46,12 +52,14 @@ from polyglotic_desktop.ui_next.views.captions import (
     SESSION_LINES,
     TEXT_SIZES,
     TRANSCRIPT_LINES,
+    TRANSCRIPT_MOST_LINES,
     CaptionLines,
     Labels,
     Line,
 )
 from polyglotic_desktop.ui_next.views.placement import Rect, Size
 from polyglotic_desktop.ui_next.views.scroll import Scroll
+from polyglotic_desktop.ui_next.views.sentences import Piece
 
 STORED_KEY = "transcripts"
 """The setting the transcripts' own choices are stored under, by app."""
@@ -70,6 +78,47 @@ GAP = 12
 CASCADE = 32
 """How far down and right a transcript opens from another one already at
 its place (`clear_of`)."""
+
+
+THREE_HOURS = 3 * 3600.0
+ASK_FROM_LINES = 300
+"""A transcript with more lines than this - the 300 captions the app's
+history kept before transcripts kept more (polyglotic-hq 334's brief) -
+is asked about at Quit while it isn't saved."""
+
+
+class TranscriptLength(StrEnum):
+    """How far back every transcript's list goes - what its window scrolls
+    through and searches: the learner's choice in Settings > App
+    (polyglotic-hq 334; the user's feedback 16, 2026-11-13: "a 3-hour
+    lecture"). Copy all and Save have the whole session whichever it is
+    (`SESSION_LINES`), as before. The caption windows keep their own
+    150 lines: none of this reaches them."""
+
+    NEWEST = "newest"
+    """The newest 1,000 lines (`TRANSCRIPT_LINES`): as before 334, the default."""
+    THREE_HOURS = "three_hours"
+    """The lines of the last three hours, up to `TRANSCRIPT_MOST_LINES`."""
+    SESSION = "session"
+    """Every line this session, up to `TRANSCRIPT_MOST_LINES`."""
+
+    @property
+    def limits(self) -> tuple[int, float | None]:
+        """At most how many lines it lists, and from how many seconds back
+        (None: however long ago)."""
+        if self is TranscriptLength.THREE_HOURS:
+            return TRANSCRIPT_MOST_LINES, THREE_HOURS
+        if self is TranscriptLength.SESSION:
+            return TRANSCRIPT_MOST_LINES, None
+        return TRANSCRIPT_LINES, None
+
+    @classmethod
+    def from_stored(cls, stored: object) -> "TranscriptLength":
+        """The stored choice; anything else is the default."""
+        try:
+            return cls(str(stored))
+        except ValueError:
+            return cls.NEWEST
 
 
 @dataclass(frozen=True)
@@ -203,6 +252,59 @@ def _matches(line: Line, search: re.Pattern[str]) -> bool:
     return any(search.search(row.text) for row in line.rows)
 
 
+Spot = tuple[int, int, int]
+"""A place in a transcript's text: a line's key, a row of it (what was
+said, its translation), and a place in that row's text - in reading order
+as tuples are ordered (polyglotic-hq 343)."""
+
+
+def selected_spans(line: Line, one: Spot, other: Spot) -> list[tuple[int, int, int]]:
+    """What of `line` is selected between `one` and `other`: (row, from,
+    to) for each row with something selected."""
+    start, end = sorted((one, other))
+    found = []
+    for index, row in enumerate(line.rows):
+        here = (line.key, index)
+        if here < start[:2] or here > end[:2]:
+            continue
+        begin = start[2] if here == start[:2] else 0
+        stop = end[2] if here == end[:2] else len(row.text)
+        if begin < stop:
+            found.append((index, begin, stop))
+    return found
+
+
+def selected_text(lines: Sequence[Line], one: Spot, other: Spot) -> str:
+    """What's selected between `one` and `other` among `lines` (those
+    listed: a search's matches while searching), as they show: what was
+    said and its translation, each row on a line of its own, in order.
+    Lines scrolled out of view count too."""
+    start, end = sorted((one, other))
+    said = []
+    first = bisect.bisect_left(lines, start[0], key=lambda ln: ln.key)
+    for line in lines[first:]:
+        if line.key > end[0]:
+            break
+        said += [line.rows[i].text[a:b] for i, a, b in selected_spans(line, one, other)]
+    return "\n".join(said)
+
+
+def selected_pieces(lines: Sequence[Line], one: Spot, other: Spot) -> list[Piece]:
+    """What's selected between `one` and `other`, as rows with their
+    selected characters, in reading order: what `views.sentences` saves
+    (polyglotic-hq 459)."""
+    start, end = sorted((one, other))
+    found: list[Piece] = []
+    first = bisect.bisect_left(lines, start[0], key=lambda ln: ln.key)
+    for line in lines[first:]:
+        if line.key > end[0]:
+            break
+        found += [
+            (line, line.rows[i], a, b) for i, a, b in selected_spans(line, one, other)
+        ]
+    return found
+
+
 @dataclass(frozen=True, slots=True)
 class Foot:
     """What the line under the list says: `count` lines (or matches while
@@ -231,19 +333,22 @@ class Transcript:
         show_mic: bool = False,
         text_size: float = 1.0,
         clock: Callable[[], datetime] | None = None,
+        length: TranscriptLength = TranscriptLength.NEWEST,
     ) -> None:
         """`source`: the app; `mic`: the user's own mic, shown with
         `show_mic`. `target`: its caption window's language (None:
         Original only); `second`: the language shown for a clause already
-        in `target`. `clock`: when captions arrive (default: now)."""
+        in `target`. `clock`: when captions arrive (default: now).
+        `length`: how far back its list goes."""
         self.source = source
         self.mic = mic
         self.show_mic = show_mic
         self.second = second
+        self.length = length
         self.captions = CaptionLines(
             self._sources(),
             target,
-            keep=TRANSCRIPT_LINES,
+            keep=length.limits[0],
             keep_earlier=SESSION_LINES,
             second=second,
             yours=(mic,) if mic else (),
@@ -252,9 +357,13 @@ class Transcript:
             finished_only=True,
             clock=clock,
         )
+        if length.limits[1] is not None:
+            self.captions.set_limits(*length.limits)
         self.query = ""
         self.search_pattern: re.Pattern[str] | None = None
         self._searches = 0  # searches made: what shows changed
+        self._changes = 0  # lines added or changed: what a save must catch up on
+        self._saved_at: int | None = None  # `_changes` at the last whole save
         self._matching: tuple[int, tuple[Line, ...]] | None = None
         self._seen = -1  # the newest line's key when last following
 
@@ -308,6 +417,23 @@ class Transcript:
             return shown
         return [*self.captions.earlier, *shown]
 
+    @property
+    def kept(self) -> int:
+        """How many lines Copy all and Save have: the whole session's."""
+        return len(self.captions.earlier) + len(self.captions.lines)
+
+    def mark_saved(self) -> None:
+        """The whole session was just written to a file the learner chose -
+        not while searching: that writes only the matches."""
+        if self.search_pattern is None:
+            self._saved_at = self._changes
+
+    def needs_saving(self) -> bool:
+        """More than `ASK_FROM_LINES` lines kept, and a line added or
+        changed since the learner last saved the whole session: what Quit
+        asks about (polyglotic-hq 334)."""
+        return self.kept > ASK_FROM_LINES and self._changes != self._saved_at
+
     def languages(self) -> list[Language]:
         """The translations copied and saved: the window's language, and the
         second language for lines already in it; none for Original only."""
@@ -315,6 +441,14 @@ class Transcript:
         if target is None:
             return []
         return [target] if second is None or second == target else [target, second]
+
+    def seconds(self) -> dict[Language, Language]:
+        """The second language of the window's language, as `transcript`'s
+        exports read it: a line already in the window's language is
+        translated into the second, kept under the window's language
+        (polyglotic-hq 432)."""
+        target, second = self.target, self.second
+        return {} if target is None or second is None else {target: second}
 
     def foot(self) -> Foot:
         """What the line under the list says now (and, while following, the
@@ -337,7 +471,9 @@ class Transcript:
 
     def apply(self, update: CaptionUpdate) -> bool:
         """A caption update; True if a line that shows changed."""
-        return self.captions.apply(update)
+        changed = self.captions.apply(update)
+        self._changes += changed
+        return changed
 
     def use_checked(
         self,
@@ -346,7 +482,11 @@ class Transcript:
         language: Language | None,
         languages_heard: tuple[Language, ...],
     ) -> bool:
-        return self.captions.use_checked(caption_id, clauses, language, languages_heard)
+        changed = self.captions.use_checked(
+            caption_id, clauses, language, languages_heard
+        )
+        self._changes += changed
+        return changed
 
     # -- what its caption window chose -------------------------------------------------
 
@@ -380,6 +520,24 @@ class Transcript:
 
     def set_text_size(self, size: float) -> None:
         self.captions.set_text_size(size)
+
+    @property
+    def settle_after(self) -> float:
+        return self.captions.settle_after
+
+    def set_settle_after(self, seconds: float) -> None:
+        """How long listed text may still change (polyglotic-hq 309)."""
+        self.captions.set_settle_after(seconds)
+
+    def set_length(self, length: TranscriptLength) -> None:
+        """How far back the list goes, from now: shorter, its oldest lines
+        go into Copy all and Save only; longer, the lines kept there come
+        back to it (as text: no word links)."""
+        if length is self.length:
+            return
+        self.length = length
+        self.captions.set_limits(*length.limits)
+        self._matching = None
 
     def go_live(self) -> None:
         self.scroll.follow()

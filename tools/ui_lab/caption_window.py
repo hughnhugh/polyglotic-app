@@ -7,8 +7,9 @@ Original only, locked, scrolled back, paused, a notice, every notice
 seconds (new, or put back by Reset position: DECISIONS.md #56), Strip, my
 speech shown, the listening mark (in each timing - Steady, under Quick
 preview's line, under a live update - and still, with Windows' animations
-off: polyglotic-hq 260), Quick preview's line, and three windows at the
-start.
+off: polyglotic-hq 260), Quick preview's line, three windows at the
+start, the first window's set-up (and its spoken languages open), and the
+bar's language chip open (polyglotic-hq 465).
 
 Every window is over 1,000 made-up captions (it keeps its 150), at the
 default size on a 1920 x 1040 work area. Timed: a resize step (the top
@@ -19,6 +20,7 @@ arrival and every frame of its slide, in Panel and in Strip (step and
 slide, polyglotic-hq 267).
 """
 
+from collections.abc import Callable
 from dataclasses import replace
 from functools import partial
 
@@ -27,7 +29,13 @@ from PySide6.QtGui import QPainter, QPaintEvent, QRegion
 from PySide6.QtWidgets import QWidget
 
 from polyglotic_desktop.core.listening.captions import CaptionKind, CaptionUpdate
-from polyglotic_desktop.core.listening.sources import SourceId, SourceLabel
+from polyglotic_desktop.core.listening.display import RowKind, WordLinks
+from polyglotic_desktop.core.listening.selection import Place, Selection
+from polyglotic_desktop.core.listening.sources import (
+    WHOLE_SYSTEM,
+    SourceId,
+    SourceLabel,
+)
 from polyglotic_desktop.core.listening.timing import CaptionId
 from polyglotic_desktop.perf import budgets
 from polyglotic_desktop.ui.recorded_captions import APP, MIC
@@ -47,6 +55,7 @@ from polyglotic_desktop.ui_next.views.caption_window import (
     Notices,
     WindowChoices,
 )
+from polyglotic_desktop.ui_next.views.lab import CaptionLab, Fill, Placing
 from polyglotic_desktop.ui_next.views.placement import Edge, Rect
 from tools.ui_lab.lab import Lab, State
 from tools.ui_lab.new_parts import CAPTIONS, finished
@@ -57,6 +66,7 @@ LABELS = {
     SourceId("app-2"): SourceLabel("Video Player", "#a5d66f"),
     SourceId("app-3"): SourceLabel("Web Browser", "#f5a97f"),
     MIC: SourceLabel("You", "#7c9cff"),
+    WHOLE_SYSTEM: SourceLabel("Everything the PC plays", "#f5a97f"),
 }
 
 
@@ -360,14 +370,19 @@ class _Sheet(QWidget):
             sum(w.height() + self.GAP for w in windows) - self.GAP,
         )
 
-    def paintEvent(self, event: QPaintEvent) -> None:
-        painter = QPainter(self)
+    def places(self) -> list[tuple[QWidget, QPoint, float]]:
+        """Each window and where it's drawn (`checks.place_in`)."""
+        found: list[tuple[QWidget, QPoint, float]] = []
         y = 0
         for each in self.windows:
-            each.render(
-                painter, QPoint(0, y), QRegion(), QWidget.RenderFlag.DrawChildren
-            )
+            found.append((each, QPoint(0, y), 1.0))
             y += each.height() + self.GAP
+        return found
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        painter = QPainter(self)
+        for each, at, _scale in self.places():
+            each.render(painter, at, QRegion(), QWidget.RenderFlag.DrawChildren)
         painter.end()
 
 
@@ -375,7 +390,7 @@ NOTICES: list[tuple[Notice | None, float | None, bool, str | None]] = [
     (Notice.RECONNECTING, 4.0, False, None),
     (Notice.SERVER_BUSY, 24.0, False, None),  # the server full (208)
     # why the server can't be reached (251): ours, counting; the learner's, Home
-    (Notice.SERVER_DOWN, 8.0, False, None),
+    (Notice.CANT_REACH, 8.0, False, None),
     (Notice.BLOCKED, None, False, None),
     (Notice.NOT_SIGNED_IN, None, False, None),
     (Notice.UPDATE_NEEDED, None, False, None),
@@ -418,6 +433,14 @@ def empty(lab: Lab) -> QWidget:
     return shown
 
 
+def everything_empty(lab: Lab) -> QWidget:
+    """Everything the PC plays before its first caption - a new learner's
+    first window (484): anything the PC plays is captioned here."""
+    shown = window(lab, captions=0, source=WHOLE_SYSTEM)
+    hovered(lab, shown)
+    return shown
+
+
 def new_window(lab: Lab) -> QWidget:
     """Its first seconds, not hovered (DECISIONS.md #56): new, or just put
     back by Reset position, with nothing to read yet, it shows its panel
@@ -437,6 +460,115 @@ def my_speech(lab: Lab) -> QWidget:
     shown.resize(shown.width(), 300)
     lab.pump()
     return shown
+
+
+def filled(lab: Lab) -> QWidget:
+    """The Lab's Captions fill the width (polyglotic-hq 309): a caption's
+    clauses run on in lines as wide as the window, its translation in the
+    lines below - resized and with captions arriving, within the budgets
+    a clause a row is held to."""
+    look = CaptionLook(lab=CaptionLab(fill=Fill.STACKED))
+    shown = window(lab, look=look)
+    resize_steps(lab, shown)
+    new_captions(lab, [shown])
+    return shown
+
+
+def filled_lines(lab: Lab) -> QWidget:
+    """Captions fill the width, line by line (309's placement (b)): a line
+    of what was said, the line of its translation under it, cut where
+    their word links say both can be - narrower than the conversation's
+    clauses, so some are cut and one wraps."""
+    look = CaptionLook(lab=CaptionLab(fill=Fill.PAIRED))
+    shown = window(lab, look=look)
+    shown.resize(round(shown.width() * 0.42), shown.height())
+    lab.pump()
+    new_captions(lab, [shown])
+    return shown
+
+
+def flow_run_on(lab: Lab) -> QWidget:
+    """The Lab's New layout (polyglotic-hq 340, decision 0132): line by
+    line with captions running on into each other, word links in colours
+    - resized and with captions arriving, within the budgets a clause a
+    row is held to."""
+    look = CaptionLook(
+        lab=CaptionLab(flow=True, fill=Fill.PAIRED, run_on=True),
+        word_links=WordLinks.COLOURS,
+    )
+    shown = window(lab, look=look)
+    resize_steps(lab, shown)
+    new_captions(lab, [shown])
+    return shown
+
+
+def flow_arrows(lab: Lab) -> QWidget:
+    """The New layout with Arrows and parts lined up: a curve from each
+    linked word down to its counterpart in the line under it, captions
+    running on - Arrows were off whenever captions filled the width."""
+    look = CaptionLook(
+        lab=CaptionLab(flow=True, fill=Fill.PAIRED, run_on=True, aligned=True),
+        word_links=WordLinks.ARROWS,
+    )
+    shown = window(lab, look=look)
+    lab.pump()
+    shown.canvas.repaint()
+    return shown
+
+
+def flow_placed(placing: Placing) -> Callable[[Lab], QWidget]:
+    """The New layout with Arrows, parts lined up and captions running on,
+    its parts placed (polyglotic-hq 458): nearest their links - a part's
+    shorter piece over the words it is linked to - or a full line's
+    spread evenly."""
+
+    def run(lab: Lab) -> QWidget:
+        look = CaptionLook(
+            lab=CaptionLab(
+                flow=True, fill=Fill.PAIRED, run_on=True, aligned=True, placing=placing
+            ),
+            word_links=WordLinks.ARROWS,
+        )
+        shown = window(lab, look=look)
+        resize_steps(lab, shown)  # within the budgets packed lines are held to
+        new_captions(lab, [shown])
+        shown.canvas.repaint()
+        return shown
+
+    return run
+
+
+def _select(lab: Lab, shown: CaptionWindow, to: RowKind) -> CaptionWindow:
+    """Words selected from part way through the third caption from the
+    end (or the oldest in view) to part way through the newest's first clause on side `to`, as a
+    drag leaves them (polyglotic-hq 358)."""
+    shown.canvas.repaint()
+    lines = [line for line, _, _ in shown.canvas.placed]
+    first, last = lines[-min(3, len(lines))], lines[-1]
+    shown.held.hold(
+        Selection(Place(first.key, 0, 2, RowKind.ORIGINAL), Place(last.key, 0, 4, to))
+    )
+    lab.pump()
+    shown.canvas.repaint()
+    return shown
+
+
+def selected(lab: Lab) -> QWidget:
+    """Words selected across three captions, what was said alone, in a
+    clause a row with word links in colours (358): the highlight sits
+    behind the text and its links."""
+    look = CaptionLook(word_links=WordLinks.COLOURS)
+    return _select(lab, window(lab, look=look), RowKind.ORIGINAL)
+
+
+def flow_selected(lab: Lab) -> QWidget:
+    """The New layout, captions running on: a selection from what was said
+    to a translation takes both sides of every clause between (358)."""
+    look = CaptionLook(
+        lab=CaptionLab(flow=True, fill=Fill.PAIRED, run_on=True),
+        word_links=WordLinks.COLOURS,
+    )
+    return _select(lab, window(lab, look=look), RowKind.TRANSLATION)
 
 
 def listening(lab: Lab) -> QWidget:
@@ -515,6 +647,11 @@ class _Screen(QWidget):
         self.windows = windows
         self.resize(AREA.width // 2, AREA.height // 2)
 
+    def places(self) -> list[tuple[QWidget, QPoint, float]]:
+        """Each window and where it's drawn, at half its size
+        (`checks.place_in`)."""
+        return [(each, each.pos() / 2, 0.5) for each in self.windows]
+
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.scale(0.5, 0.5)
@@ -524,6 +661,109 @@ class _Screen(QWidget):
                 QWidget.RenderFlag.DrawChildren,
             )  # fmt: skip
         painter.end()
+
+
+def spoken_question(lab: Lab) -> QWidget:
+    """Detect has heard its app speak Mandarin steadily: the window asks
+    whether to always hear it as Mandarin (317, decision 0109)."""
+    shown = window(lab)
+    shown.suggest_spoken("zh")
+    lab.pump()
+    return shown
+
+
+class _Together(QWidget):
+    """A window and what opens over it or beside it (a top-level window of
+    its own), drawn where they are on the screen."""
+
+    def __init__(self, parts: list[QWidget]) -> None:
+        super().__init__()
+        self.parts = parts
+        self.left = min(p.x() for p in parts)
+        self.top = min(p.y() for p in parts)
+        right = max(p.x() + p.width() for p in parts)
+        bottom = max(p.y() + p.height() for p in parts)
+        self.resize(right - self.left, bottom - self.top)
+
+    def places(self) -> list[tuple[QWidget, QPoint, float]]:
+        return [
+            (each, QPoint(each.x() - self.left, each.y() - self.top), 1.0)
+            for each in self.parts
+        ]
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        painter = QPainter(self)
+        for each, at, _ in self.places():
+            each.render(painter, at, QRegion(), QWidget.RenderFlag.DrawChildren)
+        painter.end()
+
+
+def _first_window(lab: Lab) -> tuple[CaptionWindows, CaptionWindow]:
+    """A new PC's first caption window: it asks its languages (465)."""
+    windows = CaptionWindows(None, MIC, _areas, offer_set_up=True)
+    windows.set_labels(LABELS, "You")
+    windows.set_captioned([("Discord.exe", APP)])
+    shown = windows.windows["Discord.exe"]
+    shown.always_shown = True
+    shown.show()
+    lab.pump()
+    lab.closing.append(windows.close)
+    return windows, shown
+
+
+def set_up(lab: Lab) -> QWidget:
+    """The first caption window sets itself up (465, 449's 3A): its three
+    language choices filled in, and Start captions."""
+    _, shown = _first_window(lab)
+    asked = shown.set_up
+    assert asked is not None
+    return _Together([shown, asked])
+
+
+def first_heard(lab: Lab) -> QWidget:
+    """A new PC's first caption window once captions come (478): it shows
+    my speech from the start, so the learner's own lines are there, as
+    "You", beside the app's - and the first caption closed the set-up."""
+    windows, shown = _first_window(lab)
+    assert shown.choices.show_mic  # the first window's default
+    for n, update in enumerate(finished(CAPTIONS, APP)):
+        windows.apply(replace(update, source_id=MIC) if n % 4 == 3 else update)
+    lab.pump()
+    assert shown.set_up is None  # the first caption closed it
+    shown.resize(shown.width(), 300)  # taller, as my_speech: "You" in view
+    lab.pump()
+    return shown
+
+
+def set_up_spoken(lab: Lab) -> QWidget:
+    """The set-up with They speak's languages open inside it (465)."""
+    _, shown = _first_window(lab)
+    asked = shown.set_up
+    assert asked is not None
+    lab.time("set_up_spoken", asked.spoken.click, budget=budgets.CLICK)
+    if not asked.spoken_choices.isVisible():
+        asked.spoken.click()
+    lab.pump()
+    return _Together([shown, asked])
+
+
+def languages_chip(lab: Lab) -> QWidget:
+    """A later window's bar: "Detect → English ▾" opened - the three
+    language rows and Start new windows like this (465)."""
+    shown = window(lab)
+    hovered(lab, shown)
+
+    def toggle() -> None:
+        shown.toggle_languages()
+
+    for _ in range(6):  # open, close, open, ...: each a click
+        lab.time("languages_chip", toggle, budget=budgets.CLICK)
+    shown.toggle_languages()
+    lab.pump()
+    opened = shown.languages
+    assert opened is not None
+    lab.closing.append(shown.close)
+    return _Together([shown, opened])
 
 
 def three_windows(lab: Lab) -> QWidget:
@@ -560,13 +800,27 @@ STATES = [
         ("notice", notice, True),
         ("notices", notices, True),
         ("empty", empty, True),
+        ("everything_empty", everything_empty, True),
         ("new", new_window, True),
         ("my_speech", my_speech, True),
+        ("filled", filled, True),
+        ("filled_lines", filled_lines, True),
+        ("flow_run_on", flow_run_on, True),
+        ("flow_arrows", flow_arrows, True),
+        ("flow_nearest", flow_placed(Placing.NEAREST), True),
+        ("flow_evenly", flow_placed(Placing.EVENLY), True),
+        ("selected", selected, True),
+        ("flow_selected", flow_selected, True),
         ("listening", listening, True),
         ("listening_preview", listening_preview, True),
         ("listening_live", listening_live, True),
         ("listening_still", listening_still, True),
         ("preview_line", preview_line, True),
         ("three_windows", three_windows, True),
+        ("spoken_question", spoken_question, True),
+        ("set_up", set_up, False),
+        ("set_up_spoken", set_up_spoken, False),
+        ("first_heard", first_heard, False),
+        ("languages_chip", languages_chip, False),
     )
 ]

@@ -24,7 +24,7 @@ def button(built: Built, name: str) -> QPushButton:
 def test_shown_until_the_level_is_set(qapp: QApplication) -> None:
     built = Built(MemorySettingsStore(), tools=True)
     tools = built.desktop.tools
-    assert tools is not None and tools.vocabulary.curve is None
+    assert tools is not None and tools.vocabulary.line is None
     assert line_shown(built)
     tools.vocabulary.set_level(Level(tools.vocabulary.scheme, 2))
     assert not line_shown(built)

@@ -1,6 +1,7 @@
 # 0062 The languages being learned are a list; one full dictionary's learning data runs at a time
 
-- **Status:** accepted
+- **Status:** accepted; its "one full dictionary runs at a time" replaced by
+  [0095](0095-every-full-language-learned-is-open-at-once.md) (2026-11-14)
 - **Date:** 2026-11-09
 - **Decided by:** Claude, for polyglotic-hq project 262 (248's IA.md
   section 3, answered "Q2 A, Q3 A" by the user on 2026-11-09: "Go with

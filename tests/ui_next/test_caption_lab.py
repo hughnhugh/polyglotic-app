@@ -264,9 +264,12 @@ def test_resetting_the_look_keeps_the_lab() -> None:
     assert view.value.lab == lab
 
 
-def test_the_settings_page_has_the_lab_last_in_captions(qapp: QApplication) -> None:
+def test_the_settings_page_has_the_lab_in_its_own_section_last(
+    qapp: QApplication,
+) -> None:
     page = page_with()
-    column = page.section["captions"].layout()
+    assert list(page.section)[-1] == "lab"  # its own, last (304)
+    column = page.section["lab"].layout()
     assert column is not None
     last = column.itemAt(column.count() - 1)
     assert last is not None and last.widget() is page.lab

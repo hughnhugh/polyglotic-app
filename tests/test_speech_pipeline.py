@@ -10,6 +10,7 @@ import io
 import logging
 import re
 import threading
+from collections.abc import Callable
 
 import numpy as np
 import pytest
@@ -29,7 +30,7 @@ from polyglotic_desktop.core.listening.timing import (
 from polyglotic_desktop.platform import speech_pipeline
 from polyglotic_desktop.platform.speech_detection import Audio, FrameResult
 from polyglotic_desktop.platform.speech_pipeline import Ready, SpeechPipeline
-from polyglotic_desktop.ports.capture import AudioCallback, SourceCategory
+from polyglotic_desktop.ports.capture import NOT_ALLOWED, AudioCallback, SourceCategory
 
 SR = 16000
 T0 = 500.0
@@ -270,6 +271,24 @@ def test_the_pipeline_notes_when_sound_and_speech_were_heard() -> None:
     assert heard.first_sound is not None and heard.last_speech is not None
     pipeline.remove_source(MIC.id)
     assert MIC.id not in pipeline.activity()
+
+
+class NotAllowedCapture(FakeCapture):
+    """A capture the OS gives only silence, saying it isn't allowed (411)."""
+
+    @property
+    def error(self) -> str | None:
+        return NOT_ALLOWED
+
+
+def test_a_capture_the_os_does_not_allow_is_noted_for_the_check() -> None:
+    """polyglotic-hq 411: macOS records silence when its permission isn't
+    given; the capture says so, and the "no captions?" check hears it."""
+    pipeline = SpeechPipeline(LoudnessDetector, CaptionTiming())
+    pipeline.add_source(APP, NotAllowedCapture(pattern((1.0, False))))
+    pipeline.add_source(MIC, FakeCapture(pattern((1.0, False))))
+    activity = pipeline.activity()
+    assert activity[APP.id].not_allowed and not activity[MIC.id].not_allowed
 
 
 def test_finished_speech_is_kept_as_sent_and_cleared_on_delete_and_close() -> None:
@@ -549,3 +568,31 @@ def test_dictation_never_silences_an_app() -> None:
     kept = buffer.slice(HELD_AT, LET_GO_AT, pad=0)
     assert kept is not None and np.any(kept)
     pipeline.stop()
+
+
+def test_the_mic_has_a_detector_of_its_own_and_every_other_source_the_same() -> None:
+    """polyglotic-hq 352, decision 0145: the mic's speech detection raises
+    quiet audio less (`new_mic_detector`); every other source's is made by
+    `new_detector`. Without a mic's own, the mic's is `new_detector`'s too."""
+    made: list[str] = []
+
+    def detector(kind: str) -> Callable[[], LoudnessDetector]:
+        def make() -> LoudnessDetector:
+            made.append(kind)
+            return LoudnessDetector()
+
+        return make
+
+    sound = pattern((0.1, True))
+    timing = CaptionTiming(live_update_interval=None)
+    pipeline = SpeechPipeline(
+        detector("every source"), timing, new_mic_detector=detector("the mic")
+    )
+    pipeline.add_source(APP, FakeCapture(sound))
+    pipeline.add_source(MIC, FakeCapture(sound))
+    assert made == ["every source", "the mic"]
+
+    made.clear()
+    alone = SpeechPipeline(detector("every source"), CaptionTiming(None))
+    alone.add_source(MIC, FakeCapture(sound))
+    assert made == ["every source"]

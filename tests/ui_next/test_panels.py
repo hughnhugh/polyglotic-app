@@ -73,9 +73,11 @@ def test_second_language_boxes_are_reached_under_spoken_language(
     panel.show()
     qapp.processEvents()
     stops = tab_stops(panel)
-    spoken = stops.index(panel.spoken.buttons[-1])
-    assert stops[spoken + 1 : spoken + 3] == [panel.second["en"], panel.second["ja"]]
-    assert stops[spoken + 3] is panel.translate_live
+    spoken = stops.index(panel.spoken.chip)
+    # then Show Mandarin in's two choices (375)
+    assert stops[spoken + 1 : spoken + 3] == panel.mandarin_script.buttons
+    assert stops[spoken + 3 : spoken + 5] == [panel.second["en"], panel.second["ja"]]
+    assert stops[spoken + 5] is panel.translate_live
     panel.close()
 
 
@@ -456,3 +458,36 @@ def test_live_updates_every_says_the_first_waits_for_a_second(
     finally:
         panel.deleteLater()
         QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
+
+def test_how_long_text_may_still_change_is_chosen_beside_the_timing(
+    qapp: QApplication,
+) -> None:
+    """polyglotic-hq 309 (the user: "make this a configurable setting.
+    After 0s - 3seconds"): one choice for every timing, 3s as it was -
+    Steady too, whose dim line and joined captions it settles. Its line
+    says what a shorter time costs in words, with no figure: 309's were
+    measured on read speech only, and no accuracy figure is said that
+    polyglotic-hq hasn't cleared (329's QA; 330)."""
+    handed: list[Timing] = []
+    view = TimingView(Timing(), handed.append)
+    panel = TimingPanel(view)
+    panel.show()
+    for mode in (CaptionMode.STEADY, CaptionMode.PREVIEW, CaptionMode.LIVE):
+        panel.mode.choose(mode)
+        assert panel.settle.isVisible()
+    assert panel.settle.currentData() == 3.0
+    items = range(panel.settle.count())
+    assert [panel.settle.itemData(i) for i in items] == [0.0, 1.0, 2.0, 3.0]
+    assert panel.settle.itemText(0) == "0s"
+    said = " ".join(found.text() for found in panel.settle_row.findChildren(QLabel))
+    assert "fewer words change while you read" in said
+    assert "more mistakes stay as first heard" in said
+    assert not any(char.isdigit() for char in said), said
+    handed.clear()
+    panel.settle.setCurrentIndex(1)
+    assert view.value.settle_after == 1.0 and handed == [view.value]
+    view.follow(Timing(CaptionMode.LIVE, 1.5, 3.0, 0.5))  # set by hand, elsewhere
+    assert panel.settle.currentData() == 0.5 and len(handed) == 1
+    panel.close()
+    _gone(panel)

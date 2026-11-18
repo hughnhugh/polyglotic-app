@@ -31,6 +31,24 @@ names (`set_captioned`: an app's key - its name - and its source id; or
   window (before 2026-11-09: `set_spoken_per_source`) hears them all as
   the one they name, or as Detect when they differ - and a window naming
   one then says so (`CaptionWindow.spoken_fallback`).
+- **Naming the language, suggested** (polyglotic-hq 317, decision 0109):
+  a window whose app is heard as Detect and has spoken one language
+  steadily (`core.listening.spoken.SteadyLanguage`, its own app's finished
+  captions only) asks "Always hear it as ...?" (`spoken_nudge`); Not now is
+  remembered by the window's key (`StoredWindows.declined_spoken`).
+- **A window sets itself up** (polyglotic-hq 465, 449's 3A; 478): with
+  `offer_set_up` (`main`'s), a caption window that opens asks its three
+  language choices in it (`caption_set_up`) - every one, until the
+  learner chooses Use as my default in one (`StoredWindows.set_up`; a
+  window's chip brings it back, "Ask when a window opens"). A learner
+  with windows from before it came is never asked. With Use as my
+  default its answers are how new windows start: Start new windows like
+  this goes on (`StoredWindows.start_like_this`), so a spoken language
+  named there carries to the next window; any window's language chip
+  turns it off or on again. Without it, a new window hears Detect, as
+  before. A new learner's first window shows my speech too, its switch
+  in the set-up (478); Home's sample's window - a trial - neither asks
+  nor counts as the first.
 - **Joined or separate** (109's 2a): "Join windows" puts every window
   into one (`joined_window`), a column each in the apps' order, at the
   place and height of the window it came from, as wide as they are
@@ -49,6 +67,16 @@ names (`set_captioned`: an app's key - its name - and its source id; or
   a second (`ON_TOP_EVERY_SEC`). Windows' band is `platform`'s (`ports.system.OnTop`).
   A lookup card open while a window shows after it goes back above it
   (`_card_on_top`): a window shown comes up at the top of the band.
+- **Hidden too long** (polyglotic-hq 335, decision 0128): each window the
+  learner hid has its own timer (`core.listening.hidden`); past the
+  learner's limit (Settings > Captions > Behaviour: 5, 15 or 60 minutes,
+  or never) its app's listening pauses - `paused_sources`, which `main`
+  hands the speech pipeline: nothing of it is sent, as while paused, and
+  the mic's only once every window showing my speech is paused. Showing
+  the windows starts it again. While a hidden window still captions its
+  app's speech, Home and the tray say so (`sight`, `sight_changed`); a
+  learner who asked for it gets the windows back when speech starts in
+  one (`show_wanted`).
 
 Holds caption text through its windows: never log it.
 """
@@ -68,21 +96,27 @@ from polyglotic_desktop.core.listening.captions import (
     Language,
 )
 from polyglotic_desktop.core.listening.display import ListeningMark
+from polyglotic_desktop.core.listening.hidden import HiddenWindows, Sight
 from polyglotic_desktop.core.listening.recheck import RecheckResult
 from polyglotic_desktop.core.listening.settings import agreed_language
-from polyglotic_desktop.core.listening.sources import SourceId, SourceLabel
+from polyglotic_desktop.core.listening.settling import SETTLE_AFTER_SEC
+from polyglotic_desktop.core.listening.sources import SAMPLE, SourceId, SourceLabel
+from polyglotic_desktop.core.listening.spoken import SteadyLanguage
 from polyglotic_desktop.core.listening.timing import (
     MAX_WAIT_FOR_TEXT_SEC,
     CaptionId,
     CaptionMode,
 )
+from polyglotic_desktop.core.shared import EntryId
 from polyglotic_desktop.perf import spans
 from polyglotic_desktop.ports.settings import SettingsStore
 from polyglotic_desktop.ports.system import OnTop
 from polyglotic_desktop.ui_next.caption_window import (
     ACCENT,
+    READING_HINT_SEC,
     CaptionWindow,
     notice_text,
+    reading_hint,
     to_rect,
     word_hint,
     work_areas,
@@ -90,6 +124,7 @@ from polyglotic_desktop.ui_next.caption_window import (
 from polyglotic_desktop.ui_next.joined_window import JoinedWindow
 from polyglotic_desktop.ui_next.languages import taken_off, target_languages
 from polyglotic_desktop.ui_next.lookup_card import Action, LookupCard
+from polyglotic_desktop.ui_next.reading_lines import language_of
 from polyglotic_desktop.ui_next.settings_popover import KeyState
 from polyglotic_desktop.ui_next.views import placement
 from polyglotic_desktop.ui_next.views.app_choices import AppChoice
@@ -112,6 +147,9 @@ SAVE_AFTER_MS = 400
 text size steps is one save)."""
 ON_TOP_EVERY_SEC = 1.0
 """A caption puts the windows back on top of a game at most this often."""
+HIDDEN_TICK_MS = 1000
+"""How often, while a window is hidden, its timer and what Home and the
+tray say of it are looked at."""
 
 log = logging.getLogger(__name__)
 """Each window shown, hidden or closed, and why - by its place in the list,
@@ -120,12 +158,17 @@ will minimize")."""
 
 
 class CaptionWindows(QObject):
+    look_changed = Signal()
+    """The look changed (`set_look`): transcripts follow its reading
+    lines (369)."""
     languages_changed = Signal()
     """A window's language changed, or the windows or who shows my speech
     did: the server's settings follow (`targets`)."""
     mic_wanted = Signal(bool)
     """Whether any window shows my speech: the mic is captured only then."""
     lock_wanted = Signal()
+    unlock_wanted = Signal()
+    """A locked window's Unlock, where the mouse rested on its lock (398)."""
     hide_wanted = Signal()
     stop_wanted = Signal(str)
     report_wanted = Signal()
@@ -133,10 +176,19 @@ class CaptionWindows(QObject):
     """An app's key: stop captioning it (its window's close)."""
     transcript_wanted = Signal(str)
     all_settings_wanted = Signal()
-    links_wanted = Signal(bool)
-    """A window's word links button: on or off, for every window (249, F9)."""
+    links_wanted = Signal(bool, tuple)
+    """A window's word links button: on or off, for every window (249, F9),
+    with that window's reading lines (446)."""
+    fill_wanted = Signal(bool)
+    """A window's filled lines button: on or off, for every window (372)."""
+    aligned_wanted = Signal(bool)
+    """A window's parts lined up button: on or off, for every window (372)."""
+    said_colours_wanted = Signal(bool)
+    """A window's popover: linked words in what was said in their link's
+    colour, on or off, for every window (431)."""
+    translation_colours_wanted = Signal(bool)
+    """And in the translation (431)."""
     timing_wanted = Signal(str)
-    looks_wrong = Signal(str)
     app_wanted = Signal(str, str)
     """A window's key, and an app's name: caption that app there instead
     (its settings' Captioning list, F12, 249)."""
@@ -149,6 +201,18 @@ class CaptionWindows(QObject):
     front_changed = Signal()
     """Another app's window came to the foreground (from any thread): the
     windows go back on top if it's a game that is itself always on top."""
+    paused_changed = Signal()
+    """The sources whose listening is paused - their windows hidden too
+    long - changed (`paused_sources`)."""
+    sight_changed = Signal()
+    """A window became shown, hidden, captioning while hidden or paused
+    (`sight`): Home and the tray say it."""
+    show_wanted = Signal()
+    """Speech started in a hidden window and the learner asked for the
+    windows back then (the look's `show_on_speech`)."""
+    set_up_done = Signal()
+    """A window's set-up went (465; 478: on every open until Use as my
+    default)."""
 
     def __init__(
         self,
@@ -159,12 +223,16 @@ class CaptionWindows(QObject):
         keys: KeyState | None = None,
         learner: Learner | None = None,
         on_top: OnTop | None = None,
+        offer_set_up: bool = False,
     ) -> None:
         """`keys`: whether Esc or a mouse button is held anywhere (from
         `platform`, by way of `main`), for closing a settings popover;
         `learner`: the learning tools, for the windows' highlights and the
-        lookup; `on_top`: Windows' always-on-top band (`keep_on_top`)."""
+        lookup; `on_top`: Windows' always-on-top band (`keep_on_top`);
+        `offer_set_up`: a window that opens asks its languages, until Use as
+        my default (465, 478)."""
         super().__init__(parent)
+        self.offer_set_up = offer_set_up
         self.keys = keys
         self.on_top = on_top
         self._on_top_at = -ON_TOP_EVERY_SEC
@@ -198,6 +266,7 @@ class CaptionWindows(QObject):
         self.look = CaptionLook()
         self.timing = CaptionMode.STEADY
         self.longest_wait = MAX_WAIT_FOR_TEXT_SEC
+        self.settle_after = SETTLE_AFTER_SEC
         self.second_languages: dict[Language, Language] = {}
         self.spoken_per_source: bool | None = None
         """Whether the server uses each window's spoken language (its
@@ -222,7 +291,21 @@ class CaptionWindows(QObject):
         self._going = QTimer(self, singleShot=True, interval=round(NOTICE_SEC * 1000))
         self._going.timeout.connect(self._gone)
         self._areas = areas
+        self.reading: Callable[[str], bool] = lambda key: False
+        """Whether app `key`'s transcript window is open: a hidden window
+        being read there isn't paused (`main` hands it the transcripts')."""
+        self.clock: Callable[[], float] = time.monotonic
+        """The hidden windows' timers' clock (seconds)."""
+        self.show_on_speech = self.look.show_on_speech
+        self.sights = HiddenWindows(self.look.pause_hidden_after)
+        self._sights_said: dict[str, Sight] = {}
+        self._paused_said: frozenset[SourceId] = frozenset()
+        self._hidden_tick = QTimer(self, interval=HIDDEN_TICK_MS)
+        self._hidden_tick.timeout.connect(self.tick)
         self._marks: dict[str, ListeningMark] = {}
+        self._steady: dict[str, SteadyLanguage] = {}
+        """Each window's app heard as Detect: the language it speaks
+        steadily, for the window's question (317)."""
         self._save = QTimer(self, singleShot=True, interval=SAVE_AFTER_MS)
         self._save.timeout.connect(self.save_now)
         if (self.stored.first_use and self.stored.by_key) or self.taken_off:
@@ -257,11 +340,14 @@ class CaptionWindows(QObject):
         self._spoken_fallbacks()
         self.languages_changed.emit()
         self.mic_wanted.emit(self.show_mic_anywhere)
+        self._say_sights()
 
     def _open(self, key: str, source: SourceId, index: int) -> CaptionWindow:
         choices = self.stored.by_key.get(key)
         if choices is None:
-            choices = self.stored.by_key[key] = self.stored.for_new(index)
+            choices = self.stored.by_key[key] = self.stored.for_new(
+                index, key, self.offer_set_up
+            )
             self._save.start()
         label = self.labels.get(source) or SourceLabel(key, ACCENT)
         window = CaptionWindow(
@@ -279,6 +365,7 @@ class CaptionWindows(QObject):
         )
         window.set_timing(self.timing)
         window.longest_wait = self.longest_wait
+        window.view.set_settle_after(self.settle_after)
         window.set_second_languages(self.second_languages)
         window.set_labels(self.labels, self.you)
         window.set_paused(self.paused)
@@ -288,20 +375,43 @@ class CaptionWindows(QObject):
         window.set_connection(*self.connection)
         window.set_unlock_keys(self.unlock_keys)
         window.set_locked(self.locked)
+        window.set_start_like_this(self.stored.start_like_this)
+        window.start_like_this_wanted.connect(
+            lambda on: self._start_like_this(window, on)
+        )
+        window.set_asks_set_up(self.offer_set_up and not self.stored.set_up)
+        window.ask_set_up_wanted.connect(self.set_asks_set_up)
+        window.set_up_done.connect(
+            lambda as_default: self._set_up_done(window, as_default)
+        )
+        if self._asks_set_up() and source != SAMPLE:  # the sample is a trial (478)
+            window.ask_set_up()
         self._marks[key] = ListeningMark()
+        if self.hidden:  # opened hidden: its timer starts now
+            self.sights.hide(key, self.clock())
+            self._hidden_tick.start()
         window.changed.connect(lambda: self._changed(window))
         window.language_changed.connect(self._spoken_fallbacks)
         window.language_changed.connect(self.languages_changed)
         window.second_wanted.connect(self.second_language_wanted)
         window.mic_changed.connect(self._mic_changed)
         window.lock_wanted.connect(self.lock_wanted)
+        window.unlock_wanted.connect(self.unlock_wanted)
         window.hide_wanted.connect(self.hide_wanted)
         window.all_settings_wanted.connect(self.all_settings_wanted)
         window.links_wanted.connect(self.links_wanted)
+        window.fill_wanted.connect(self.fill_wanted)
+        window.aligned_wanted.connect(self.aligned_wanted)
+        window.said_colours_wanted.connect(self.said_colours_wanted)
+        window.translation_colours_wanted.connect(self.translation_colours_wanted)
         window.app_choices = lambda: self.app_choices(key)
+        window.recent_spoken = self.recent_spoken
+        window.spoken_declined.connect(lambda code: self._spoken_declined(window, code))
+        window.spoken_unanswered.connect(
+            lambda code: self._spoken_unanswered(window, code)
+        )
         window.app_wanted.connect(lambda name: self.app_wanted.emit(key, name))
         window.timing_wanted.connect(self.timing_wanted)
-        window.looks_wrong.connect(self.looks_wrong)
         window.stop_wanted.connect(lambda: self.stop_wanted.emit(window.key))
         window.report_wanted.connect(self.report_wanted)
         window.set_reporting(self._reporting)
@@ -315,6 +425,7 @@ class CaptionWindows(QObject):
         window = self.windows.pop(key)
         log.info("caption window %d closed: its app no longer captioned", window.index)
         self._marks.pop(key, None)
+        self.sights.forget(key)
         if self.joined_window is not None:
             self.joined_window.remove(window)
         window.close()
@@ -399,6 +510,7 @@ class CaptionWindows(QObject):
         choices = self.stored.joined
         joined = JoinedWindow(choices, self._areas, self.keys)
         joined.set_locked(self.locked)
+        joined.set_unlock_keys(self.unlock_keys)
         joined.place_at(choices.geometry or self._joined_place(ordered[0], ordered))
         joined.changed.connect(lambda: self._joined_moved(joined))
         joined.separate_wanted.connect(self.separate)
@@ -413,13 +525,66 @@ class CaptionWindows(QObject):
     # -- their choices ------------------------------------------------------------------
 
     def _changed(self, window: CaptionWindow) -> None:
+        before = self.stored.by_key.get(window.key)
+        spoken = window.choices.spoken_language
+        if before is None or before.spoken_language != spoken:
+            self.stored.spoken_named(spoken)  # first in the lists (317)
+            steady = self._steady.get(window.key)
+            if steady is not None:  # heard afresh from the next caption
+                steady.start_again()
         self.stored.by_key[window.key] = window.choices
         self.stored.last = window.choices
         self._save.start()
 
+    def _asks_set_up(self) -> bool:
+        """Whether a window opening now asks its languages: every one, until
+        the learner chose Use as my default in one (478; the first on a PC
+        alone, 465) - while no other one is asking."""
+        return (
+            self.offer_set_up
+            and not self.stored.set_up
+            and not any(w.set_up is not None for w in self.windows.values())
+        )
+
+    def _set_up_done(self, window: CaptionWindow, as_default: bool) -> None:
+        """A window's set-up went, its answers that window's. With Use as
+        my default: never asked again, and new windows start like it - its
+        spoken language too (465, 478). Without: the next window that
+        opens asks again (the user, 2026-11-18: "selecting as default on
+        start up gets rid of the screen for future opens")."""
+        if as_default:
+            self.stored.last = window.choices
+            self._start_like_this(window, True)
+            self.set_asks_set_up(False)
+        self.set_up_done.emit()
+
+    def set_asks_set_up(self, on: bool) -> None:
+        """Whether a window that opens asks its languages - a window's
+        "Ask when a window opens", or Use as my default (off) (478)."""
+        self.stored.set_up = not on
+        for each in self.windows.values():
+            each.set_asks_set_up(self.offer_set_up and on)
+        self._save.start()
+
+    def _start_like_this(self, window: CaptionWindow, on: bool) -> None:
+        """Start new windows like this, on or off from a window's languages:
+        on, `window` is the one they start like."""
+        self.stored.start_like_this = on
+        if on:
+            self.stored.last = window.choices
+        for each in self.windows.values():
+            each.set_start_like_this(on)
+        self._save.start()
+
+    def recent_spoken(self) -> tuple[str, ...]:
+        """The spoken languages the learner named last, newest first: first
+        in every spoken-language list (polyglotic-hq 317)."""
+        return self.stored.recent_spoken
+
     def _mic_changed(self) -> None:
         self.languages_changed.emit()  # the mic's languages are the windows'
         self.mic_wanted.emit(self.show_mic_anywhere)
+        self._say_sights()  # the mic paused or not, with the windows showing it
 
     def save_now(self) -> None:
         """The windows' choices into the settings, beside today's."""
@@ -544,21 +709,97 @@ class CaptionWindows(QObject):
         """A caption update (on the interface thread): to each window it's for."""
         with spans.span("caption_windows.apply"):
             changed = False
+            if self.sights.any_hidden:
+                self._heard_hidden(update)
             for window in self.windows.values():
                 shown = window.receive(update)
                 changed = shown or changed
                 if shown and update.kind is CaptionKind.FINISHED:
-                    self._hint(window)
+                    self._hint(window, update)
+                    self._reading_hint(window, update)
+                if update.kind is CaptionKind.FINISHED:
+                    self._steady_language(window, update)
             now = time.monotonic()
             if changed and now - self._on_top_at >= ON_TOP_EVERY_SEC:
                 self._on_top_at = now
                 self.keep_on_top()
 
-    def _hint(self, window: CaptionWindow) -> None:
+    def _heard_hidden(self, update: CaptionUpdate) -> None:
+        """A caption of a hidden window's own app: it's captioning while
+        hidden - and, if the learner asked, the windows come back when
+        speech starts in it (335)."""
+        now = self.clock()
+        started = False
+        for key, window in self.windows.items():
+            if update.source_id == window.source:
+                started = self.sights.captioned(key, now) or started
+        if started and self.show_on_speech and self.hidden:
+            log.info("caption windows shown: speech started in a hidden one")
+            self.show_wanted.emit()
+        self._say_sights()
+
+    def _steady_language(self, window: CaptionWindow, update: CaptionUpdate) -> None:
+        """A finished caption of a window's own app (not my speech) heard as
+        Detect: once its app has spoken one language steadily, the window
+        asks whether to always hear it as that (317) - unless the learner
+        said Not now to that language for this window before."""
+        if update.source_id != window.source or window.choices.spoken is not None:
+            return
+        steady = self._steady.get(window.key)
+        if steady is None:
+            steady = self._steady[window.key] = SteadyLanguage()
+            steady.declined = set(self.stored.declined_spoken.get(window.key, ()))
+        found = steady.heard(update.language, update.languages_heard)
+        if found is not None:
+            window.suggest_spoken(found)
+
+    def _spoken_declined(self, window: CaptionWindow, code: str) -> None:
+        """Not now: that language isn't asked about again for this window."""
+        self.stored.spoken_declined(window.key, code)
+        steady = self._steady.get(window.key)
+        if steady is not None:
+            steady.declined.add(code)
+        self._save.start()
+
+    def _spoken_unanswered(self, window: CaptionWindow, code: str) -> None:
+        """The question went by itself: not asked again about that language
+        for this window until the app starts again (350) - not stored."""
+        steady = self._steady.get(window.key)
+        if steady is not None:
+            steady.unanswered.add(code)
+
+    def _hint(self, window: CaptionWindow, update: CaptionUpdate) -> None:
         """A finished caption shown: "Click any word" until the first
-        lookup, where words can be looked up."""
-        if self.card is not None and not self.stored.looked_up:
+        lookup - only when its words can be looked up here: a dictionary
+        for a language heard in it is open (polyglotic-hq 368: a German
+        interface's first Chinese caption said so with none open)."""
+        if self.card is None or self.learner is None or self.stored.looked_up:
+            return
+        heard = (update.language, *update.languages_heard)
+        if any(self.learner.has_dictionary(code) for code in heard):
             window.set_hint(word_hint())
+
+    def _reading_hint(self, window: CaptionWindow, update: CaptionUpdate) -> None:
+        """Once on this PC, after the first lookup: a finished caption with
+        Chinese in it - said or its translation - where Chinese's
+        dictionary is on this PC and pinyin is off says that it can go
+        above it (369)."""
+        if self.stored.reading_hinted or (
+            self.card is not None and not self.stored.looked_up
+        ):
+            return
+        if "zh" in self.look.reading_lines:
+            return
+        chinese = [
+            language
+            for language in (update.language, window.choices.target)
+            if language_of(language) == "zh"
+        ]
+        if not chinese or not window.reads(chinese[0]):
+            return
+        self.stored.reading_hinted = True
+        window.show_notice(reading_hint(), READING_HINT_SEC)
+        self._save.start()
 
     def _looked_up(self) -> None:
         """The first lookup on this PC: the hint goes, for good."""
@@ -653,7 +894,16 @@ class CaptionWindows(QObject):
         """The dictionary's word-split data is read (`CaptionFeed`): the
         captions shown before it are marked now."""
         for window in self.windows.values():
-            window.canvas.update()
+            window.dictionary_ready()
+
+    def load_changed(self, entries: frozenset[EntryId] | None) -> None:
+        """The learning load changed (`LearningTools.load_changed`): the
+        captions holding a word whose stage changed repaint, in every
+        window - every caption if any word's may have (None). A lookup
+        card's own action too: a word checked from the card is replaced by
+        another, which other captions may hold."""
+        for window in self.windows.values():
+            window.load_changed(entries)
 
     def learning_changed(self, what: str) -> None:
         """Learning changed (`LearningTools.changed`): marks drawn again - a
@@ -676,8 +926,13 @@ class CaptionWindows(QObject):
     def set_look(self, look: CaptionLook) -> None:
         recolour = look.background != self.look.background
         self.look = look
+        self.show_on_speech = look.show_on_speech
+        if look.pause_hidden_after != self.sights.limit:
+            self.sights.limit = look.pause_hidden_after
+            self.tick()  # a shorter limit may be past already
         for window in self.windows.values():
             window.set_look(look)
+        self.look_changed.emit()
         if recolour and self.joined_window is not None:
             self.joined_window.restyle()  # its controls on the new panel
 
@@ -692,6 +947,13 @@ class CaptionWindows(QObject):
         self.longest_wait = seconds
         for window in self.windows.values():
             window.longest_wait = seconds
+
+    def set_settle_after(self, seconds: float) -> None:
+        """How long shown text may still change (decision 0099): every
+        window's captions settle after this from now on."""
+        self.settle_after = seconds
+        for window in self.windows.values():
+            window.view.set_settle_after(seconds)
 
     def set_second_languages(self, seconds: Mapping[Language, Language]) -> None:
         if dict(seconds) == self.second_languages:
@@ -771,11 +1033,14 @@ class CaptionWindows(QObject):
             self.joined_window.set_locked(locked)
 
     def set_unlock_keys(self, keys: str) -> None:
-        """The lock's hotkey as it is now ("" if another app has it): what a
-        locked window says unlocks it (F10, 249)."""
+        """The lock's hotkey as it is now ("" if it doesn't work here): what a
+        locked window says unlocks it (F10, 249), and the lock button's tip
+        (398)."""
         self.unlock_keys = keys
         for window in self.windows.values():
             window.set_unlock_keys(keys)
+        if self.joined_window is not None:
+            self.joined_window.set_unlock_keys(keys)
 
     def carry(self, old: str, new: str) -> None:
         """App `new` is about to be captioned in the window of `old`: it
@@ -787,9 +1052,71 @@ class CaptionWindows(QObject):
             self._save.start()
 
     def set_hidden(self, hidden: bool) -> None:
-        """Hidden: nothing drawn (Ctrl+Alt+H)."""
+        """Hidden: nothing drawn (Ctrl+Alt+H). Each window's timer starts
+        (335); shown, any listening paused starts again."""
         self.hidden = hidden
+        now = self.clock()
+        for key, window in self.windows.items():
+            if hidden:
+                self.sights.hide(key, now)
+            elif self.sights.show(key):
+                log.info("caption window %d shown: listening again", window.index)
+        if hidden and self.windows:
+            self._hidden_tick.start()
         self._show_or_hide()
+        self._say_sights()
+
+    # -- hidden too long (335) ------------------------------------------------------------
+
+    def tick(self) -> None:
+        """Windows hidden past the limit pause; what Home and the tray say
+        follows. The tick stops once nothing is hidden."""
+        now = self.clock()
+        for key, read in self.windows.items():
+            if self.reading(key) and self.sights.read(key, now):
+                log.info(
+                    "caption window %d listening again: its transcript is open",
+                    read.index,
+                )
+        for key in self.sights.tick(now):
+            window = self.windows.get(key)
+            index = window.index if window is not None else -1
+            log.info(
+                "caption window %d paused: hidden %s min", index, self.sights.limit
+            )
+        if not self.sights.any_hidden:
+            self._hidden_tick.stop()
+        self._say_sights()
+
+    def _say_sights(self) -> None:
+        """`paused_changed` and `sight_changed`, when either changed."""
+        paused = self.paused_sources()
+        if paused != self._paused_said:
+            self._paused_said = paused
+            self.paused_changed.emit()
+        now = self.clock()
+        sights = {key: self.sights.sight(key, now) for key in self.windows}
+        if sights != self._sights_said:
+            self._sights_said = sights
+            self.sight_changed.emit()
+
+    def paused_sources(self) -> frozenset[SourceId]:
+        """The sources nothing is sent for: each paused window's app, and
+        the mic once every window that shows my speech is paused."""
+        paused = self.sights.paused()
+        found = {w.source for key, w in self.windows.items() if key in paused}
+        showing = [key for key, w in self.windows.items() if w.choices.show_mic]
+        if self.mic is not None and showing and all(k in paused for k in showing):
+            found.add(self.mic)
+        return frozenset(found)
+
+    def sight(self, key: str) -> tuple[Sight, int | None]:
+        """`key`'s window as the learner would find it - and, paused, the
+        minutes it was hidden before it paused."""
+        return (
+            self.sights.sight(key, self.clock()),
+            self.sights.paused().get(key),
+        )
 
     @property
     def out_of_sight(self) -> bool:

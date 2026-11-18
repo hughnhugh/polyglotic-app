@@ -195,6 +195,38 @@ def test_resumed_mid_speech_picks_up_where_the_speech_started() -> None:
     assert span(finished[0]) >= 5.9
 
 
+def test_a_source_paused_on_its_own_sends_nothing_and_the_others_carry_on() -> None:
+    """A caption window hidden too long (polyglotic-hq 335): its app's
+    speech sends nothing - live or finished - and isn't heard; the mic's is
+    sent as before."""
+    timing = make_timing(interval=1.5)
+    timing.paused_sources = frozenset({APP.id})
+    speech = [(0.5, False), (9.0, True), (1.5, False)]
+    timing.add_source(APP)
+    timing.add_source(MIC)
+    out: list[Decision] = []
+    heard: set[SourceId] = set()
+    for end, speaking in frames(speech):
+        out.extend(timing.frame(APP.id, end, speaking))
+        out.extend(timing.frame(MIC.id, end, speaking))
+        heard |= timing.hearing()
+    assert out and all(
+        isinstance(d, TranscriptionRequest) and d.source == MIC for d in out
+    )
+    assert heard == {MIC.id}
+
+
+def test_a_source_resumed_mid_speech_picks_up_where_the_speech_started() -> None:
+    timing = make_timing(interval=1.5)
+    timing.add_source(APP)
+    out: list[Decision] = []
+    for end, speech in frames([(0.5, False), (6.0, True), (1.5, False)]):
+        timing.paused_sources = frozenset({APP.id}) if end < T0 + 3.0 else frozenset()
+        out.extend(timing.frame(APP.id, end, speech))
+    finished = requests(out, SpeechKind.FINISHED)
+    assert len(finished) == 1 and span(finished[0]) >= 5.9
+
+
 # -- the join and long-speech split cases of test_discord_segmentation.py --------
 
 
@@ -1179,3 +1211,127 @@ def test_without_loudness_the_cut_falls_at_the_limit_as_before() -> None:
     first, second = requests(out, SpeechKind.FINISHED)
     assert span(first) == pytest.approx(6.0 + ONSET_LEAD_IN_SEC, abs=2 * FRAME_SEC)
     assert first.cut_after and second.cut_before
+
+
+# -- the speech ceiling: live updates wait their turn (decision 0097) ----------------
+
+APPS = (
+    APP,
+    Source(SourceId("source-2"), SourceCategory.GAME),
+    Source(SourceId("source-3"), SourceCategory.CALL),
+)
+
+
+def live_mode_timing(interval: float, ceiling: float | None = 600.0) -> CaptionTiming:
+    """Live updates as the app runs it, every `interval` seconds."""
+    ids = (CaptionId(f"c{i}") for i in itertools.count(1))
+    timing = CaptionTiming(
+        live_update_interval=interval,
+        new_caption_id=lambda: next(ids),
+        rules=CaptionMode.LIVE.rules,
+        max_wait=3.0,
+    )
+    timing.speech_ceiling = ceiling
+    return timing
+
+
+def talk(
+    timing: CaptionTiming, sources: Sequence[Source], seconds: float
+) -> list[tuple[float, TranscriptionRequest]]:
+    """Every source talking without a pause for `seconds`: each request
+    with the time it was asked for."""
+    for source in sources:
+        timing.add_source(source)
+    out: list[tuple[float, TranscriptionRequest]] = []
+    for end, speech in frames([(seconds, True), (1.5, False)]):
+        for source in sources:
+            for decision in timing.frame(source.id, end, speech):
+                assert isinstance(decision, TranscriptionRequest)
+                out.append((end, decision))
+    return out
+
+
+def busiest_minute(sent: list[tuple[float, TranscriptionRequest]]) -> float:
+    """The most audio asked for in any 60 seconds, margins and all - what
+    the server's speech ceiling counts."""
+    most = 0.0
+    for n, (first, _) in enumerate(sent):
+        total = 0.0
+        for at, request in sent[n:]:
+            if at - first >= 60.0:
+                break
+            total += request.audio_seconds
+        most = max(most, total)
+    return most
+
+
+def test_three_apps_talking_stay_under_the_speech_ceiling() -> None:
+    """polyglotic-hq 307: three apps in Live updates every 0.75s sent about
+    1,000s of audio a minute against the server's 600, and it refused every
+    live update for a third of each minute."""
+    sent = talk(live_mode_timing(0.75), APPS, 150.0)
+    assert busiest_minute(sent) <= 600.0
+    # ... and nothing like as much is asked for without the rule
+    assert busiest_minute(talk(live_mode_timing(0.75, None), APPS, 150.0)) > 800.0
+
+
+def test_the_speech_ceiling_never_holds_finished_speech() -> None:
+    held = talk(live_mode_timing(0.5), APPS, 150.0)
+    free = talk(live_mode_timing(0.5, None), APPS, 150.0)
+
+    def finished(sent: list[tuple[float, TranscriptionRequest]]) -> list[Any]:
+        return [
+            (at, r.source.id, r.speech_start, r.speech_end)
+            for at, r in sent
+            if r.kind is SpeechKind.FINISHED
+        ]
+
+    assert finished(held) == finished(free)
+
+
+def test_under_the_speech_ceiling_each_app_gets_its_turn() -> None:
+    timing = live_mode_timing(0.5)
+    sent = talk(timing, APPS, 150.0)
+    assert timing.live_updates_held > 0
+    for source in APPS:
+        ends = [
+            at
+            for at, r in sent
+            if r.kind is SpeechKind.LIVE and r.source.id == source.id and at > T0 + 30
+        ]
+        # held, a live update comes late - never not at all: none of the
+        # three goes more than a few seconds without one
+        assert max(b - a for a, b in itertools.pairwise(ends)) < 6.5
+    counts = [
+        sum(r.kind is SpeechKind.LIVE and r.source.id == source.id for _, r in sent)
+        for source in APPS
+    ]
+    assert max(counts) - min(counts) <= 0.1 * max(counts)
+
+
+def test_one_app_talking_is_never_held_by_the_speech_ceiling() -> None:
+    timing = live_mode_timing(0.75)
+    sent = talk(timing, APPS[:1], 150.0)
+    assert timing.live_updates_held == 0
+    assert sent == talk(live_mode_timing(0.75, None), APPS[:1], 150.0)
+
+
+@pytest.mark.parametrize("stops_after", [60.0 + n * 0.128 for n in range(12)])
+def test_a_source_that_stops_talking_gives_up_its_turn(stops_after: float) -> None:
+    """A held live update's turn goes with its speech: the others don't
+    wait behind a source that has fallen silent."""
+    timing = live_mode_timing(0.5)
+    for source in APPS:
+        timing.add_source(source)
+    last_live: dict[SourceId, float] = {}
+    for end, _ in frames([(120.0, True)]):
+        for source in APPS:
+            speaking = not (source is APPS[2] and end >= T0 + stops_after)
+            for decision in timing.frame(source.id, end, speaking):
+                if (
+                    isinstance(decision, TranscriptionRequest)
+                    and decision.kind is SpeechKind.LIVE
+                ):
+                    last_live[source.id] = end
+    assert last_live[APPS[0].id] > T0 + 117.0
+    assert last_live[APPS[1].id] > T0 + 117.0

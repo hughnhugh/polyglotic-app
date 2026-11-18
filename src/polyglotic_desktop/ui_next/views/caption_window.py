@@ -2,8 +2,9 @@
 project 109's structure, section 2).
 
 One caption window per app captioned (at most 3; DECISIONS.md #53), each
-with **its own** place, text size, translation language (or
-Original only), spoken language (or Detect; polyglotic-hq 263) and "Show
+with **its own** place, text size, translation size (its translation's
+text as a share of what was said's; polyglotic-hq 305), translation
+language (or Original only), spoken language (or Detect; polyglotic-hq 263) and "Show
 my speech here" (1.1). `WindowChoices` is what a
 window remembers between launches, by its source's key - an app's name,
 or "system" for everything the PC plays: stored as one setting,
@@ -13,8 +14,20 @@ know, so today's interface ignores it).
 The first time the new interface runs, the windows take today's values
 (`views.migration`, once). After that, a window new to the list copies
 the last window's language and text size; its spoken language is
-Detect - a new app may speak anything - and "Show my speech here" starts
+Detect - a new app may speak anything - unless the learner chose "Start
+new windows like this" (`StoredWindows.start_like_this`: then it is the
+last window's too; polyglotic-hq 465), and "Show my speech here" starts
 off (section 2, defaults).
+
+The very first caption window on a PC sets itself up (polyglotic-hq 465,
+449's 3A): its three language choices are asked in it - and in every
+window that opens after, until the learner chooses "Use as my default" in
+one (polyglotic-hq 478; `StoredWindows.set_up`, kept). Its answers are then
+how new windows start. A new learner's first window shows my speech too
+(`StoredWindows.first_window`; 478, the user, 2026-11-18: "record user mic
+in first window is the default"), with its switch in the set-up to turn it
+off. Home's sample's window is neither: it's a trial, not what the learner
+captions.
 
 `JoinedChoices`: whether the windows are joined into one, a column each
 (109's 2a), and that window's own place - kept beside each
@@ -35,11 +48,18 @@ from polyglotic_desktop.core.listening.display import (
     LinkDetail,
     LinkGap,
     LinkLine,
+    ReadingColour,
+    ReadingSize,
+    ReadingSystem,
     WordLinks,
 )
+from polyglotic_desktop.core.listening.hidden import PAUSE_AFTER_MIN
+from polyglotic_desktop.core.listening.sources import SAMPLE
+from polyglotic_desktop.core.listening.spoken import SPOKEN_LANGUAGES as SPOKEN
+from polyglotic_desktop.core.listening.spoken import with_recent
 from polyglotic_desktop.core.listening.timing import CaptionMode
 from polyglotic_desktop.ui_next.views.arrivals import Arrival
-from polyglotic_desktop.ui_next.views.captions import TEXT_SIZES
+from polyglotic_desktop.ui_next.views.captions import CAPTION_TEXT_SIZES, TEXT_SIZES
 from polyglotic_desktop.ui_next.views.lab import CaptionLab
 from polyglotic_desktop.ui_next.views.placement import DEFAULT_HEIGHT, Preset, Rect
 
@@ -50,7 +70,18 @@ LIMIT = 3
 """Caption windows at most: one per app captioned (DECISIONS.md #53)."""
 
 TEXT_STEP = 0.1
-"""A text size step (A- / A+, Ctrl+wheel): 10 %, from 70 to 200 %."""
+"""A text size step (A- / A+, Ctrl+wheel): 10 % - a caption window's from
+60 to 400 % (`CAPTION_TEXT_SIZES`), a transcript's from 70 to 200 %."""
+FINE_STEP = 0.05
+"""A caption window's text size on its settings' slider: 5 %, to land
+between A- and A+'s steps."""
+
+TRANSLATION_SIZES = (0.5, 2.0)
+"""A translation's text size, as a share of what was said's: 50 to 200 %
+(the user, 2026-11-13: "need to a way to make the translation font size
+smaller"; 2026-11-14: "maximal logical customisation"), in TEXT_STEP's
+steps; 100 %, the same, is the default. Either line is still drawn within
+CAPTION_TEXT_SIZES (`CaptionLayout`)."""
 
 
 ORIGINAL_ONLY = ""
@@ -59,9 +90,10 @@ ORIGINAL_ONLY = ""
 DETECT = "detect"
 """A window's stored spoken language when it is Detect (the protocol's
 word for it)."""
-SPOKEN_LANGUAGES = ("en", "zh", "yue")
-"""The spoken languages a window can name: English, Mandarin and
-Cantonese, as Home's Spoken language offered them (polyglotic-hq 248's
+SPOKEN_LANGUAGES: tuple[str, ...] = tuple(str(code) for code in SPOKEN)
+"""The spoken languages a window can name: every one the speech model can
+be told (`core.listening.spoken`; polyglotic-hq 317 - before, English,
+Mandarin and Cantonese, as Home's Spoken language offered them: 248's
 IA.md 1.1); any other stored value is read as the base's."""
 
 
@@ -70,7 +102,8 @@ class WindowChoices:
     """What a caption window remembers. `translate_into`: its translation
     language, or ORIGINAL_ONLY. `spoken_language`: the language its app's
     speech is in, one of SPOKEN_LANGUAGES - None: Detect. `geometry`: where
-    it was put (None: its default slot)."""
+    it was put (None: its default slot). `translation_size`: its
+    translation's text as a share of what was said's (TRANSLATION_SIZES)."""
 
     translate_into: str = "en"
     text_size: float = 1.0
@@ -78,6 +111,7 @@ class WindowChoices:
     preset: Preset = Preset.BOTTOM_CENTRE
     geometry: Rect | None = None
     spoken_language: str | None = None
+    translation_size: float = 1.0
 
     @property
     def target(self) -> Language | None:
@@ -97,6 +131,7 @@ class WindowChoices:
             "position": self.preset.value,
             "geometry": self.geometry.as_list() if self.geometry else None,
             "spoken_language": self.spoken_language or DETECT,
+            "translation_size": self.translation_size,
         }
 
     @classmethod
@@ -126,6 +161,9 @@ class WindowChoices:
         spoken = stored.get("spoken_language")
         if spoken == DETECT or spoken in SPOKEN_LANGUAGES:
             found["spoken_language"] = None if spoken == DETECT else spoken
+        share = translation_size(stored.get("translation_size"))
+        if share is not None:
+            found["translation_size"] = share
         return replace(base, **found)  # type: ignore[arg-type]
 
 
@@ -186,26 +224,74 @@ class StoredWindows:
     has been opened yet - a window for a source today's settings didn't
     name takes them too. `joined`: whether they're joined, and the joined
     window's place. `looked_up`: a word has been looked up on this PC, so
-    "Click any word" is never said again (polyglotic-hq 176)."""
+    "Click any word" is never said again (polyglotic-hq 176).
+    `recent_spoken`: the spoken languages the learner named last, newest
+    first - put first in every spoken-language list (polyglotic-hq 317).
+    `declined_spoken`: by a window's key, the languages it was asked to
+    always hear as and the learner said "Not now" to - never asked again
+    (317). `reading_hinted`: a window has said once that pinyin can go
+    above Chinese (369). `set_up`: "Use as my default" was chosen in a
+    window's set-up (478), or there were windows before it came (polyglotic-hq
+    465; a window's chip turns it off again, "Ask when a window opens"): never asked
+    again. `start_like_this`: "Start new windows like this" - a new window
+    takes the last one's spoken language too, not Detect (465)."""
 
     by_key: dict[str, WindowChoices] = field(default_factory=dict)
     last: WindowChoices = field(default_factory=WindowChoices)
     first_use: bool = False
     joined: JoinedChoices = field(default_factory=JoinedChoices)
     looked_up: bool = False
+    recent_spoken: tuple[str, ...] = ()
+    declined_spoken: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    reading_hinted: bool = False
+    set_up: bool = False
+    start_like_this: bool = False
 
-    def for_new(self, index: int) -> WindowChoices:
-        """The `index`-th window, new to the list: the last one's language
-        and text size, at its default place, my speech off. On first
+    def spoken_declined(self, key: str, code: str) -> None:
+        """The window of `key` was asked to always hear `code` and the
+        learner said "Not now": never asked again."""
+        before = self.declined_spoken.get(key, ())
+        if code not in before:
+            self.declined_spoken[key] = (*before, code)
+
+    def spoken_named(self, code: str | None) -> None:
+        """A window was set to hear `code` (None: Detect): first among the
+        recent ones, if it's a language."""
+        self.recent_spoken = with_recent(self.recent_spoken, code)
+
+    @property
+    def first_window(self) -> bool:
+        """The next window opened is a new learner's first: Use as my default
+        isn't chosen and no window is kept but the sample's (478)."""
+        return not self.set_up and all(key == SAMPLE for key in self.by_key)
+
+    def for_new(self, index: int, key: str = "", set_up: bool = False) -> WindowChoices:
+        """The `index`-th window, new to the list (its key `key`): the last
+        one's language, text size and translation size, at its default
+        place, my speech off - and its spoken language with "Start new
+        windows like this", else Detect (465). On first
         use, today's values: my speech as "Caption my own speech" was, and
-        the overlays' position - where the first was put, for the first."""
+        the overlays' position - where the first was put, for the first.
+        Where the first window's set-up is offered (`set_up`: `main`'s), a
+        new learner's first window shows my speech (`first_window`; not the
+        sample's), and the set-up shows its switch (478)."""
+        first = set_up and self.first_window and key != SAMPLE
         last = self.last
         if not self.first_use:
-            return WindowChoices(last.translate_into, last.text_size)
-        if index == 0:
-            return last
-        preset = Preset.BOTTOM_CENTRE if last.preset is Preset.CUSTOM else last.preset
-        return replace(last, preset=preset, geometry=None)
+            choices = WindowChoices(
+                last.translate_into,
+                last.text_size,
+                translation_size=last.translation_size,
+                spoken_language=last.spoken_language if self.start_like_this else None,
+            )
+        elif index == 0:
+            choices = last
+        else:
+            preset = (
+                Preset.BOTTOM_CENTRE if last.preset is Preset.CUSTOM else last.preset
+            )
+            choices = replace(last, preset=preset, geometry=None)
+        return replace(choices, show_mic=True) if first else choices
 
     def only_offered(self, offered: Collection[str]) -> "StoredWindows":
         """These choices with each translation language one of `offered` or
@@ -230,6 +316,11 @@ class StoredWindows:
             "last": self.last.to_stored(),
             "joined": self.joined.to_stored(),
             "looked_up": self.looked_up,
+            "reading_hinted": self.reading_hinted,
+            "recent_spoken": list(self.recent_spoken),
+            "declined_spoken": {k: list(v) for k, v in self.declined_spoken.items()},
+            "set_up": self.set_up,
+            "start_like_this": self.start_like_this,
         }
 
     @classmethod
@@ -247,23 +338,64 @@ class StoredWindows:
                 str(key): WindowChoices.from_stored(value, last)
                 for key, value in windows.items()
             }
+        recent = own.get("recent_spoken")
+        declined = own.get("declined_spoken")
         return cls(
             by_key,
             last,
             joined=JoinedChoices.from_stored(own.get("joined")),
             looked_up=own.get("looked_up") is True,
+            reading_hinted=own.get("reading_hinted") is True,
+            recent_spoken=with_recent(
+                (c for c in recent if isinstance(c, str))
+                if isinstance(recent, list)
+                else (),
+                None,
+            ),
+            declined_spoken={
+                str(key): tuple(c for c in codes if c in SPOKEN_LANGUAGES)
+                for key, codes in declined.items()
+                if isinstance(codes, list)
+            }
+            if isinstance(declined, Mapping)
+            else {},
+            # windows from before the set-up came (0.1.7): already set up;
+            # since, as the learner left it - asked on every open until Use
+            # as my default (478)
+            set_up=own.get("set_up") is True or ("set_up" not in own and bool(by_key)),
+            start_like_this=own.get("start_like_this") is True,
         )
 
 
 def text_size(value: object) -> float | None:
-    """A stored text size, if it is one (70 to 200 %), to two places."""
+    """A caption window's stored text size, if it is one
+    (CAPTION_TEXT_SIZES: 60 to 400 %), to two places."""
     if (
         isinstance(value, int | float)
         and not isinstance(value, bool)
-        and TEXT_SIZES[0] <= value <= TEXT_SIZES[1]
+        and CAPTION_TEXT_SIZES[0] <= value <= CAPTION_TEXT_SIZES[1]
     ):
         return round(float(value), 2)
     return None
+
+
+def translation_size(value: object) -> float | None:
+    """A stored translation size, if it is one (TRANSLATION_SIZES), to two
+    places."""
+    if (
+        isinstance(value, int | float)
+        and not isinstance(value, bool)
+        and TRANSLATION_SIZES[0] <= value <= TRANSLATION_SIZES[1]
+    ):
+        return round(float(value), 2)
+    return None
+
+
+def stepped_translation(size: float, steps: int) -> float:
+    """A translation size `steps` steps of TEXT_STEP up (or down), kept
+    within TRANSLATION_SIZES."""
+    low, high = TRANSLATION_SIZES
+    return round(min(high, max(low, size + steps * TEXT_STEP)), 2)
 
 
 STRIP = "strip"
@@ -328,6 +460,38 @@ class CaptionLook:
     DECISIONS.md #104)."""
     lab: CaptionLab = field(default_factory=CaptionLab)
     """Settings > Captions > Lab's experimental values (`views.lab`; 284)."""
+    pause_hidden_after: int | None = PAUSE_AFTER_MIN
+    """Minutes a hidden window still listens before its listening pauses;
+    None: never (`core.listening.hidden`, polyglotic-hq 335)."""
+    show_on_speech: bool = False
+    """A hidden window comes back when its app's speech starts (335)."""
+    reading_lines: tuple[str, ...] = ()
+    """The languages whose text carries its reading line above it, what
+    was said and translations alike ("zh": pinyin above Chinese;
+    polyglotic-hq 369, decision 0155) - off for every language at first."""
+    reading_size: ReadingSize = ReadingSize.SMALL
+    """How big a reading is beside its text."""
+    reading_past: bool = False
+    """Readings only over the words past what the learner knows (the
+    words word links "past what I know" would link, decision 0130)."""
+    reading_system: ReadingSystem = ReadingSystem.PINYIN
+    """Chinese's reading line in pinyin or zhuyin (395)."""
+    reading_colour: ReadingColour = ReadingColour.LINK
+    """What colour a reading is drawn in (polyglotic-hq 395): its word link's
+    by default, so word links on show a word and its pinyin alike (446)."""
+    reading_custom: str = "#9ad0ff"
+    """The colour picked for readings, with `reading_colour` CUSTOM (kept
+    while another is chosen, so Custom brings it back)."""
+    said_in_link_colours: bool = True
+    """Linked words in what was said take their link's colour, as their
+    underline has (395)."""
+    translation_in_link_colours: bool = True
+    """Linked words in the translation take their link's colour - each on
+    its own (431: the user, 2026-11-17, "toggleable separately"). With
+    both, and pinyin in its word link's colour, a word, its pinyin and its
+    translation all match. Both on by default (the user, 2026-11-17, 446:
+    "default this setting to be on"): with word links off they change
+    nothing."""
 
 
 INTRO_SEC = 8.0
@@ -382,8 +546,6 @@ class Notice(StrEnum):
     """This PC seems to be offline."""
     CANT_REACH = "cant_reach"
     """Nothing answered: the learner's internet, or our server."""
-    SERVER_DOWN = "server_down"
-    """Our server isn't serving: not the learner's internet."""
     SERVER_RESTARTING = "server_restarting"
     SERVER_PROBLEM = "server_problem"
     """Our server failed the session."""
@@ -397,6 +559,9 @@ class Notice(StrEnum):
     """Open on too many of the account's PCs: Home says what to do."""
     TOO_MANY_TRIES = "too_many_tries"
     """Too many failed sign-ins from this network: it waits."""
+    MAINTENANCE = "maintenance"
+    """Polyglotic's server is in a planned maintenance window: Home says
+    until when (polyglotic-hq 319)."""
     NOT_SIGNED_IN = "not_signed_in"
     UPDATE_NEEDED = "update_needed"
     STOPPED = "stopped"
@@ -417,7 +582,6 @@ COUNTING = (
     Notice.SERVER_BUSY,
     Notice.OFFLINE,
     Notice.CANT_REACH,
-    Notice.SERVER_DOWN,
     Notice.SERVER_RESTARTING,
     Notice.SERVER_PROBLEM,
     Notice.TOO_MANY_TRIES,
@@ -509,8 +673,9 @@ class Notices:
         return min(due) if due else None
 
 
-def stepped(size: float, steps: int) -> float:
+def stepped(size: float, steps: int, sizes: tuple[float, float] = TEXT_SIZES) -> float:
     """A text size `steps` steps of TEXT_STEP up (or down), kept within
-    TEXT_SIZES."""
-    low, high = TEXT_SIZES
+    `sizes` (a transcript's TEXT_SIZES; a caption window's
+    CAPTION_TEXT_SIZES)."""
+    low, high = sizes
     return round(min(high, max(low, size + steps * TEXT_STEP)), 2)

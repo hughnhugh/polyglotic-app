@@ -25,17 +25,30 @@ window, Home's app row.
 - **Remembered per app:** each transcript's text size and whether its
   rail is open (`views.transcript.TranscriptChoices`), saved a moment
   after they change as one setting, `transcripts`, beside today's.
+- **How far back every transcript's list goes** (`set_length`: Settings >
+  App, polyglotic-hq 334): the newest 1,000 lines, the last three hours,
+  or the whole session - Copy all and Save have the whole session
+  whichever it is.
+- **Asked once at Quit** (`may_quit`, polyglotic-hq 334): with three hours
+  or the whole session kept, each transcript of more than 300 lines that
+  isn't saved - its app's caption window open or closed - is offered
+  Save..., Quit without saving or Cancel, with "Don't ask again"
+  (`asking_changed`; Settings > App turns it back on). Closing a caption
+  window asks nothing: its transcript stays for the session. Nothing is
+  ever written unless the learner saves it.
 
 Holds caption text through its transcripts: never log it.
 """
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 from functools import partial
 from typing import Protocol
 
-from PySide6.QtCore import QObject, QPoint, QTimer, Signal
-from PySide6.QtWidgets import QApplication, QMenu, QWidget
+from PySide6.QtCore import QObject, QPoint, Qt, QTimer, Signal
+from PySide6.QtWidgets import QApplication, QCheckBox, QMenu, QMessageBox, QWidget
 
 from polyglotic_desktop.core.learning.vocabulary import Changed
 from polyglotic_desktop.core.listening.captions import CaptionUpdate
@@ -66,6 +79,7 @@ from polyglotic_desktop.ui_next.views.transcript import (
     StoredTranscripts,
     Transcript,
     TranscriptChoices,
+    TranscriptLength,
     beside,
     clear_of,
 )
@@ -91,14 +105,76 @@ def _tr(text: str) -> str:
     return QApplication.translate("Transcripts", text)
 
 
+def _trn(text: str, n: int) -> str:
+    """A count's text in the language's form for `n` (decision 0034)."""
+    return QApplication.translate("Transcripts", text, None, n)
+
+
+class QuitChoice(Enum):
+    """What the learner chose when Quit asked about a transcript."""
+
+    SAVE = "save"
+    QUIT = "quit"
+    CANCEL = "cancel"
+
+
+@dataclass(frozen=True, slots=True)
+class QuitAnswer:
+    """The choice, and whether "Don't ask again" was ticked."""
+
+    choice: QuitChoice
+    never_again: bool = False
+
+
+def ask_to_save(name: str, lines: int) -> QuitAnswer:
+    """Quit's question about app `name`'s transcript of `lines` lines:
+    Save... (the default), Quit without saving or Cancel (Esc), and "Don't
+    ask again". A window of its own: Quit comes from the tray as often as
+    from a window."""
+    box = question(name, lines)
+    box.exec()
+    clicked = box.clickedButton()
+    roles = {QMessageBox.ButtonRole.AcceptRole: QuitChoice.SAVE}
+    roles[QMessageBox.ButtonRole.DestructiveRole] = QuitChoice.QUIT
+    role = box.buttonRole(clicked) if clicked is not None else None
+    choice = (
+        roles.get(role, QuitChoice.CANCEL) if role is not None else QuitChoice.CANCEL
+    )
+    check = box.checkBox()
+    answer = QuitAnswer(choice, check is not None and check.isChecked())
+    box.deleteLater()
+    return answer
+
+
+def question(name: str, lines: int) -> QMessageBox:
+    """Quit's question, made - not shown (`ask_to_save` shows it)."""
+    box = QMessageBox(
+        QMessageBox.Icon.Question,
+        _tr("Save the transcript?"),
+        _tr("Save the transcript of {app} before quitting?").format(app=name),
+    )
+    box.setObjectName("transcripts.ask_to_save")
+    box.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+    box.setInformativeText(
+        _trn("It has %Ln line(s), and it's gone when Polyglotic quits.", lines)
+    )
+    save = box.addButton(_tr("Save…"), QMessageBox.ButtonRole.AcceptRole)
+    box.addButton(_tr("Quit without saving"), QMessageBox.ButtonRole.DestructiveRole)
+    cancel = box.addButton(_tr("Cancel"), QMessageBox.ButtonRole.RejectRole)
+    box.setDefaultButton(save)
+    box.setEscapeButton(cancel)
+    box.setCheckBox(QCheckBox(_tr("Don't ask again"), box))
+    return box
+
+
 class Transcripts(QObject):
-    looks_wrong = Signal(str)
-    """A line's caption id: check it with the best model (today's flow)."""
     timing_wanted = Signal(str)
     """The session's caption timing, chosen on a transcript's strip."""
     opened = Signal()
     """A transcript window was opened or brought forward (the listening
     session's usage statistics count it; polyglotic-hq project 134)."""
+    asking_changed = Signal(bool)
+    """"Don't ask again" at Quit's question: False (`main` saves it)."""
 
     def __init__(
         self,
@@ -128,6 +204,16 @@ class Transcripts(QObject):
         self.notice: Notice | None = None
         self.transcripts: dict[str, Transcript] = {}
         """Every app captioned this session, by its key."""
+        self.length = TranscriptLength.NEWEST
+        """How far back every transcript's list goes (`set_length`)."""
+        self.ask_at_quit = True
+        """Quit asks about a long transcript not saved (Settings > App)."""
+        self.ask: Callable[[str, int], QuitAnswer] = ask_to_save
+        """Asks Quit's question (an app's name, its transcript's lines)."""
+        self._quit_answered = False
+        self._labels: dict[str, SourceLabel] = {}
+        """Each app's label as its caption window last had it, by key - a
+        transcript outlives its window (Quit's question names it)."""
         self.shown: dict[str, TranscriptWindow] = {}
         """The transcript windows opened, by app (closed ones kept, hidden)."""
         self._store = store
@@ -141,6 +227,7 @@ class Transcripts(QObject):
         self._save = QTimer(self, singleShot=True, interval=SAVE_AFTER_MS)
         self._save.timeout.connect(self.save_now)
         windows.languages_changed.connect(self.follow)
+        windows.look_changed.connect(self._follow_look)
         self.follow()
 
     # -- in step with the caption windows ---------------------------------------------
@@ -155,6 +242,7 @@ class Transcripts(QObject):
         windows of apps no longer captioned close."""
         windows = self.windows
         for key, window in windows.windows.items():
+            self._labels[key] = window.label
             choices = window.choices
             target = choices.target
             second = windows.second_languages.get(target) if target else None
@@ -168,8 +256,10 @@ class Transcripts(QObject):
                     show_mic=choices.show_mic,
                     text_size=self._choices(key).text_size,
                     clock=self._clock,
+                    length=self.length,
                 )
             found.set_language(target, second)
+            found.set_settle_after(windows.settle_after)
             found.set_show_mic(choices.show_mic)
             own = self._own.get(key)
             if own is not None:
@@ -226,9 +316,36 @@ class Transcripts(QObject):
 
     # -- the session's ----------------------------------------------------------------
 
+    def is_open(self, key: str) -> bool:
+        """Whether app `key`'s transcript window is open and not minimised:
+        its captions are being read there (a hidden caption window isn't
+        paused meanwhile, polyglotic-hq 335)."""
+        shown = self.shown.get(key)
+        return shown is not None and shown.isVisible() and not shown.isMinimized()
+
+    def set_length(self, length: TranscriptLength) -> None:
+        """How far back every transcript's list goes (Settings > App): now,
+        in each - an open one shows it at once."""
+        if length is self.length:
+            return
+        self.length = length
+        for key, found in self.transcripts.items():
+            found.set_length(length)
+            shown = self.shown.get(key)
+            if shown is not None and shown.isVisible():
+                shown.refresh()
+
+    def _follow_look(self) -> None:
+        """The caption windows' look changed: each transcript's reading
+        lines follow it - pinyin above Chinese there too (369)."""
+        for shown in self.shown.values():
+            shown.list.set_reading(self.windows.look)
+
     def dictionary_ready(self) -> None:
         """The dictionary's word-split data is read (`CaptionFeed`): saved
-        words are found in the lines shown before it."""
+        words are found in the lines shown before it, and pinyin comes."""
+        for shown in self.shown.values():
+            shown.list.dictionary_ready()
         self.learning_changed(Changed.SAVED_WORDS.value)
 
     def learning_changed(self, what: str) -> None:
@@ -290,28 +407,35 @@ class Transcripts(QObject):
         self.opened.emit()
 
     def _open(self, key: str, found: Transcript) -> TranscriptWindow:
-        window = self.windows.windows[key]
+        """App `key`'s transcript window, made (not shown) - with no caption
+        window left for it (Quit's Save... for an app no longer captioned),
+        named as its window last was, without the rail's panels."""
+        window = self.windows.windows.get(key)
         shown = TranscriptWindow(
             key,
             found,
-            window.label,
+            self._label(key),
             self._choices(key),
             self.theme,
             self.learner,
             self._you(),
             self.windows.card,
-            self._panels(key),
+            self._panels(key) if window is not None else [],
             self.save_folder,
         )
         # beside its caption window - or, joined, the joined window it's a column of
         joined = self.windows.joined_window
-        anchor: QWidget = joined if joined is not None else window
-        corner = anchor.mapToGlobal(QPoint(0, 0))
-        near = Rect(corner.x(), corner.y(), anchor.width(), anchor.height())
+        anchor: QWidget | None = joined if joined is not None else window
+        near = None
+        if anchor is not None:
+            corner = anchor.mapToGlobal(QPoint(0, 0))
+            near = Rect(corner.x(), corner.y(), anchor.width(), anchor.height())
         areas = self._areas()
-        area = area_for(near, areas) or (areas[0] if areas else Rect(0, 0, 1920, 1040))
+        found_area = area_for(near, areas) if near is not None else None
+        area = found_area or (areas[0] if areas else Rect(0, 0, 1920, 1040))
         size = Size(style.px(DEFAULT_SIZE.width), style.px(DEFAULT_SIZE.height))
-        place = beside(near if anchor.isVisible() else None, size, area)
+        showing = anchor is not None and anchor.isVisible()
+        place = beside(near if showing else None, size, area)
         others = [w.geometry() for w in self.shown.values() if w.isVisible()]
         taken = [Rect(g.x(), g.y(), g.width(), g.height()) for g in others]
         place = clear_of(place, taken, area)
@@ -319,8 +443,8 @@ class Transcripts(QObject):
         shown.changed.connect(lambda: self._changed(shown))
         shown.language_wanted.connect(lambda code: self._language(key, code))
         shown.timing_wanted.connect(self.timing_wanted)
-        shown.looks_wrong.connect(self.looks_wrong)
         shown.set_notice(self._notice())
+        shown.list.set_reading(self.windows.look)
         return shown
 
     def _language(self, key: str, code: str) -> None:
@@ -372,6 +496,46 @@ class Transcripts(QObject):
         shown = self.shown.pop(key)
         shown.close()
         shown.deleteLater()
+
+    def _label(self, key: str) -> SourceLabel:
+        """App `key`'s label: its caption window's, or as it last was."""
+        window = self.windows.windows.get(key)
+        if window is not None:
+            return window.label
+        return self._labels.get(key) or SourceLabel(key, YOU)
+
+    # -- Quit (polyglotic-hq 334) -------------------------------------------------------
+
+    def may_quit(self) -> bool:
+        """Whether Quit (or Restart now) may go on: with three hours or the
+        whole session kept, each transcript that needs saving is asked
+        about - Save... saves it (its window made if it never was); Cancel,
+        or a save not made, stays. Asked once: after a yes, True at once."""
+        if self._quit_answered:
+            return True
+        if self.ask_at_quit and self.length is not TranscriptLength.NEWEST:
+            for key, found in list(self.transcripts.items()):
+                if not self.ask_at_quit:
+                    break  # "Don't ask again" ticked for one: not for the rest
+                if not found.needs_saving():
+                    continue
+                answer = self.ask(self._label(key).name, found.kept)
+                if answer.choice is QuitChoice.CANCEL:
+                    return False
+                if answer.never_again:
+                    self.ask_at_quit = False
+                    self.asking_changed.emit(False)
+                if answer.choice is QuitChoice.SAVE and not self._save_one(key, found):
+                    return False
+        self._quit_answered = True
+        return True
+
+    def _save_one(self, key: str, found: Transcript) -> bool:
+        """Save transcript as... for app `key`'s transcript, from Quit."""
+        shown = self.shown.get(key)
+        if shown is None:
+            shown = self.shown[key] = self._open(key, found)
+        return shown.save_as()
 
     def save_now(self) -> None:
         """The transcripts' choices into the settings, beside today's."""

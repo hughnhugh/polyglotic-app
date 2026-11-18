@@ -64,7 +64,17 @@ def test_choices_read_leniently() -> None:
 def test_todays_interface_keeps_its_own_values() -> None:
     """The windows' setting is one key; today's are untouched by it."""
     stored = moved_over(TODAY)
-    assert set(stored.to_stored()) == {"windows", "last", "joined", "looked_up"}
+    assert set(stored.to_stored()) == {
+        "windows",
+        "last",
+        "joined",
+        "looked_up",
+        "recent_spoken",
+        "declined_spoken",
+        "reading_hinted",
+        "set_up",  # the first window's set-up answered (465)
+        "start_like_this",
+    }
 
 
 def test_joined_or_separate_is_remembered_with_the_joined_place() -> None:

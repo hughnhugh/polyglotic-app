@@ -127,7 +127,7 @@ def test_a_change_qt_reports_restyles_the_main_window(at_100: QApplication) -> N
     window.follows_text_size = True
     reported(at_100, window, points(18))  # 200 %
     assert style.text_scale() == 2.0 and changed == [True]
-    assert "font-size: 26px" in window.styleSheet()
+    assert "font-size: 26px" in window.sidebar.styleSheet()
     assert window.minimumWidth() >= FLOOR[0]  # kept to the (small) offscreen screen
     reported(at_100, window, points(18))  # the same size again: nothing
     assert changed == [True]

@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from polyglotic_desktop.connection import protocol
+from polyglotic_desktop.core.listening.maintenance import SPREAD_SEC
 from polyglotic_desktop.core.listening.unreachable import Unreachable
 
 MAX_WAIT_SEC = 8.0
@@ -130,6 +131,10 @@ class Reconnects:
             return Stop(StopReason.LISTENING_MOVED)
         if code == ENDED_BY_US:
             return Stop(StopReason.ENDED_BY_US)
+        if isinstance(refusal, protocol.ServerBusy) and refusal.reason == "maintenance":
+            # a planned window: the time left (at most 2 minutes), plus a
+            # random 0-60 s, so the apps come back spread out at its end (319)
+            return RetryIn(refusal.retry_after + SPREAD_SEC * self._random())
         if isinstance(refusal, protocol.ServerBusy):
             # retry_after plus a random 0-50% more
             return RetryIn(refusal.retry_after * (1 + 0.5 * self._random()))
@@ -139,6 +144,10 @@ class Reconnects:
         if code == GOING_AWAY:
             wait = max(GOING_AWAY_MIN_SEC, wait)
         return RetryIn(wait)
+
+    def random(self) -> float:
+        """A random 0-1, the backoff's own (tests fix it)."""
+        return self._random()
 
     def _backoff(self) -> float:
         """Full jitter: random between 0 and min(8, 2^n), then n + 1."""

@@ -171,7 +171,7 @@ def test_a_garbled_row_is_left_out_and_the_rest_loads(
     snapshot = store.load()
     store.close()
 
-    assert vocabulary.curve is not None
+    assert vocabulary.line is not None
     assert len(snapshot.statuses) == STATUSES
     assert [c.id for c in snapshot.categories] == ["saved", "tricky"]
     assert len(snapshot.saved_words) == len(snapshot.deck_words) == 3

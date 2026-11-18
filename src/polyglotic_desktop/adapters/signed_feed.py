@@ -11,7 +11,11 @@ app, with the public keys built in (`main.FEED_KEYS`):
 1. fetches the feed and its signature, and refuses the feed unless one of
    the keys signed exactly those bytes for the channel it asked for;
 2. downloads the package Velopack would install - the newest full one -
-   and refuses it unless its size and SHA-256 are the signed feed's;
+   and refuses it unless its size and SHA-256 are the signed feed's (a
+   download cut short is carried on from at the next check, then checked
+   whole) - or, asked to leave it (`package=False`: a look on a metered
+   connection must not download it, polyglotic-hq 345), downloads it
+   only when told to (`fetch_package`);
 3. writes the signed feed beside it in a folder of its own, and Velopack
    reads that folder instead of the network (deltas off: only the full
    package is there).
@@ -30,7 +34,9 @@ import logging
 import re
 import urllib.request
 from collections.abc import Callable, Sequence
+from http import HTTPStatus
 from pathlib import Path
+from typing import Any
 
 from nacl.exceptions import BadSignatureError
 from nacl.signing import VerifyKey
@@ -44,11 +50,24 @@ SIGNATURE_BYTES = 64
 FEED_BYTES_MAX = 4_000_000  # a feed is a few KB; anything this big is wrong
 PLAIN_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 """A package's file name in the feed: a bare name, never a path."""
+CONTENT_RANGE = re.compile(r"bytes (\d+)-\d+/(?:\d+|\*)")
+"""A 206's Content-Range: where the part sent starts."""
 
 
 class FeedNotTrusted(Exception):
     """The feed, its signature or a package isn't what we signed. Says
     which check failed, never the contents."""
+
+
+def failure_named(problem: BaseException) -> str:
+    """A failure as the log says it: its kind - and a feed check's own
+    words, which name the check, never the feed's contents. A tester's
+    "FeedNotTrusted" alone couldn't say whether a signature or a download
+    cut short had failed (polyglotic-hq 302). Other failures' details stay
+    out: an OSError's can name a folder or an address."""
+    if isinstance(problem, FeedNotTrusted):
+        return f"{type(problem).__name__}: {problem}"
+    return type(problem).__name__
 
 
 def public_keys(encoded: Sequence[str]) -> list[VerifyKey]:
@@ -142,27 +161,79 @@ def _request(url: str) -> urllib.request.Request:
     return urllib.request.Request(url, headers=HEADERS)
 
 
-def fetch(url: str) -> bytes:
+OpenUrl = Callable[..., Any]
+"""`urllib.request.urlopen`'s shape, called `(request, timeout=...)`: main
+hands in connection.tls's, which tries a certificate outside its dates
+once more (decision 0104). What protects an update isn't TLS but the
+feed's signature and the package's signed size and SHA-256."""
+
+
+def _opener(open_url: OpenUrl | None) -> OpenUrl:
+    return open_url or urllib.request.urlopen
+
+
+def fetch(url: str, open_url: OpenUrl | None = None) -> bytes:
     """A small file (the feed, its signature) over HTTPS - the feed's
     address is checked before this is used."""
-    with urllib.request.urlopen(_request(url), timeout=TIMEOUT_SEC) as response:
+    with _opener(open_url)(_request(url), timeout=TIMEOUT_SEC) as response:
         body: bytes = response.read(FEED_BYTES_MAX + 1)
         return body
 
 
-def fetch_to(url: str, path: Path, limit: int) -> None:
+def fetch_to(
+    url: str,
+    path: Path,
+    limit: int,
+    open_url: OpenUrl | None = None,
+    timeout: float = TIMEOUT_SEC,
+    on_block: Callable[[int], bool] | None = None,
+    block: int = 1 << 20,
+) -> None:
     """A package, streamed to `path` (tens of MB: never held in memory) - at
     most `limit` bytes of it. The caller passes one more than the signed
     feed's size: a package served longer than that is cut there, so whoever
-    holds the storage can't fill the disk, and the size check refuses it."""
-    with (
-        urllib.request.urlopen(_request(url), timeout=TIMEOUT_SEC) as response,
-        path.open("wb") as out,
-    ):
-        left = limit
-        while left > 0 and (block := response.read(min(1 << 20, left))):
-            out.write(block)
-            left -= len(block)
+    holds the storage can't fill the disk, and the size check refuses it.
+
+    What `path` already holds - a download cut short - is carried on from:
+    only the rest is asked for (`Range`), and kept if that's what comes
+    back (206 from where it stopped); anything else (a whole file, 200)
+    starts it again. A tester's 0.1.4 (about 90 MB) was cut short on a
+    connection that dropped every few minutes, and each try began from
+    nothing (polyglotic-hq 302). The signed size and SHA-256 are checked
+    once it's whole, so no byte is trusted for having been kept.
+
+    `timeout`: how long a read may wait for data (a dictionary pack's
+    download calls a quiet connection stalled sooner than an update's);
+    `on_block`, if given, is told the bytes in `path` after each block, and
+    stops the download by answering False (what came is kept), at most
+    `block` bytes apart."""
+    have = path.stat().st_size if path.is_file() else 0
+    request = _request(url)
+    if 0 < have < limit:
+        request.add_header("Range", f"bytes={have}-")
+    with _opener(open_url)(request, timeout=timeout) as response:
+        carried_on = 0 < have < limit and _rest_from(response, have)
+        if not carried_on and response.status == HTTPStatus.PARTIAL_CONTENT:
+            path.unlink(missing_ok=True)  # a part, not the rest of ours: anew next time
+            return
+        with path.open("ab" if carried_on else "wb") as out:
+            written = have if carried_on else 0
+            left = limit - written
+            while left > 0 and (data := response.read(min(block, left))):
+                out.write(data)
+                left -= len(data)
+                written += len(data)
+                if on_block is not None and not on_block(written):
+                    return
+
+
+def _rest_from(response: Any, start: int) -> bool:
+    """Whether `response` is the package from byte `start` on: a 206 whose
+    Content-Range starts there."""
+    if response.status != HTTPStatus.PARTIAL_CONTENT:
+        return False
+    found = CONTENT_RANGE.fullmatch(response.headers.get("Content-Range", "").strip())
+    return found is not None and int(found.group(1)) == start
 
 
 class VerifiedFeed:
@@ -185,12 +256,15 @@ class VerifiedFeed:
         self._get = get
         self._get_to = get_to
 
-    def refresh(self, channel: str, current_version: str, switching: bool) -> Path:
+    def refresh(
+        self, channel: str, current_version: str, switching: bool, package: bool = True
+    ) -> Path:
         """Fetches and checks `channel`'s feed and its newest full package -
         unless that's this version or an older one and the channel isn't
         changing (nothing Velopack would install: then any package checked
         before, installed by now, is removed) - and returns the folder
-        Velopack should read. Raises
+        Velopack should read. `package` False: the feed only, the package
+        left for `fetch_package` (polyglotic-hq 345). Raises
         FeedNotTrusted, leaving the folder's last checked feed (or none),
         if any check fails."""
         name = f"releases.{channel}.json"
@@ -202,15 +276,30 @@ class VerifiedFeed:
         newest = newest_full_package(feed)
         folder = self.folder_for(channel)
         folder.mkdir(parents=True, exist_ok=True)
-        package = folder / str(newest["FileName"])
+        newest_file = folder / str(newest["FileName"])
         wanted = switching or _newer(str(newest["Version"]), current_version)
-        if wanted and not self._has(package, newest):
-            self._download(package, newest)
+        if wanted and package and not self._has(newest_file, newest):
+            self._download(newest_file, newest)
         elif not wanted:
             self._remove_packages(folder)
         (folder / name).write_bytes(feed)  # last: only a checked feed is ever there
         log.info("update feed checked: newest %s", newest["Version"])
         return folder
+
+    def fetch_package(self, channel: str) -> None:
+        """Downloads and checks the newest full package of `channel`'s feed
+        as `refresh` last checked it - what `refresh(package=False)` left
+        out (polyglotic-hq 345). FeedNotTrusted if it can't be, or no feed
+        was checked."""
+        folder = self.folder_for(channel)
+        try:
+            feed = (folder / f"releases.{channel}.json").read_bytes()
+        except OSError as e:
+            raise FeedNotTrusted("no checked feed to download from") from e
+        newest = newest_full_package(feed)
+        package = folder / str(newest["FileName"])
+        if not self._has(package, newest):
+            self._download(package, newest)
 
     def folder_for(self, channel: str) -> Path:
         """Where `channel`'s checked feed and package are kept."""
@@ -237,19 +326,27 @@ class VerifiedFeed:
                 log.info("checked package removed: nothing to install")
 
     def _download(self, package: Path, asset: dict[str, object]) -> None:
+        """Downloads `package` to its `.part` and checks it whole. A download
+        cut short - its connection dropped - is kept, and the next check
+        carries on from it (`fetch_to`); one the signed size and SHA-256
+        refuse is removed."""
         part = package.with_name(package.name + ".part")
         size = int(str(asset["Size"]))
-        # one byte more than the feed says: a longer package is cut and refused
-        self._get_to(self._base + package.name, part, size + 1)
-        if part.stat().st_size != size:
+        if not (part.is_file() and part.stat().st_size == size):  # not whole yet
+            # one byte more than the feed says: a longer package is cut and refused
+            self._get_to(self._base + package.name, part, size + 1)
+        got = part.stat().st_size if part.is_file() else 0
+        if got < size:
+            raise FeedNotTrusted("a package's download was cut short")
+        if got != size:
             part.unlink()
             raise FeedNotTrusted("a package isn't the size the feed says")
         if _sha256(part) != str(asset["SHA256"]).lower():
             part.unlink()
             raise FeedNotTrusted("a package isn't the one the feed says")
         part.replace(package)
-        for old in package.parent.glob("*.nupkg"):
-            if old != package:
+        for old in [*package.parent.glob("*.nupkg"), *package.parent.glob("*.part")]:
+            if old != package:  # an older version's, whole or cut short
                 old.unlink(missing_ok=True)
 
 

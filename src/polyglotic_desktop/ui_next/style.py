@@ -25,8 +25,10 @@ Windows' own do. Captions keep their own size (a caption window's A- /
 A+): neither factor touches them.
 """
 
+import tempfile
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from PySide6.QtGui import QColor, QFont, QFontDatabase, QGuiApplication
 from PySide6.QtWidgets import QApplication, QMenu, QToolTip
@@ -85,16 +87,21 @@ _WITH_SYMBOLS = (
 )
 
 
-def use_interface_language(language: str) -> None:
+def use_interface_language(language: str, listed: bool = True) -> None:
     """The interface's Chinese in its own script's font: Traditional's
     (JhengHei, Taiwan's glyph shapes) before Simplified's (YaHei) for a
     Traditional interface. Set once at start, before the first window
     (polyglotic-hq 156). And its symbols from SYMBOLS (`use_symbols`), and
-    its Chinese faces behind every font (`use_chinese_behind_every_font`)."""
+    its Chinese faces behind every font (`use_chinese_behind_every_font`).
+
+    `listed=False`: behind the fonts the interface names only, which asks
+    nothing of Windows' fonts - `main` at start, while they're read on a
+    thread of their own (`fonts_ahead`); it calls this again, whole, once
+    they're read and before any text is drawn (polyglotic-hq 322)."""
     global _UI_FAMILY_CSS
     traditional = language == "zh_TW"
     use_symbols()
-    use_chinese_behind_every_font(traditional, SCRIPT_FACES.get(language, []))
+    use_chinese_behind_every_font(traditional, SCRIPT_FACES.get(language, []), listed)
     UI_FAMILIES[:] = _ui_families(traditional, language)
     _UI_FAMILY_CSS = ", ".join(f"'{f}'" for f in UI_FAMILIES)
 
@@ -112,7 +119,9 @@ CHINESE_FACES = frozenset(
 Qt keeps the faces behind one: in lower case."""
 
 
-def use_chinese_behind_every_font(traditional: bool, own: Sequence[str] = ()) -> None:
+def use_chinese_behind_every_font(
+    traditional: bool, own: Sequence[str] = (), listed: bool = True
+) -> None:
     """The interface's Chinese faces (`_chinese`) behind every family Qt
     has and every one the interface names (`QFont.insertSubstitution`), so
     Chinese in a font list with no Chinese face of its own - what names no
@@ -134,10 +143,14 @@ def use_chinese_behind_every_font(traditional: bool, own: Sequence[str] = ()) ->
     (changed, the old order goes). `own`: the interface language's own
     script's faces (`SCRIPT_FACES`), before the Chinese ones - a Japanese
     interface's menus draw their kanji in a Japanese face (polyglotic-hq
-    294)."""
+    294).
+
+    `listed=False`: only the families the interface names. Listing Qt's
+    families is the first use of Windows' fonts, and waits for them to be
+    read (about 0.1 s, `fonts_ahead`); the names need no such look."""
     chinese, others = _chinese(traditional)
     named = {*_WITH_SYMBOLS, *QGuiApplication.font().families()}
-    for family in {*QFontDatabase.families(), *named}:
+    for family in {*QFontDatabase.families(), *named} if listed else named:
         kept = [f for f in QFont.substitutes(family) if f not in CHINESE_FACES]
         symbols = SYMBOLS.lower()  # Qt keeps them in lower case
         at = kept.index(symbols) + 1 if symbols in kept else 0
@@ -325,6 +338,76 @@ def rgba(hex_color: str, alpha: float) -> str:
     return f"rgba({c.red()}, {c.green()}, {c.blue()}, {alpha:.3f})"
 
 
+QUIET_ROLES = ("PageSubtitle", "Dim", "Faint", "Warning")
+"""A label's roles (`controls.label`) the stylesheet also finds by the
+label's `role` property: a note keeps its colour and size when it's given
+an object name of its own."""
+
+
+def _role(role: str) -> str:
+    assert role in QUIET_ROLES
+    return f'QLabel[role="{role}"]'
+
+
+TICK_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">'
+    '<path d="M3.5 8.5l3 3 6-7" fill="none" stroke="{colour}" stroke-width="2" '
+    'stroke-linecap="round" stroke-linejoin="round"/></svg>'
+)
+"""A check box's tick (`tick`), drawn in the indicator's 16 x 16."""
+_ticks: tempfile.TemporaryDirectory[str] | None = None
+
+
+def tick(colour: str) -> str:
+    """A check box's tick in `colour`, as a file: a stylesheet's `image`
+    reads one only from a file. Written once per colour, into a folder of
+    this run's own that goes when it ends. "" if it can't be written: the
+    box is then filled without its tick, its state still plain."""
+    global _ticks
+    try:
+        if _ticks is None:
+            _ticks = tempfile.TemporaryDirectory(prefix="polyglotic-")
+        path = Path(_ticks.name) / f"tick-{QColor(colour).name()[1:]}.svg"
+        if not path.exists():
+            path.write_text(TICK_SVG.format(colour=colour), encoding="utf-8")
+    except OSError:
+        return ""
+    return path.as_posix()
+
+
+def _indicators(t: Theme) -> str:
+    """Check boxes' and radio buttons' boxes in the theme's colours, not
+    Windows' (polyglotic-hq 425: the consent screen's were drawn for
+    Windows' light or dark mode - on a window in the other, 1.1:1 against
+    its background, unseen). Their edge is TEXT_DIM and a checked one is
+    filled with ACCENT, each at least 3:1 against the window and its cards
+    (WCAG 2.2's 1.4.11; tests/ui/test_check_boxes.py). As big as Windows
+    11's own: 20 px with the edge, at 100 %."""
+    box = px(18)
+    ring = (box + 2) // 2  # a radio button's round
+    checked = tick(t["ACCENT_TEXT"])
+    image = f' image: url("{checked}");' if checked else ""
+    ACCENT, ACCENT_TEXT = t["ACCENT"], t["ACCENT_TEXT"]
+    TEXT, TEXT_DIM, TEXT_FAINT = t["TEXT"], t["TEXT_DIM"], t["TEXT_FAINT"]
+    dot = (
+        "qradialgradient(cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, "
+        f"stop:0 {ACCENT_TEXT}, stop:0.38 {ACCENT_TEXT}, stop:0.46 {ACCENT}, "
+        f"stop:1 {ACCENT})"
+    )
+    return f"""
+QCheckBox::indicator, QRadioButton::indicator {{
+    width: {box}px; height: {box}px; border: 1px solid {TEXT_DIM}; background: transparent;
+}}
+QCheckBox::indicator {{ border-radius: 3px; }}
+QRadioButton::indicator {{ border-radius: {ring}px; }}
+QCheckBox::indicator:hover, QRadioButton::indicator:hover {{ border-color: {TEXT}; }}
+QCheckBox::indicator:checked {{ background: {ACCENT}; border-color: {ACCENT};{image} }}
+QRadioButton::indicator:checked {{ background: {dot}; border-color: {ACCENT}; }}
+QCheckBox::indicator:disabled, QRadioButton::indicator:disabled {{ border-color: {TEXT_FAINT}; }}
+QCheckBox::indicator:checked:disabled {{ background: {TEXT_FAINT}; border-color: {TEXT_FAINT}; }}
+"""
+
+
 def stylesheet(t: Theme) -> str:
     """A window's stylesheet in theme `t`'s colours, its text at the text
     size now (`px`): today's, and the new parts'."""
@@ -340,14 +423,16 @@ QMainWindow, QDialog, QTabWidget, #Page, #Content {{ background: {BG}; }}
 QToolTip {{ background: {SURFACE_2}; color: {TEXT}; border: 1px solid {BORDER}; padding: 4px 6px; }}
 #Card {{ background: {SURFACE}; border: 1px solid {BORDER}; border-radius: 12px; }}
 #PageTitle {{ font-size: {px(24)}px; font-weight: 600; font-family: '{t.heading_family}', {_UI_FAMILY_CSS}; }}
-#PageSubtitle, #Dim {{ color: {TEXT_DIM}; }}
-#Faint, #machine_made {{ color: {TEXT_FAINT}; font-size: {px(12)}px; }}
-#Warning {{ color: {WARNING}; }}
+#PageSubtitle, #Dim, {_role("PageSubtitle")}, {_role("Dim")} {{ color: {TEXT_DIM}; }}
+#Faint, #machine_made, {_role("Faint")} {{ color: {TEXT_FAINT}; font-size: {px(12)}px; }}
+#Warning, {_role("Warning")} {{ color: {WARNING}; }}
 #Banner {{
     background: {rgba(WARNING, 0.14)}; border: 1px solid {rgba(WARNING, 0.5)};
     border-radius: 8px; padding: 6px 10px;
 }}
 #CardTitle {{ font-size: {px(14)}px; font-weight: 600; }}
+#CardTitle[heading="true"] {{ font-size: {px(16)}px; }}
+#PinnedCard {{ background: {SURFACE_2}; border: 1px solid {BORDER}; border-radius: 8px; }}
 #Brand {{ font-size: {px(15)}px; font-weight: 600; }}
 #RowTitle {{ font-weight: 600; }}
 #StateTitle {{ font-size: {px(20)}px; font-weight: 600; }}
@@ -387,7 +472,11 @@ QLineEdit, QComboBox, QPlainTextEdit {{
     background: {SURFACE_2}; border: 1px solid {BORDER}; border-radius: 8px;
     padding: 6px 10px; selection-background-color: {MARKER}; selection-color: {TEXT};
 }}
+QLineEdit {{ placeholder-text-color: {TEXT_DIM}; }}
+QLabel {{ selection-background-color: {MARKER}; selection-color: {TEXT}; }}
 QComboBox[kind="chip"] {{ padding: 2px 8px; border-radius: 10px; }}
+QComboBox[drop="own"]::drop-down {{ border: none; background: transparent; width: {px(22)}px; }}
+QComboBox[drop="own"]::down-arrow {{ image: none; width: 0px; height: 0px; }}
 QLineEdit:focus, QComboBox:focus, QPlainTextEdit:focus {{ border: 1px solid {FOCUS}; }}
 QComboBox QAbstractItemView {{ background: {SURFACE_2}; border: 1px solid {BORDER}; }}
 QTextBrowser {{
@@ -401,6 +490,10 @@ QTabBar::tab:selected {{ color: {TEXT}; border-bottom: 2px solid {ACCENT}; }}
 QTableWidget {{ background: {SURFACE}; border: 1px solid {BORDER}; gridline-color: {BORDER}; }}
 QHeaderView::section {{ background: {SURFACE_2}; color: {TEXT_DIM}; border: none; padding: 5px; }}
 QCheckBox {{ spacing: 8px; }}
+{_indicators(t)}
+/* the first run's code box: its edge at least 3:1 (425; BORDER is 1.3:1) */
+#SignInDialog QLineEdit {{ border-color: {TEXT_FAINT}; }}
+#SignInDialog QLineEdit:focus {{ border-color: {FOCUS}; }}
 #Sidebar {{ background: {SIDEBAR}; border-right: 1px solid {BORDER}; }}
 #NavButton {{
     background: transparent; border: none; border-radius: 8px; text-align: left;

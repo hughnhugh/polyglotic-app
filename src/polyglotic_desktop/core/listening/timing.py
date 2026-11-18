@@ -130,6 +130,21 @@ CUT_LOOKBACK_SEC = 1.5
 # The quietest moment is the quietest run of this many frames (~100ms):
 # longer than the closure of a "p" or "t" inside a word.
 _QUIET_RUN_FRAMES = 3
+# The server's speech ceiling: seconds of audio a minute per account, live
+# updates and finished speech together (protocol.md, Limits; `welcome`'s
+# `limits.speech_seconds_per_minute`). Over it the server refuses live
+# updates - all of them, until enough of the minute has aged out: with
+# three apps talking at 0.75s, every live update for about 20s of each
+# minute (polyglotic-hq 307). So the app keeps to it itself, evenly
+# (decision 0097): live updates wait their turn for a share of it.
+SPEECH_SECONDS_PER_MINUTE = 600.0
+# The app's own share of the ceiling: under it by more than the difference
+# between its count and the server's (which counts a frame by its bytes
+# too).
+LIVE_BUDGET_SHARE = 0.9
+# How much of the ceiling the app can send at once before live updates are
+# spread: three apps' live updates at 0.75s for about 8s.
+LIVE_BURST_SHARE = 0.1
 
 _MIN_SPEECH_FRAMES = int(MIN_SPEECH_SEC / FRAME_SEC)  # 12 frames
 
@@ -343,6 +358,17 @@ class TranscriptionRequest:
     replaces: tuple[CaptionId, ...] = ()
     cut_before: bool = False
     cut_after: bool = False
+    held: bool = False
+    """A live update that waited its turn under the speech ceiling before
+    it was asked for (`CaptionTiming._live_budget`): nothing the server
+    is told - the session counts them, to tell the learner once that live
+    updates have slowed (`core.listening.held_back`)."""
+
+    @property
+    def audio_seconds(self) -> float:
+        """How long the audio sent for it is: the speech and its margins -
+        what the server's speech ceiling counts."""
+        return self.speech_end - self.speech_start + sum(self.pads)
 
     @property
     def pads(self) -> tuple[float, float]:
@@ -453,6 +479,21 @@ class CaptionTiming:
         self.paused = False
         """Nothing is sent while paused; speech is still followed, so
         captions pick up mid-sentence when resumed."""
+        self.paused_sources: frozenset[SourceId] = frozenset()
+        """Sources paused on their own - a caption window hidden past the
+        learner's limit (polyglotic-hq 335): nothing is sent for them, as
+        while paused, and their speech is still followed."""
+        self.speech_ceiling: float | None = SPEECH_SECONDS_PER_MINUTE
+        """The server's speech ceiling, seconds of audio a minute: live
+        updates wait rather than pass it (`_live_budget`). None: no such
+        rule (the proof of concept's)."""
+        self.live_updates_held = 0
+        """How many live updates that were due have waited for the speech
+        ceiling, so far - each once, however long it waited."""
+        self._budget: float | None = None  # seconds of audio; None: full
+        self._budget_at = 0.0
+        self._waiting: set[SourceId] = set()  # sources with a live update held
+        self._served: dict[SourceId, float] = {}  # each source's last live update
         self._new_caption_id = new_caption_id
         self._sources: dict[SourceId, _SourceState] = {}
         self._run: _Run | None = None
@@ -497,9 +538,14 @@ class CaptionTiming:
         return frozenset(
             source_id
             for source_id, state in self._sources.items()
-            if state.segment is not None
+            if source_id not in self.paused_sources
+            and state.segment is not None
             and state.segment.speech_frames >= _MIN_SPEECH_FRAMES
         )
+
+    def _silent(self, source_id: SourceId) -> bool:
+        """Nothing is sent for `source_id` now: paused, or paused on its own."""
+        return self.paused or source_id in self.paused_sources
 
     def add_source(self, source: Source, bleed: MicBleedCheck | None = None) -> None:
         """Starts following `source`. `bleed` is checked before anything is
@@ -509,6 +555,8 @@ class CaptionTiming:
     def remove_source(self, source_id: SourceId) -> None:
         """Stops following a source. Speech in progress is dropped."""
         self._sources.pop(source_id, None)
+        self._waiting.discard(source_id)
+        self._served.pop(source_id, None)
 
     def frame(
         self, source_id: SourceId, end: float, speech: bool, level: float | None = None
@@ -517,6 +565,57 @@ class CaptionTiming:
         or not, and its `level` - how loud it was (any measure that's lower
         for quieter audio; None: not known, and a cut at a limit falls where
         the limit does). Returns the decisions it leads to (usually none)."""
+        self._refill(end)
+        decisions = self._heard(source_id, end, speech, level)
+        if self._sources[source_id].segment is None:
+            self._waiting.discard(source_id)  # no speech, no turn to wait for
+        if self._budget is not None:
+            for decision in decisions:
+                if isinstance(decision, TranscriptionRequest):
+                    self._budget -= decision.audio_seconds
+        return decisions
+
+    def _refill(self, now: float) -> None:
+        """The live budget, a leaky bucket on the app's clock: it holds at
+        most LIVE_BURST_SHARE of the ceiling, and fills at the rate that
+        keeps any minute's audio - a burst and all - under
+        LIVE_BUDGET_SHARE of it. Everything sent is taken from it; only live
+        updates wait for it."""
+        ceiling = self.speech_ceiling
+        if ceiling is None:
+            self._budget = None
+            return
+        full = LIVE_BURST_SHARE * ceiling
+        if self._budget is None:
+            self._budget = full
+        else:
+            rate = (LIVE_BUDGET_SHARE - LIVE_BURST_SHARE) * ceiling / 60.0
+            gained = max(0.0, now - self._budget_at) * rate
+            self._budget = min(full, self._budget + gained)
+        self._budget_at = now
+
+    def _live_budget(self, source_id: SourceId, now: float) -> bool:
+        """Whether `source_id`'s live update, due now, can go: there's
+        budget left, and no other source with one held had its last live
+        update longer ago - so each source gets its turn, and none is
+        starved by the others. Otherwise it waits: it's due again at the
+        source's next frame."""
+        if self._budget is None:
+            return True
+        last = self._served.get(source_id, 0.0)
+        others = (self._served.get(s, 0.0) for s in self._waiting if s != source_id)
+        if self._budget > 0 and last <= min(others, default=last):
+            self._waiting.discard(source_id)
+            self._served[source_id] = now
+            return True
+        if source_id not in self._waiting:
+            self._waiting.add(source_id)
+            self.live_updates_held += 1
+        return False
+
+    def _heard(
+        self, source_id: SourceId, end: float, speech: bool, level: float | None
+    ) -> list[Decision]:
         state = self._sources[source_id]
         segment = state.segment
         decisions: list[Decision] = []
@@ -618,9 +717,9 @@ class CaptionTiming:
     ) -> list[Decision]:
         """The pause: the whole speech segment (or the run it joins) once
         more, as a finished caption replacing its live updates."""
-        if self.paused:
-            return []
         source = state.source
+        if self._silent(source.id):
+            return []
         if state.bleed is not None and state.bleed(segment.start, speech_end):
             if segment.caption_id is None:
                 return []
@@ -690,7 +789,7 @@ class CaptionTiming:
         there. Without it the next speech starts one. Nothing is joined
         onto a cut: the stretch was cut on purpose."""
         decisions: list[Decision] = []
-        if not self.paused and not (
+        if not self._silent(state.source.id) and not (
             state.bleed is not None and state.bleed(segment.start, end)
         ):
             caption_id = segment.caption_id or self._new_caption_id()
@@ -724,12 +823,14 @@ class CaptionTiming:
         update."""
         interval = self.paced_interval
         wait = self.paced_max_wait
+        source_id = state.source.id
         if (
-            self.paused
+            self._silent(source_id)
             or (interval is None and wait is None)
             or state.silence_frames
             or end - segment.start < LIVE_MIN_AUDIO_SEC
         ):
+            self._waiting.discard(source_id)
             return []
         overdue = wait is not None and end - segment.last_update >= wait
         schedule = self.rules.schedule
@@ -759,6 +860,9 @@ class CaptionTiming:
             if end - segment.last_update < interval and not overdue:
                 return []
             _next_section_if_long(segment, end)
+        held = source_id in self._waiting
+        if not self._live_budget(source_id, end):
+            return []
         segment.last_update = end
         segment.section_updates += 1
         segment.live_updates += 1
@@ -776,5 +880,6 @@ class CaptionTiming:
                 end,
                 section=segment.section,
                 cut_before=segment.cut_before and segment.section == 0,
+                held=held,
             )
         ]

@@ -378,6 +378,58 @@ def test_the_tray_icon_shows_pause_and_a_click_brings_the_window_back(
             started.stop()
 
 
+@pytest.mark.windows_only  # main() itself: the OS's adapters
+def test_a_second_start_brings_the_window_back_from_the_tray_and_minimised(
+    tmp_path: Path,
+) -> None:
+    """Only one copy runs (polyglotic-hq 310): the app started again on its
+    data folder ends with 0 and shows nothing of its own, and the first
+    copy's main window comes back - closed to the tray, then minimised -
+    shown, in front of the desktop's other windows."""
+    command, out = _app_command(tmp_path)
+    again = [*command[:3], str(tmp_path / "second"), *command[4:]]
+    log, second_log = tmp_path / "app.txt", tmp_path / "second.txt"
+
+    def said() -> dict[str, bool]:
+        found: dict[str, bool] = json.loads((out / "main.json").read_text("utf-8"))
+        return found
+
+    def started_again(desktop: PrivateDesktop) -> None:
+        second = desktop.start(again, env=QT, cwd=ROOT, output=second_log)
+        try:
+            assert second.wait(60) == 0, _tail(second_log)
+        finally:
+            second.stop()
+        assert not (tmp_path / "second" / "shown.json").exists()
+
+    with PrivateDesktop() as desktop:
+        started = desktop.start(command, env=QT, cwd=ROOT, output=log)
+        try:
+            _until(lambda: (out / "shown.json").exists(), 90, "main window", log)
+            main = json.loads((out / "shown.json").read_text(encoding="utf-8"))["main"]
+            # said on the driver's next step after shown.json (CI, 2026-11-14)
+            _until(lambda: (out / "main.json").exists(), 30, "main.json", log)
+
+            (out / "hide").touch()  # closed: kept in the tray
+            _until(lambda: not said()["shows"], 30, "main window hidden", log)
+            started_again(desktop)
+            _until(lambda: said()["shows"], 30, "main window back", log)
+            (shown,) = [w for w in desktop.windows(started) if w.hwnd == main]
+            assert shown.visible or not SHOWN
+            on_top = [w for w in desktop.windows() if w.visible and not w.topmost]
+            assert not SHOWN or on_top[0].hwnd == main  # in front of the rest
+
+            (out / "minimise").touch()
+            _until(lambda: said()["minimised"], 30, "main window minimised", log)
+            started_again(desktop)
+            _until(lambda: not said()["minimised"], 30, "main window restored", log)
+
+            (out / "quit").touch()
+            assert started.wait(30) == 0, _tail(log)
+        finally:
+            started.stop()
+
+
 def _middle(window: Window) -> tuple[int, int]:
     left, top, right, bottom = window.rect
     return (left + right) // 2, (top + bottom) // 2

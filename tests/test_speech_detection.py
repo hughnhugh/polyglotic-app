@@ -16,6 +16,7 @@ from polyglotic_desktop.platform.speech_detection import (
     GAIN_HOLD_SEC,
     GAIN_MAX,
     GAIN_TARGET_PEAK,
+    MIC_GAIN_MAX,
     MODEL_SHA256,
     SILENCE_RESET_SEC,
     DetectionGain,
@@ -187,4 +188,21 @@ def test_the_gain_holds_after_loud_audio_then_rises() -> None:
     gain.reset()
     assert float(np.abs(gain.apply(quiet)).max()) == pytest.approx(
         GAIN_TARGET_PEAK, rel=1e-5
+    )
+
+
+def test_the_mics_gain_raises_quiet_audio_by_mic_gain_max_at_most() -> None:
+    """polyglotic-hq 352, decision 0145: what is quiet on the mic is the
+    room, so its gain stops at MIC_GAIN_MAX (+6 dB); ordinary audio is
+    heard as it is, as on every source."""
+    quiet = _frame(GAIN_TARGET_PEAK / 30)
+    raised = DetectionGain(MIC_GAIN_MAX).apply(quiet)
+    assert float(np.abs(raised).max()) == pytest.approx(
+        float(np.abs(quiet).max()) * MIC_GAIN_MAX, rel=1e-5
+    )
+    loud = _frame(GAIN_TARGET_PEAK * 2)
+    assert DetectionGain(MIC_GAIN_MAX).apply(loud) is loud
+    near = _frame(GAIN_TARGET_PEAK / 1.5)  # needs less than the ceiling
+    assert float(np.abs(DetectionGain(MIC_GAIN_MAX).apply(near)).max()) == (
+        pytest.approx(GAIN_TARGET_PEAK, rel=1e-5)
     )

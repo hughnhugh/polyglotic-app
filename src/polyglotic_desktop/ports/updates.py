@@ -15,12 +15,15 @@ class Update:
     """A release on the feed this copy could move to. `downgrade`: a lower
     or equal version, which only a change of channel may bring. `notes`:
     its release notes as the feed carries them (Markdown, RELEASE-NOTES.md's
-    section for it), "" when the feed has none - not part of what makes
-    two the same release."""
+    section for it), "" when the feed has none; `size`: the bytes this
+    copy would download for it - its deltas' when the installer would use
+    them, else the full package's - 0 when not known (polyglotic-hq 345).
+    Neither is part of what makes two the same release."""
 
     version: str
     downgrade: bool = False
     notes: str = field(default="", compare=False)
+    size: int = field(default=0, compare=False)
 
 
 class FeedUnreachable(Exception):

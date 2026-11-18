@@ -65,6 +65,27 @@ def test_the_build_is_unpacked_without_velopacks_files_and_stamped_for_the_chann
     assert (tmp_path / "out" / "Polyglotic.ico").read_bytes() == b"ico"
 
 
+@pytest.mark.usefixtures("no_qt")
+def test_a_promoted_build_keeps_the_time_it_was_built(tmp_path: Path) -> None:
+    """The stamp's `built` (decision 0104) is the build's, not the promotion's."""
+    stamped = {
+        "version": "0.1.0",
+        "channel": "win-x64-alpha",
+        "built": "2026-11-14T05:12:00Z",
+    }
+    build = package(
+        tmp_path / "Polyglotic-0.1.0-win-x64-alpha-full.nupkg",
+        "win-x64-alpha",
+        **{promote.STAMP: json.dumps(stamped).encode()},
+    )
+    app = unpack(build, "win-x64-beta", tmp_path / "out", expected=None)
+    assert json.loads((app / promote.STAMP).read_text(encoding="utf-8")) == {
+        "version": "0.1.0",
+        "channel": "win-x64-beta",
+        "built": "2026-11-14T05:12:00Z",
+    }
+
+
 def test_a_build_that_isnt_the_recorded_one_isnt_unpacked(tmp_path: Path) -> None:
     build = package(tmp_path / "build.nupkg", "win-x64-alpha")
     with pytest.raises(NotTheBuild, match="recorded 00"):

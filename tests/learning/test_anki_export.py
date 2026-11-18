@@ -18,7 +18,11 @@ from polyglotic_desktop.core.learning.anki import (
     marked_sentence,
 )
 from polyglotic_desktop.core.learning.lookups import LookupContext
-from polyglotic_desktop.core.learning.vocabulary import EntryText, Vocabulary
+from polyglotic_desktop.core.learning.vocabulary import (
+    AnkiFormat,
+    EntryText,
+    Vocabulary,
+)
 from polyglotic_desktop.core.shared import EntryFacts, EntryId, WordStatus
 
 HANG = EntryId("cedict:行-háng")
@@ -289,6 +293,32 @@ def test_only_words_not_exported_yet() -> None:
     assert again.export_anki(describe, only_new=True).entry_ids == (XING,)
 
 
+def test_each_kind_of_file_remembers_its_own_exports() -> None:
+    """368 (QA 361's B5): an .apkg, then a CSV of only the words not
+    exported yet, came out empty - the two shared one record. A learner
+    keeping a deck file for Anki and a CSV for something else wants each
+    to get every word once."""
+    s = Setup()
+    s.vocab.learn(HANG, TEXTS[HANG], LookupContext("银行", "bank"))
+    deck = s.vocab.export_anki(describe, only_new=True, file=AnkiFormat.DECK)
+    s.vocab.mark_exported(deck.entry_ids, AnkiFormat.DECK)
+    assert (
+        s.vocab.export_anki(describe, only_new=True, file=AnkiFormat.DECK).notes == ()
+    )
+    csv = s.vocab.export_anki(describe, only_new=True, file=AnkiFormat.CSV)
+    assert csv.entry_ids == (HANG,)
+    s.vocab.mark_exported(csv.entry_ids, AnkiFormat.CSV)
+    assert s.vocab.export_anki(describe, only_new=True, file=AnkiFormat.CSV).notes == ()
+    # each kept apart through a restart; exported in either is exported
+    s.clock.advance(minutes=1)
+    s.vocab.learn(XING, TEXTS[XING], LookupContext("行人", "pedestrian"))
+    s.vocab.mark_exported([XING], AnkiFormat.DECK)
+    again = Vocabulary(s.store, known_facts, "hsk-2025", s.clock)
+    assert again.export_anki(describe, True, AnkiFormat.CSV).entry_ids == (XING,)
+    assert again.export_anki(describe, True, AnkiFormat.DECK).entry_ids == ()
+    assert again.is_exported(HANG) and again.is_exported(XING)
+
+
 def test_a_deck_word_set_elsewhere_exports_without_a_sentence() -> None:
     s = Setup()
     s.vocab.set_status(XING, WordStatus.LEARNING)  # no lookup here
@@ -336,6 +366,29 @@ def test_marking_the_word_in_its_sentence() -> None:
     assert marked_sentence(note("电脑", "電腦", "")) == ""
 
 
+def test_marking_a_pack_languages_word_in_its_sentence() -> None:
+    """Decision 0175: a word of any language written with spaces is marked
+    as a whole word in any case; one written without spaces, anywhere."""
+
+    def note(headword: str, sentence: str) -> AnkiNote:
+        return AnkiNote(
+            "x", headword, "", "", "", sentence, "", "", Clock().now, Clock().now
+        )  # fmt: skip
+
+    assert marked_sentence(note("дом", "Дом стоит у реки")) == (
+        "<b>Дом</b> стоит у реки"
+    )
+    # whole words only: "дом" isn't marked inside "домой"
+    assert marked_sentence(note("дом", "он идёт домой")) == "он идёт домой"
+    # no spaces between Japanese words: kana, and a word with kanji
+    assert marked_sentence(note("りんご", "私はりんごを食べる")) == (
+        "私は<b>りんご</b>を食べる"
+    )
+    assert marked_sentence(note("食べる", "私はりんごを食べる")) == (
+        "私はりんごを<b>食べる</b>"
+    )
+
+
 def test_a_sentence_with_line_breaks_and_quotes_round_trips() -> None:
     s = Setup()
     s.vocab.learn(
@@ -369,7 +422,9 @@ def test_a_merged_entry_takes_its_line_and_export_mark_along() -> None:
     assert word is not None and word.sentence == "旧书" and word.entry_id == new
     assert updated.deck_word(old) is None
     assert updated.is_exported(new) and not updated.is_exported(old)
-    assert set(store.deck_words) == {new} and set(store.anki_exports) == {new}
+    assert set(store.deck_words) == {new} and {e for e, _ in store.anki_exports} == {
+        new
+    }
 
 
 def test_no_cell_starts_like_a_spreadsheet_formula() -> None:

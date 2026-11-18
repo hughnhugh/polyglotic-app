@@ -188,6 +188,36 @@ def test_the_packed_apps_check_has_a_data_folder_of_its_own(
     assert not left.exists()
 
 
+def test_a_mac_judges_the_start_after_macos_first_look_at_the_app(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """polyglotic-hq 419: a newly signed app's first launch on a Mac carries
+    Gatekeeper's first look (1.775 s on GitHub's Mac), once per build; that
+    launch settles the app and is kept, the second is judged. Windows
+    launches once, as before."""
+    launches = iter([1.775, 0.82, 0.9])
+
+    def check(folder: Path, layout: object = None) -> dict[str, object]:
+        return {"exit_code": 0, "launch_seconds": next(launches), "version": "0.0.1"}
+
+    monkeypatch.setattr(build, "check_install", check)
+    judged = build.settled_check_install(Path("dist/Polyglotic.app"), build.MACOS)
+    assert judged["launch_seconds"] == 0.82
+    assert judged["first_launch"] == {
+        "exit_code": 0,
+        "launch_seconds": 1.775,
+        "window_seconds": None,
+        "wall_seconds": None,
+    }
+    assert build.over_start_budget(judged) == []
+    assert build.first_launch_failed(judged) == []
+    windows = build.settled_check_install(Path("dist/Polyglotic"), build.WINDOWS)
+    assert windows["launch_seconds"] == 0.9 and "first_launch" not in windows
+    assert build.first_launch_failed({"first_launch": {"exit_code": 1}}) == [
+        "the first launch failed: {'exit_code': 1}"
+    ]
+
+
 def test_a_packed_window_over_its_budget_is_a_problem() -> None:
     """The packed app's main window within START_PACKED (DECISIONS.md #53;
     polyglotic-hq project 132), timed by its own install check."""
@@ -207,6 +237,30 @@ def test_a_packed_window_over_its_budget_is_a_problem() -> None:
     ]
     assert build.over_start_budget({}) == [
         "--check-install didn't time the main window"
+    ]
+
+
+def test_githubs_mac_holds_the_start_to_a_ceiling_of_its_own() -> None:
+    """Decision 0193 (polyglotic-hq 420): GitHub's Mac VM settled the same
+    code at 1.051 s and 1.627 s (419's runs 2 and 3). On that runner only,
+    the start is held to 2.5 s - a doubling still fails - and the 1000 ms
+    budget stays for a person's Mac and for Windows."""
+    github = {"RUNNER_ENVIRONMENT": "github-hosted"}
+    assert build.start_limit_ms(build.MACOS, github) == 2500
+    assert build.start_limit_ms(build.MACOS, {}) == 1000
+    assert (
+        build.start_limit_ms(build.MACOS, {"RUNNER_ENVIRONMENT": "self-hosted"}) == 1000
+    )
+    assert build.start_limit_ms(build.WINDOWS, github) == 1000
+    run3: dict[str, object] = {"launch_seconds": 1.627, "window_seconds": 0.816}
+    assert (
+        build.over_start_budget(run3, build.start_limit_ms(build.MACOS, github)) == []
+    )
+    assert build.over_start_budget(run3, build.start_limit_ms(build.MACOS, {})) == [
+        "the main window took 1.627 s from launch, over 1000 ms"
+    ]
+    assert build.over_start_budget({"launch_seconds": 3.3}, 2500) == [
+        "the main window took 3.3 s from launch, over 2500 ms"
     ]
 
 
@@ -252,3 +306,41 @@ def test_every_pack_of_a_version_carries_its_release_notes() -> None:
         ]
         assert packs and all(line.rstrip().endswith('"$notes"') for line in packs)
         assert 'python -m tools.package.release_notes "$TAG" --out "$notes"' in text
+
+
+def test_a_downloaded_pack_must_work_in_the_packed_app_without_simplemma() -> None:
+    """Decision 0123 (polyglotic-hq 327): the release build's check tries a
+    pack, and fails a build that can't open one, or that carries simplemma."""
+    tried = {"unpacked": True, "opened": True, "found": "рука", "simplemma": False}
+    assert build.packs_as_decided({"dictionary_pack": tried}) == []
+    assert build.packs_as_decided(
+        {"dictionary_pack": {**tried, "simplemma": True}}
+    ) == ["simplemma is in the build: decision 0123 keeps it out"]
+    assert build.packs_as_decided({}) == [
+        "--check-install didn't try a dictionary pack"
+    ]
+
+
+def test_packs_go_in_the_installer_only_when_asked(tmp_path: Path) -> None:
+    """Decision 0124: `--packs ru` copies both of Russian's files and its
+    credits, each stamped with the build's version; nothing otherwise."""
+    from tests.packs_storage import tiny_pack
+
+    from polyglotic_desktop.adapters.sqlite_dictionary import SqliteDictionary
+
+    built = tmp_path / "built"
+    tiny_pack(built)
+    tiny_pack(built, meanings="zh")
+    folder = tmp_path / "Polyglotic" / "dictionaries" / build.IN_THE_INSTALLER
+    copied = build.bundle_packs(["ru"], built, folder, "0.1.5")
+    assert sorted(p.name for p in folder.iterdir()) == [
+        "wiktru-zh.sqlite",
+        "wiktru.CREDITS.md",
+        "wiktru.sqlite",
+    ]
+    for path in copied:
+        file = SqliteDictionary(path)
+        assert file.info["pack_version"] == "0.1.5"
+        file.close()
+    with pytest.raises(FileNotFoundError):
+        build.bundle_packs(["es"], built, folder, "0.1.5")

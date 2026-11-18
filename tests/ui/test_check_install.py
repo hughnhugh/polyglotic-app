@@ -85,6 +85,10 @@ def test_everything_the_app_needs_is_built_and_reported(tmp_path: Path) -> None:
     assert found["speech_frames"] == 0  # a second of silence
     assert found["opus_bytes"] > 0
     assert found["feed_signature_check"] is True  # RFC 8032 test 1, and a refusal
+    # a pack as a download leaves it: unpacked, opened, a form looked up (327);
+    # from source simplemma is there, in the installed app it isn't (0123)
+    assert found["dictionary_pack"] == {**main.PACK_CHECKED, "simplemma": True}
+    assert found["installer_packs"] == {}  # from source: none (decision 0124)
     assert found["ready_seconds"] > 0
     # the interface as main builds it, every window once (project 132)
     assert found["windows"] == [
@@ -170,3 +174,35 @@ def test_after_a_failed_step_too(
 
     assert code == 1
     assert list(temporary.iterdir()) == []
+
+
+def test_one_learner_is_opened_before_the_window_as_a_start_opens(
+    qapp: QApplication, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The check times the start a learner waits for (polyglotic-hq 400): a
+    start opens its learner's dictionary and data before the window, and any
+    other language's after the first paint. The check opened the English
+    learner's too, before the window - 60-80 ms each, timed into
+    `launch_seconds` though no start waits for it. It's checked after."""
+    temporary = tmp_path / "temp"
+    temporary.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(temporary))
+    opened: list[bool] = []
+    real = main.learner_tools
+
+    def recorded(dictionaries: Path, english: bool, *args: Any, **kwargs: Any) -> Any:
+        opened.append(english)
+        return real(dictionaries, english, *args, **kwargs)
+
+    def window_built(*args: object, **kwargs: object) -> None:
+        raise RuntimeError(f"the window: {opened} opened before it")
+
+    monkeypatch.setattr(main, "learner_tools", recorded)
+    monkeypatch.setattr(main, "new_interface", window_built)
+
+    code = check_install(
+        tmp_path / "report.json", sample_dictionaries(tmp_path / "dictionaries")
+    )
+
+    assert code == 1  # stopped at the window, here
+    assert opened == [False]  # the Chinese learner's alone

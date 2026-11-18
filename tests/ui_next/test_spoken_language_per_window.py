@@ -90,7 +90,7 @@ def test_spoken_language_is_chosen_in_the_window_and_says_detect_first(
     changed: list[bool] = []
     window.language_changed.connect(lambda: changed.append(True))
     popover = opened(window)
-    assert popover.spoken.text().startswith("Detect")
+    assert popover.spoken.text().startswith("Detect · 30 languages")
     popover.spoken.click()  # the choices open inside it
     assert popover.spoken_choices.isVisible()
     shown = [
@@ -99,16 +99,16 @@ def test_spoken_language_is_chosen_in_the_window_and_says_detect_first(
     assert not [
         text for text in shown if "less accurate" in text
     ]  # the user, 2026-11-13
-    codes = [
-        popover.spoken_choices.item(i).text()
-        for i in range(popover.spoken_choices.count())
-    ]
-    assert codes == ["Detect", "English", "Mandarin", "Cantonese"]
-    popover._spoken_chosen(item(popover.spoken_choices, "zh"))
+    codes = popover.spoken_choices.codes_shown()
+    assert codes[0] == "" and len(codes) == 31  # Detect, then all 30 (317)
+    assert {"en", "zh", "yue", "ru", "ja", "sv"} <= set(codes)
+    items = popover.spoken_choices.items
+    assert items is not None
+    popover.spoken_choices.chosen.emit("zh")
     assert window.choices.spoken == ZH and changed == [True]
     assert not popover.spoken_choices.isVisible()
-    assert popover.spoken.text().startswith("Mandarin")
-    popover._spoken_chosen(item(popover.spoken_choices, ""))
+    assert popover.spoken.text().startswith("Always Mandarin")
+    popover.spoken_choices.chosen.emit(None)
     assert window.choices.spoken is None  # Detect
 
 
@@ -120,7 +120,8 @@ def test_lines_already_in_the_windows_language_only_where_they_can_be(
     popover = opened(window)
     second = popover.rows["second"]
     assert second.isVisible()  # Detect, into English
-    assert popover.second_title.text() == "Lines already in English"
+    # named by the window's language (465)
+    assert popover.second_title.text() == "When they already speak English"
     assert popover.second.text().startswith("Leave as they are")
     window.set_spoken_language("zh")  # Mandarin into English: never already in it
     assert not second.isVisible()
@@ -147,7 +148,9 @@ def test_a_second_language_is_asked_for_by_language_and_shown_once_set(
     popover._second_chosen(item(choices, "zh"))
     assert asked == [("en", "zh")]
     window.set_second_languages({EN: ZH})  # the app kept it: every window follows
-    assert popover.second.text().startswith("Chinese (Simplified)")
+    # the picker names the language, whatever its script (polyglotic-hq 433)
+    assert popover.second.text().startswith("Also translate into Chinese")
+    assert "Simplified" not in popover.second.text()
     window.set_second("zh")  # already so: not asked again
     window.set_second("")
     assert asked == [("en", "zh"), ("en", "")]
@@ -194,7 +197,7 @@ def test_an_older_server_hears_every_window_as_detect_and_a_window_says_so(
     assert a.spoken_fallback and not b.spoken_fallback  # b is Detect anyway
     popover = opened(a)
     assert popover.spoken_fallback.isVisible()
-    assert popover.spoken.text().startswith("Mandarin")  # the choice is kept
+    assert popover.spoken.text().startswith("Always Mandarin")  # the choice is kept
     b.set_spoken_language("zh")  # they agree: Mandarin for both
     assert not a.spoken_fallback and not popover.spoken_fallback.isVisible()
     b.set_spoken_language("en")
@@ -253,7 +256,9 @@ def test_a_new_window_starts_at_detect_whatever_the_last_one_named() -> None:
     ("stored", "read"),
     [
         ({"spoken_language": "yue"}, YUE),
+        ({"spoken_language": "ru"}, Language("ru")),  # any the model hears (317)
         ({"spoken_language": "detect"}, None),
+        ({"spoken_language": "uk"}, ZH),  # a caption language it can't be told
         ({"spoken_language": "Klingon"}, ZH),  # not offered: the base's
         ({"spoken_language": None}, ZH),
         ({}, ZH),  # stored before windows had their own: the base's

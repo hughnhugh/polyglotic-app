@@ -12,13 +12,10 @@ from tests.ui.fakes import Built, FakeAppList, MemorySettingsStore, RecordingTra
 from tests.ui_next.made_up import finished_updates
 
 from polyglotic_desktop.core.listening.captions import (
-    CaptionKind,
-    CaptionUpdate,
-    Clause,
     Language,
 )
 from polyglotic_desktop.core.listening.sources import MIC, WHOLE_SYSTEM, SourceId
-from polyglotic_desktop.core.listening.timing import CaptionId, CaptionMode
+from polyglotic_desktop.core.listening.timing import CaptionMode
 from polyglotic_desktop.main import (
     Hub,
     Panels,
@@ -90,16 +87,16 @@ def test_a_windows_second_language_is_kept_by_language() -> None:
 
 
 def test_without_the_switch_the_settings_are_todays() -> None:
-    chosen = listening_settings(AppSettings(targets=("en", "zh")))
+    chosen = listening_settings(AppSettings(targets=("en", "zh"), dictation=False))
     assert chosen.targets == (EN, ZH) and dict(chosen.source_targets) == {}
 
 
 def test_a_window_for_each_of_the_first_three_apps_picked() -> None:
     apps = ("Chat App", "Video Player", "Web Browser", "Game")
-    value = AppSettings(apps=apps)
+    value = AppSettings(whole_system=False, apps=apps)
     assert [key for key, _ in captioned_apps(value, True, ids)] == list(apps[:3])
     assert captured(value).apps == apps[:3]  # a 4th isn't captured either
-    assert captioned_apps(AppSettings(), True, ids) == []
+    assert captioned_apps(AppSettings(whole_system=False), True, ids) == []
     whole = captioned_apps(AppSettings(whole_system=True), True, ids)
     assert whole == [("system", WHOLE_SYSTEM)]
     windows_10 = captioned_apps(value, False, ids)  # no per-app capture
@@ -107,7 +104,7 @@ def test_a_window_for_each_of_the_first_three_apps_picked() -> None:
 
 
 def test_a_windows_close_unticks_its_app() -> None:
-    value = AppSettings(apps=("Chat App", "Game"))
+    value = AppSettings(whole_system=False, apps=("Chat App", "Game"))
     assert stop_captioning(value, "Game") == {"apps": ("Chat App",)}
     assert stop_captioning(value, "system") == {"whole_system": False, "apps": ()}
 
@@ -336,19 +333,35 @@ def test_the_looks_reset_leaves_the_windows_where_they_are(
     assert (window.choices.geometry, window.choices.preset) == placed
 
 
-def test_all_caption_settings_opens_the_main_window_on_settings_captions(
+def test_all_caption_settings_opens_the_main_window_on_settings_look(
     qapp: QApplication,
 ) -> None:
     """A caption window's "All caption settings..." (248's F11; 261): the
-    main window in front, on Settings, its Captions section showing."""
+    main window in front, on Settings, its Look section showing - the
+    first of the caption windows' (304)."""
     built = Built()
     hub = built.hub
     hub.window.go_to("words")
     hub.settings.show_section("app")
     built.windows.all_settings_wanted.emit()
     assert hub.window.isVisible() and hub.window.current == "settings"
-    assert hub.settings.sections.value() == "captions"
-    assert hub.settings.section["captions"].isVisible()
+    assert hub.settings.sections.value() == "look"
+    assert hub.settings.section["look"].isVisible()
+    built.close()
+
+
+def test_the_trays_more_languages_opens_settings_on_dictation(
+    qapp: QApplication,
+) -> None:
+    """The tray's "More languages…" for dictation (283): the main window in
+    front, on Settings > Dictation, where its language is (304)."""
+    built = Built()
+    hub = built.hub
+    hub.window.go_to("words")
+    hub.open_dictation_settings()
+    assert hub.window.isVisible() and hub.window.current == "settings"
+    assert hub.settings.sections.value() == "dictation"
+    assert hub.settings.dictation_language.isVisible()
     built.close()
 
 
@@ -377,9 +390,9 @@ def test_the_pickers_rows_are_the_settings_and_the_windows(
 
 
 def test_adding_a_fourth_app_isnt_asked_for() -> None:
-    three = AppSettings(apps=("a", "b", "c"))
+    three = AppSettings(whole_system=False, apps=("a", "b", "c"))
     assert adding_app(three, "d") is None and adding_app(three, "a") is None
-    changes = adding_app(AppSettings(apps=("a",), whole_system=True), "b")
+    changes = adding_app(AppSettings(whole_system=False, apps=("a",)), "b")
     assert changes is not None
     assert changes["apps"] == ("a", "b") and changes["whole_system"] is False
     assert "b" in changes["source_colors"]  # type: ignore[operator]
@@ -413,7 +426,7 @@ def test_the_main_window_comes_when_the_tray_asks(
     desktop.show_window()  # the tray: something is chosen, so the page stays
     assert built.window.isVisible() and built.window.current == "account"
     built.window.hide()
-    desktop.window_wanted.emit(False)  # "Looks wrong?"'s card: as it is
+    desktop.window_wanted.emit(False)  # on whatever page it shows
     assert built.window.isVisible() and built.window.current == "account"
 
 
@@ -465,10 +478,11 @@ def test_home_follows_the_session_and_the_picker_acts(
 def test_the_first_run_ends_on_home_picking_what_to_caption(
     qapp: QApplication,
 ) -> None:
-    """DECISIONS.md #25 and 109's section 7: after the first run's
-    questions, the main window opens on Home with the picker - "Pick what
-    to caption", nothing captured or shown until an app is ticked."""
-    store = MemorySettingsStore({"targets": ["en"]})
+    """DECISIONS.md #25 and 109's section 7: with nothing chosen - a
+    learner who stopped everything; a new one captions everything the PC
+    plays since 484 - the main window opens on Home with the picker - "Pick
+    what to caption", nothing captured or shown until an app is ticked."""
+    store = MemorySettingsStore({"targets": ["en"], "whole_system": False})
     desktop = DesktopApp(store, None, FakeAppList())
     windows = CaptionWindows(store, MIC, lambda: [Rect(0, 0, 1920, 1040)])
     assert desktop.apps is not None
@@ -691,27 +705,3 @@ def test_homes_join_button_joins_and_separates(
     assert windows.joined_window is not None and join.text() == "Separate windows"
     join.click()
     assert windows.joined_window is None and join.text() == "Join windows"
-
-
-def test_looks_wrong_shows_the_translation_its_window_shows(
-    switched: tuple[DesktopApp, CaptionWindows],
-) -> None:
-    """The comparison card shows a line in the language of its app's
-    window - not today's `targets`, which the new interface doesn't change
-    (project 132's feature map, 2026-11-07)."""
-    desktop, windows = switched
-    windows.windows["Web Browser"].set_language("ja")
-    desktop.feed.apply(
-        CaptionUpdate(
-            CaptionId("c1"),
-            APP_1,
-            CaptionKind.FINISHED,
-            (Clause("你好。", {JA: "こんにちは。"}),),
-            Language("zh"),
-            (Language("zh"),),
-        )
-    )
-    desktop.looks_wrong.check("c1")
-    card = desktop.looks_wrong.card
-    assert card is not None and "こんにちは。" in card.seen.text()
-    card.close()

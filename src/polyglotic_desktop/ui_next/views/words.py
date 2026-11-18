@@ -13,7 +13,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
-from polyglotic_desktop.core.learning.levels import LevelCurve
+from polyglotic_desktop.core.learning.levels import KnownLine
 from polyglotic_desktop.core.learning.saved_words import SavedWord
 from polyglotic_desktop.core.learning.vocabulary import EntryText, Vocabulary
 from polyglotic_desktop.core.lexicon.entries import SCHEMES
@@ -47,6 +47,12 @@ class WordsLearner(Protocol):
 
     @property
     def is_chinese(self) -> bool: ...
+
+    @property
+    def language(self) -> str:
+        """The language these words are in: `zh`, `en`, or a pack
+        language's code (`ru`; decision 0175)."""
+        ...
 
     @property
     def deck_writer(self) -> AnkiDeckWriter | None: ...
@@ -186,15 +192,20 @@ class LevelLine:
     scheme: str = ""
     level: str = ""
     """The level's name; empty: just starting (or the scheme unknown)."""
+    words: int | None = None
+    """A line said in words (polyglotic-hq 323): about this many of the
+    most common ones; None for a level of a scheme."""
 
 
-def level_line(curve: LevelCurve | None) -> LevelLine:
-    if curve is None:
+def level_line(line: KnownLine | None) -> LevelLine:
+    if line is None:
         return LevelLine(False)
-    scheme = SCHEMES.get(curve.scheme)
-    level = curve.picked_level
+    if not line.by_level:
+        return LevelLine(True, words=line.known)
+    scheme = SCHEMES.get(line.scale)
+    level = line.known
     if scheme is None:
-        return LevelLine(True, curve.scheme, str(level))
+        return LevelLine(True, line.scale, str(level))
     if level == 0:
         return LevelLine(True, scheme.name)
     return LevelLine(

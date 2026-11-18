@@ -137,19 +137,20 @@ def test_at_three_the_add_list_is_full() -> None:
 def test_the_pickers_commands() -> None:
     commands = Commands()
     view = PickerView(Picker(captioned=(_row("a"),), hidden=True), commands)  # type: ignore[arg-type]
-    view.show_window("a")  # hidden: nothing to show
+    view.show_window("a")  # hidden: every window shown again (335)
     view.set_whole_system(False)  # no change
     view.rename("a", "  Chat  ")
     view.set_translate_into("a", ORIGINAL_ONLY)
     view.set_show_mic("a", True)
     view.remove("a")
     assert [name for name, _ in commands.asked] == [
+        "show_window",
         "rename",
         "set_translate_into",
         "set_show_mic",
         "remove",
     ]
-    assert commands.asked[0] == ("rename", ("a", "Chat"))
+    assert commands.asked[1] == ("rename", ("a", "Chat"))
 
 
 def test_update_needed_says_what_to_do() -> None:

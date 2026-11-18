@@ -3,6 +3,7 @@ port keeps survives closing and reopening; a file from a newer app is
 refused; deleting a category takes its saved words with it."""
 
 import sqlite3
+import sys
 from collections.abc import Callable
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -11,13 +12,14 @@ import pytest
 from tests.learning.fakes import Clock, words_of
 from tests.learning.test_vocabulary import ENTRIES, eid, lookup
 
+from polyglotic_desktop.adapters import sqlite_learning
 from polyglotic_desktop.adapters.sqlite_learning import (
     VERSION,
     LearningStoreDamagedError,
     LearningStoreFormatError,
     SqliteLearningStore,
 )
-from polyglotic_desktop.core.learning.levels import LevelCurve
+from polyglotic_desktop.core.learning.levels import KnownLine
 from polyglotic_desktop.core.learning.lookups import LookupContext
 from polyglotic_desktop.core.learning.statuses import StatusRecord, StatusSource
 from polyglotic_desktop.core.learning.vocabulary import Vocabulary
@@ -31,6 +33,8 @@ from polyglotic_desktop.ports.learning import (
     StoredExposures,
     StoredLevel,
     StoredListening,
+    StoredLoadWord,
+    StoredLookups,
     StoredSavedWord,
     StoredStatus,
 )
@@ -121,6 +125,7 @@ def test_the_vocabulary_on_disk(tmp_path: Path) -> None:
     vocab.set_level(Level("hsk-2025", 1))
     vocab.set_status(eid("超市"), WordStatus.LEARNING)
     vocab.looked_up(ENTRIES["我"], pinned=True)
+    vocab.looked_up(ENTRIES["我"], pinned=True)  # the second turns it new (397)
     vocab.save(
         eid("榴莲"), "榴莲", "榴槤", "liú lián", "durian", "tricky",
         LookupContext("榴莲很臭", "Durian stinks"),
@@ -130,7 +135,7 @@ def test_the_vocabulary_on_disk(tmp_path: Path) -> None:
     store.close()
 
     reopened = Vocabulary(SqliteLearningStore(path), lookup, "hsk-2025")
-    assert reopened.curve == LevelCurve("hsk-2025", 1.5)
+    assert reopened.line == KnownLine("hsk-2025", 1)
     assert reopened.status(ENTRIES["超市"]).status is WordStatus.LEARNING
     assert reopened.status(ENTRIES["我"]) == StatusRecord(
         WordStatus.NEW, StatusSource.ESTIMATED, Clock().now
@@ -351,12 +356,16 @@ def test_a_version_1_file_gains_the_deck_tables(tmp_path: Path) -> None:
     path = tmp_path / "learning.sqlite"
     SqliteLearningStore(path).close()
     db = sqlite3.connect(path)
+    db.execute("DROP TABLE load_words")
     db.execute("DROP TABLE deck_words")
     db.execute("DROP TABLE anki_exports")
     db.execute("DROP TABLE daily_coverage")
     db.execute("DROP TABLE daily_listening")
     db.execute("DROP TABLE handed_over_days")
     db.execute("ALTER TABLE exposures DROP COLUMN first_heard")
+    db.execute("DROP TABLE anki_csv_exports")  # version 7's
+    db.execute("DROP TABLE lookups")  # version 8's
+    db.execute("DROP TABLE saved_sentences")  # version 9's
     db.execute("PRAGMA user_version = 1")
     db.close()
     store = SqliteLearningStore(path)
@@ -389,10 +398,14 @@ def test_a_version_2_file_gains_the_coverage_table_and_keeps_its_data(
     store.save_status(StoredStatus("cedict:a", "known", "learner", AT))
     store.close()
     db = sqlite3.connect(path)
+    db.execute("DROP TABLE load_words")
     db.execute("DROP TABLE daily_coverage")
     db.execute("DROP TABLE daily_listening")
     db.execute("DROP TABLE handed_over_days")
     db.execute("ALTER TABLE exposures DROP COLUMN first_heard")
+    db.execute("DROP TABLE anki_csv_exports")  # version 7's
+    db.execute("DROP TABLE lookups")  # version 8's
+    db.execute("DROP TABLE saved_sentences")  # version 9's
     db.execute("PRAGMA user_version = 2")
     db.close()
     store = SqliteLearningStore(path)
@@ -426,9 +439,13 @@ def test_a_version_3_file_gains_the_listening_table(tmp_path: Path) -> None:
     path = tmp_path / "learning.sqlite"
     SqliteLearningStore(path).close()
     db = sqlite3.connect(path)
+    db.execute("DROP TABLE load_words")
     db.execute("DROP TABLE daily_listening")
     db.execute("DROP TABLE handed_over_days")
     db.execute("ALTER TABLE exposures DROP COLUMN first_heard")
+    db.execute("DROP TABLE anki_csv_exports")  # version 7's
+    db.execute("DROP TABLE lookups")  # version 8's
+    db.execute("DROP TABLE saved_sentences")  # version 9's
     db.execute("PRAGMA user_version = 3")
     db.close()
     store = SqliteLearningStore(path)
@@ -465,11 +482,208 @@ def test_a_version_4_file_gains_first_heard_and_keeps_its_counts(
     path = tmp_path / "learning.sqlite"
     SqliteLearningStore(path).close()
     db = sqlite3.connect(path)
+    db.execute("DROP TABLE load_words")
     db.execute("DROP TABLE handed_over_days")
     db.execute("ALTER TABLE exposures DROP COLUMN first_heard")
     db.execute("INSERT INTO exposures VALUES ('a', 3, 0, 1)")
+    db.execute("DROP TABLE anki_csv_exports")  # version 7's
+    db.execute("DROP TABLE lookups")  # version 8's
+    db.execute("DROP TABLE saved_sentences")  # version 9's
     db.execute("PRAGMA user_version = 4")
     db.commit()
     db.close()
     store = SqliteLearningStore(path)
     assert store.load().exposures == [StoredExposures("a", 3, 0, 1, None)]
+
+
+def test_the_exposure_counts_are_read_with_one_call_a_word_met(tmp_path: Path) -> None:
+    """The start reads a row for every word met - 30,000 for a long-time
+    learner - before the window shows, so what a row costs is held: its
+    record made, and nothing else called for it. Each row parsed through
+    a function of its own, its day through two more, made four calls a
+    row, and the start about 20 ms longer at 30,000 (polyglotic-hq 314).
+    Counted, not timed: the same on a busy PC."""
+    words = 2000
+    path = tmp_path / "learning.sqlite"
+    store = SqliteLearningStore(path)
+    store.save_exposures(
+        [
+            StoredExposures(f"cedict:{n}", n, 0, 0, date(2026, 11, 1 + n % 14))
+            for n in range(words)
+        ],
+        {},
+    )
+    store.close()
+    store = SqliteLearningStore(path)
+    calls = 0
+
+    def count(frame: object, event: str, arg: object) -> None:
+        nonlocal calls
+        calls += event == "call"  # Python functions only
+
+    sys.setprofile(count)
+    try:
+        snapshot = store.load()
+    finally:
+        sys.setprofile(None)
+        store.close()
+
+    assert len(snapshot.exposures) == words
+    read = {row.entry_id: row for row in snapshot.exposures}
+    assert read["cedict:3"] == StoredExposures("cedict:3", 3, 0, 0, date(2026, 11, 4))
+    assert calls < 1.5 * words  # one a row (its record), and the read's own
+
+
+def test_the_learning_loads_words_survive_reopening_and_go_with_the_data(
+    tmp_path: Path,
+) -> None:
+    """polyglotic-hq 324: the load's words are learning data - kept, and
+    deleted with the rest."""
+    path = tmp_path / "learning.sqlite"
+    store = SqliteLearningStore(path)
+    met = StoredLoadWord("cedict:a", "in", 2, 1, False, 1200, AT, AT, None)
+    by_hand = StoredLoadWord("cedict:b", "graduated", 4, 0, True, None, AT, None, AT)
+    store.save_load_words(
+        [met, by_hand, StoredLoadWord("cedict:c", "in", 0, 0, False, 7, AT)]
+    )
+    store.save_load_words([met._replace(meetings=2)])  # replaces
+    store.delete_load_words(["cedict:c"])
+    store.close()
+    store = SqliteLearningStore(path)
+    assert sorted(store.load().load_words) == [met._replace(meetings=2), by_hand]
+    store.forget_entry("cedict:a")
+    assert store.load().load_words == [by_hand]
+    store.delete_learning_data()
+    assert store.load().load_words == []
+    store.close()
+
+
+def test_a_version_5_file_gains_the_load_table_and_keeps_its_data(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "learning.sqlite"
+    SqliteLearningStore(path).close()
+    db = sqlite3.connect(path)
+    db.execute("DROP TABLE load_words")
+    db.execute("INSERT INTO exposures VALUES ('a', 3, 0, 1, NULL)")
+    db.execute("DROP TABLE anki_csv_exports")  # version 7's
+    db.execute("DROP TABLE lookups")  # version 8's
+    db.execute("DROP TABLE saved_sentences")  # version 9's
+    db.execute("PRAGMA user_version = 5")
+    db.commit()
+    db.close()
+    store = SqliteLearningStore(path)
+    data = store.load()
+    assert data.exposures == [StoredExposures("a", 3, 0, 1, None)]
+    assert data.load_words == []
+    store.close()
+
+
+def test_each_kind_of_anki_file_keeps_its_own_exports(tmp_path: Path) -> None:
+    """368: a deck file's exports and a CSV's are kept apart, so "only words
+    not exported yet" in one doesn't leave out what went into the other;
+    both go with the word, and with the learning data."""
+    store = SqliteLearningStore(tmp_path / "learning.sqlite")
+    deck = StoredAnkiExport("cedict:a", AT, "deck")
+    csv = StoredAnkiExport("cedict:b", AT, "csv")
+    store.save_anki_exports([deck, csv])
+    assert sorted(store.load().anki_exports, key=lambda e: e.kind) == [csv, deck]
+    store.forget_entry("cedict:b")
+    assert store.load().anki_exports == [deck]
+    store.delete_learning_data()
+    assert store.load().anki_exports == []
+    store.close()
+
+
+def test_a_version_6_files_exports_are_remembered_by_both_kinds(
+    tmp_path: Path,
+) -> None:
+    """Which kind wrote a word before version 7 is unknown: both remember
+    it, as the one record did - nothing comes out again unasked."""
+    path = tmp_path / "learning.sqlite"
+    SqliteLearningStore(path).close()
+    db = sqlite3.connect(path)
+    db.execute("DROP TABLE anki_csv_exports")
+    db.execute("DROP TABLE lookups")  # version 8's
+    db.execute("DROP TABLE saved_sentences")  # version 9's
+    db.execute("INSERT INTO anki_exports VALUES ('a', ?)", (AT.isoformat(),))
+    db.execute("PRAGMA user_version = 6")
+    db.commit()
+    db.close()
+    store = SqliteLearningStore(path)
+    exports = store.load().anki_exports
+    assert sorted(exports, key=lambda e: e.kind) == [
+        StoredAnkiExport("a", AT, "csv"),
+        StoredAnkiExport("a", AT, "deck"),
+    ]
+    store.close()
+
+
+def test_lookups_are_kept_with_the_word_and_go_with_the_learning_data(
+    tmp_path: Path,
+) -> None:
+    """373: how often each word was looked up, and when last."""
+    store = SqliteLearningStore(tmp_path / "learning.sqlite")
+    looked = StoredLookups("cedict:a", 2, 5, AT, 1)
+    store.save_lookups(looked)
+    store.save_lookups(StoredLookups("cedict:b", 0, 1, AT))
+    store.close()
+    store = SqliteLearningStore(tmp_path / "learning.sqlite")
+    assert sorted(store.load().lookups, key=lambda k: k.entry_id) == [
+        looked,
+        StoredLookups("cedict:b", 0, 1, AT),
+    ]
+    store.forget_entry("cedict:b")
+    assert store.load().lookups == [looked]
+    store.delete_learning_data()
+    assert store.load().lookups == []
+    store.close()
+
+
+def test_a_version_7_file_keeps_its_pinned_lookups_as_lookups(tmp_path: Path) -> None:
+    """Before version 8 a pinned lookup was kept only as what it did: an
+    assumed-known word's status turned "new", source "estimated". Each
+    becomes one pinned lookup at that time; the status stays, and nothing
+    else is counted."""
+    path = tmp_path / "learning.sqlite"
+    SqliteLearningStore(path).close()
+    db = sqlite3.connect(path)
+    db.execute("DROP TABLE lookups")
+    db.execute("DROP TABLE saved_sentences")  # version 9's
+    rows = [
+        ("looked", "new", "estimated"),
+        ("said-new", "new", "learner"),
+        ("known", "known", "learner"),
+    ]
+    for entry_id, status, source in rows:
+        db.execute(
+            "INSERT INTO statuses VALUES (?, ?, ?, ?)",
+            (entry_id, status, source, AT.isoformat()),
+        )
+    db.execute("PRAGMA user_version = 7")
+    db.commit()
+    db.close()
+    store = SqliteLearningStore(path)
+    data = store.load()
+    assert data.lookups == [StoredLookups("looked", 1, 0, AT, 0)]
+    assert len(data.statuses) == 3
+    store.close()
+    assert VERSION == 9
+
+
+def test_an_app_from_before_version_9_refuses_the_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """What 0.1.6 (version 6), a build with 368's #706 (version 7) and
+    0.1.7 (version 8) do with a file this version opened: refuse it as a
+    newer app's, with nothing written - the rule every version kept
+    (decision 0010)."""
+    path = tmp_path / "learning.sqlite"
+    SqliteLearningStore(path).close()
+    for older in (6, 7, 8):
+        monkeypatch.setattr(sqlite_learning, "VERSION", older)
+        with pytest.raises(LearningStoreFormatError, match="version 9"):
+            SqliteLearningStore(path)
+    db = sqlite3.connect(path)
+    assert db.execute("PRAGMA user_version").fetchone() == (9,)
+    db.close()

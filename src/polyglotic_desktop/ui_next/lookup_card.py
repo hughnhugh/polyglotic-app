@@ -11,7 +11,10 @@ lookup (`ui.lookup`) in 109's shape:
   mouse through to the window under it, so it never takes the hover from
   the words; it goes `HIDE_MS` after the mouse leaves the word.
 - **Pinned** by a click on a word, or a drag across a phrase: the
-  actions (Add to deck, Known, Save to - with New category - and Remove),
+  actions (Add to deck, Known, Save to - with New category - Remove, and
+  Copy: the word, its reading and meaning to the clipboard, "✓ Copied"
+  until the next click, Ctrl+C while one of the app's windows has the
+  keyboard - polyglotic-hq 333),
   the parts with Back, "Heard in N captions" and the context line. It
   stays until Esc, a click elsewhere, or `LEAVE_MS` after the mouse
   leaves it.
@@ -42,6 +45,18 @@ lookup (`ui.lookup`) in 109's shape:
   speaker is crossed out, and a click says how Windows adds one, with a
   button to its speech settings. Screen readers get the word as the
   card's name and the button's state as its description.
+- **Its text can be copied** (polyglotic-hq 343): pinned, a drag across
+  the word, its readings, senses, parts, the "Here:" line and the context
+  selects it (`copying.TextSelection`) - a click on a part, without a
+  drag, still looks it up. A right-click on the selection copies it, with
+  "Copied" by the mouse and never the keyboard (`copying.copy_quietly`);
+  Ctrl+C copies it while one of the app's windows has the keyboard - or
+  the whole card, as Copy does, with nothing selected. A drag that leaves
+  the card doesn't close it.
+- **"Here: ngân hàng"** (polyglotic-hq 328): what the word is in the
+  translation shown with its caption line, from the line's word links -
+  first under the word, hovered or pinned; larger on a word whose row has
+  no dictionary, where it's what the card has to say. None, no line.
 
 A Learning action runs through `act`, which the caption windows hand it:
 they repaint only the captions holding the entry it changed. Its colours
@@ -53,14 +68,26 @@ context): never log them.
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
-from PySide6.QtCore import QEvent, QObject, QPointF, QRect, QRectF, Qt, QTimer, Signal
+from PySide6.QtCore import (
+    QEvent,
+    QLocale,
+    QObject,
+    QPointF,
+    QRect,
+    QRectF,
+    Qt,
+    QTimer,
+    Signal,
+)
 from PySide6.QtGui import (
     QColor,
     QCursor,
     QEnterEvent,
     QFont,
     QFontMetricsF,
+    QGuiApplication,
     QKeyEvent,
+    QKeySequence,
     QMouseEvent,
     QPainter,
     QPaintEvent,
@@ -79,6 +106,7 @@ from PySide6.QtWidgets import (
 )
 
 from polyglotic_desktop.core.learning.languages import Tier, tier_of
+from polyglotic_desktop.core.learning.load import Stage
 from polyglotic_desktop.core.lexicon.chinese import has_han
 from polyglotic_desktop.core.lexicon.entries import DictionaryEntry
 from polyglotic_desktop.core.shared import WordStatus
@@ -86,7 +114,11 @@ from polyglotic_desktop.perf import spans
 from polyglotic_desktop.ports.dictionary import DictionaryProblem
 from polyglotic_desktop.ui_next import glyphs, style
 from polyglotic_desktop.ui_next.caption_layout import CJK_FAMILIES, LATIN_FAMILIES
+from polyglotic_desktop.ui_next.caption_marks import STAGE_COLOURS
+from polyglotic_desktop.ui_next.copying import Painted, TextSelection, copy_quietly
 from polyglotic_desktop.ui_next.languages import learned_name
+from polyglotic_desktop.ui_next.load_card import add_text, check_texts, stage_text
+from polyglotic_desktop.ui_next.os_words import hotkeys_here, pc_or_mac
 from polyglotic_desktop.ui_next.settings_popover import KeyState
 from polyglotic_desktop.ui_next.views.lookup import (
     Card,
@@ -95,6 +127,7 @@ from polyglotic_desktop.ui_next.views.lookup import (
     PartsTitle,
     Shows,
     WordAt,
+    copy_text,
     place,
 )
 from polyglotic_desktop.ui_next.views.placement import Size
@@ -125,6 +158,8 @@ GAP = 6
 SURFACE, LINE, TEXT, DIM, FAINT = "#191d24", "#2a303b", "#e9ecf2", "#a0a8b6", "#848c9c"
 """FAINT is the faintest text still 4.5:1 on SURFACE (5.0:1; the UI lab)."""
 ACCENT, ACCENT_TEXT = "#7c9cff", "#0d1220"
+SELECTED = 0.35
+"""Selected text's background: the accent, this opaque under the text."""
 STATUS_COLORS = {
     WordStatus.NEW: "#ffd27a",
     WordStatus.LEARNING: "#7ee0a8",
@@ -133,6 +168,8 @@ STATUS_COLORS = {
 }
 """A status chip's colour: new and in the deck as the captions mark them."""
 CHENGYU = "#ffb86b"
+ROW = "part:"
+"""A part row's hit: a click looks the part up, a drag selects its words."""
 SAY_KEY = Qt.Key.Key_R
 """Says the word, or stops it: Anki's key for hearing a card's audio again."""
 SAY_GLYPHS = {
@@ -142,6 +179,15 @@ SAY_GLYPHS = {
 }
 _TYPING = (QLineEdit, QTextEdit, QPlainTextEdit, QAbstractSpinBox)
 """Widgets an R typed into is text, not "say it"."""
+
+
+def _has_selection(widget: QWidget | None) -> bool:
+    """`widget` has words selected of its own - a label in the main window,
+    or anything with a selection that says so as a label does
+    (`hasSelectedText`): Ctrl+C there copies those (343)."""
+    selected = getattr(widget, "hasSelectedText", None)
+    return callable(selected) and bool(selected())
+
 
 Action = Callable[[], DictionaryEntry | None]
 """A Learning action: it returns the entry it changed, or None."""
@@ -168,6 +214,33 @@ def heard_in(count: int) -> str:
 def more_readings(count: int) -> str:
     """ "+1 more reading", "+2 more readings" (as `heard_in`)."""
     return _trn("+%Ln more reading(s)", count)
+
+
+def here(words: str) -> tuple[str, tuple[int, int]]:
+    """The card's line for a word's counterpart in its caption line's
+    translation - "Here: ngân hàng" (polyglotic-hq 328) - and where `words`
+    are in it (the rest is the label, drawn faint)."""
+    #: what the word looked up is in the translation of its caption line, e.g. "Here: ngân hàng": what it means here
+    label = _tr("Here: {words}")
+    before, _, after = label.partition("{words}")
+    return f"{before}{words}{after}", (len(before), len(before) + len(words))
+
+
+def answered_by(language: str) -> str:
+    """The card's line naming the dictionary that answered, when it isn't
+    the row's language's (polyglotic-hq 337)."""
+    #: the card's word was found in another language's dictionary than its caption line's, e.g. "From the English dictionary"
+    return _tr("From the {language} dictionary").format(language=learned_name(language))
+
+
+def _here_font(card: Card) -> QFont:
+    """The counterpart's line: in its own language's fonts - a Chinese or
+    Japanese face first for those - with the interface's behind, for the
+    label (a Chinese interface's in its own Chinese face, 198). Larger
+    where it's the card's main content (no dictionary for the row)."""
+    own = CJK_FAMILIES.get(card.counterpart_language, ())
+    families = (*own, *LATIN_FAMILIES, *style.UI_FAMILIES)
+    return _font(16 if card.shows is Shows.NO_DICTIONARY else 14, families)
 
 
 def dictionary_out(problem: DictionaryProblem, chinese: bool) -> tuple[str, str]:
@@ -314,6 +387,25 @@ class _Painted:
         self.runs: list[_Run] = []
         self.blocks: list[_Block] = []
         self.glyphs: list[tuple[glyphs.Glyph, QRectF, QColor]] = []
+        self.texts: list[Painted] = []
+        """The text that can be selected, in reading order (343)."""
+        self.lines = 0
+
+    def new_line(self) -> int:
+        """A number for the next line of text: pieces on one line are copied
+        with a space between them, lines with a new line."""
+        self.lines += 1
+        return self.lines
+
+    def selectable(
+        self, text: str, font: QFont, x: float, baseline: float, line: int
+    ) -> None:
+        """`text`, drawn as a run at `baseline`, can be selected."""
+        if not text:
+            return
+        layout = _one_line(text, font)
+        top = baseline - layout.lineAt(0).ascent()
+        self.texts.append(Painted(text, layout, QPointF(x, top), line))
 
     @property
     def right(self) -> float:
@@ -338,8 +430,11 @@ class _Painted:
         ascent = max(m.ascent() + (4 if p.box else 0) for p, _, m in line)
         descent = max(m.descent() + (4 if p.box else 0) for p, _, m in line)
         baseline = self.y + ascent
+        number = self.new_line()
         for piece, x, metrics in line:
             text_x = x + (8 if piece.box else 0)
+            if piece.box is None and piece.hit is None:  # not a chip or a button
+                self.selectable(piece.text, piece.font, text_x, baseline, number)
             if piece.box is not None:
                 fill, border = piece.box
                 width = metrics.horizontalAdvance(piece.text) + 16
@@ -366,8 +461,10 @@ class _Painted:
         x: float = PAD,
         formats: Sequence[tuple[int, int, QTextCharFormat]] = (),
     ) -> float:
-        """`text` wrapped from `x` to the right edge; its height."""
+        """`text` wrapped from `x` to the right edge (it can be selected);
+        its height."""
         layout, height = _laid(text, font, self.right - x)
+        self.texts.append(Painted(text, layout, QPointF(x, self.y), self.new_line()))
         ranges = []
         for start, end, format_ in formats:
             selection = QTextLayout.FormatRange()
@@ -383,6 +480,20 @@ class _Painted:
 
     def height(self) -> int:
         return round(self.y + PAD - 2)
+
+
+def _one_line(text: str, font: QFont) -> QTextLayout:
+    """`text` laid out on one line, as `QPainter.drawText` draws it: where a
+    run's characters are, to select them."""
+    layout = QTextLayout(text, font)
+    option = QTextOption()
+    option.setWrapMode(QTextOption.WrapMode.NoWrap)
+    layout.setTextOption(option)
+    layout.beginLayout()
+    line = layout.createLine()
+    line.setPosition(QPointF(0, 0))
+    layout.endLayout()
+    return layout
 
 
 def _laid(text: str, font: QFont, width: float) -> tuple[QTextLayout, float]:
@@ -428,6 +539,9 @@ class LookupCard(QWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+        # on a Mac a tool window hides while the app isn't active - and the
+        # app is never active while the learner is in another (polyglotic-hq 429)
+        self.setAttribute(Qt.WidgetAttribute.WA_MacAlwaysShowToolWindow)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setMouseTracking(True)
         self.setObjectName("lookup_card")
@@ -440,7 +554,14 @@ class LookupCard(QWidget):
         self.above = True
         self._pending: WordAt | None = None
         self._saving = False  # the categories open under Save to
+        self._copied = False  # Copy says "Copied" until the next action or word
         self._painted = _Painted(style.px(WIDTH))
+        self.selection = TextSelection()
+        """The card's text selected by a drag (343)."""
+        self._press: tuple[QPointF, str | None] | None = None
+        """Where the left button went down on the card - and the part row
+        there, looked up on release unless the mouse drags - till it's up."""
+        self._dragging = False
         self._hits: list[tuple[QRectF, str]] = []
         self._hot: str | None = None
         self._hover = QTimer(self, singleShot=True, interval=HOVER_MS)
@@ -550,6 +671,8 @@ class LookupCard(QWidget):
         self._pending = None
         self._saving = False
         self._voice_help = False
+        self._end_press()
+        self.selection.clear()
         if self.speech is not None:
             self.speech.forget()  # a word being said stops with its card
         self.hide()
@@ -570,14 +693,23 @@ class LookupCard(QWidget):
         with spans.span("lookup_card.pin" if pinned else "lookup_card.hover"):
             self.request = word
             self._saving = False
+            self._copied = False
             self._hot = None
             self._voice_help = False
+            self.selection.clear()
             if self.speech is not None:
                 self.speech.forget()  # another word: the last one stops
 
             def shown() -> DictionaryEntry | None:
                 # a pin is evidence the word isn't known: it may change
-                self.model.show(word.word, word.context, pinned, word.at, word.language)
+                self.model.show(
+                    word.word,
+                    word.context,
+                    pinned,
+                    word.at,
+                    word.language,
+                    word.fallbacks,
+                )
                 return self.model.entry() if pinned else None
 
             self.act(shown)
@@ -616,6 +748,7 @@ class LookupCard(QWidget):
         card = self.model.card()
         painted = self._lay_out(card, self._width(card))
         self._painted = painted
+        self.selection.use(painted.texts)  # kept while its text is the same
         self._hits = [(box.rect, box.hit) for box in painted.boxes if box.hit]
         # a screen reader: the word, and what its speaker does now
         self.setAccessibleName(card.word)
@@ -641,11 +774,13 @@ class LookupCard(QWidget):
             else ""
         )
         reading = card.readings[0].reading if card.readings else card.guess
+        counterpart = here(card.counterpart)[0] if card.counterpart else ""
         wanted = max(
             headline
             + QFontMetricsF(_font(15)).horizontalAdvance(reading)
             + style.px(110),
             QFontMetricsF(_font(13, _meanings(card))).horizontalAdvance(sense),
+            QFontMetricsF(_here_font(card)).horizontalAdvance(counterpart),
         )
         return round(min(high, max(low, wanted + 2 * PAD)))
 
@@ -667,7 +802,7 @@ class LookupCard(QWidget):
         language = word_language(card)
         if language is None:
             return None
-        return language, self.speech.state(card.word, language)
+        return language, self.speech.state(card.word, language, card.simplified)
 
     def _lay_out(self, card: Card, width: int) -> _Painted:
         painted = _Painted(width)
@@ -678,9 +813,13 @@ class LookupCard(QWidget):
         self._headline(painted, card, room)
         if saying is not None and saying[1] is Say.NO_VOICE and self._voice_help:
             self._no_voice(painted, saying[0])
+        if card.shows is Shows.ENTRY and card.pinned:
+            self._chips(painted, card)
+        if card.counterpart:
+            self._counterpart(painted, card)
+        if card.answered_by:
+            self._answered_by(painted, card)
         if card.shows is Shows.ENTRY:
-            if card.pinned:
-                self._chips(painted, card)
             self._readings(painted, card)
             if card.actions:
                 self._actions(painted, card)
@@ -693,10 +832,10 @@ class LookupCard(QWidget):
             name = learned_name(card.language or "")
             painted.text(
                 _tr(
-                    "The {language} dictionary is used once you learn {language}, "
-                    "from the next start. Captions and translation still work."
+                    "The {language} dictionary is used once you learn {language}. "
+                    "Captions and translation still work."
                 ).format(language=name)
-                if tier_of(card.language or "") is Tier.FULL  # not the one in use
+                if tier_of(card.language or "") is Tier.FULL  # not learned (306)
                 else _tr(
                     "No dictionary for {language} yet. Captions and translation "
                     "still work."
@@ -720,9 +859,18 @@ class LookupCard(QWidget):
         (DECISIONS.md #65, polyglotic-hq 262); or, just added, where it is."""
         painted.space(10)
         if not card.offer:
+            name = learned_name(card.added)
             painted.text(
-                _tr("{language} is on your Learning page now.").format(
-                    language=learned_name(card.added)
+                _tr(
+                    "{language} is on your Learning page now, with its dictionary "
+                    "to download there ({size} MB)."
+                ).format(
+                    language=name,
+                    size=QLocale().toString(card.added_pack / 1_000_000, "f", 1),
+                )
+                if card.added_pack
+                else _tr("{language} is on your Learning page now.").format(
+                    language=name
                 ),
                 _ui(12),
                 DIM,
@@ -783,14 +931,22 @@ class LookupCard(QWidget):
 
     def _no_voice(self, painted: _Painted, language: str) -> None:
         """No voice for the word's language on this PC: how Windows adds
-        one (Microsoft's steps, polyglotic-hq 286), and a button to it."""
+        one (Microsoft's steps, polyglotic-hq 286), and a button to it - on
+        a Mac, how macOS adds one (Apple's steps, 428)."""
         name = learned_name("zh" if language == "zh-hant" else language)
         painted.space(4)
         painted.text(
-            _tr(
-                "No {language} voice on this PC yet. Windows adds one for free: "
-                "Settings > Time & language > Speech > Add voices, then "
-                "{language}."
+            pc_or_mac(
+                _tr(
+                    "No {language} voice on this PC yet. Windows adds one for free: "
+                    "Settings > Time & language > Speech > Add voices, then "
+                    "{language}."
+                ),
+                _tr(
+                    "No {language} voice on this Mac yet. macOS adds one for free: "
+                    "System Settings > Accessibility > Spoken Content > System "
+                    "voice > Manage Voices, then {language}."
+                ),
             ).format(language=name),
             _ui(12),
             DIM,
@@ -853,9 +1009,33 @@ class LookupCard(QWidget):
             pieces.append(self._basic_chip())
         if card.heard:
             pieces.append(_Piece(heard_in(card.heard), _ui(12), FAINT))
+        if card.load_stage is not None:  # the learning load's stage (324)
+            stage = card.load_stage
+            colour = TEXT if stage is Stage.READY else STAGE_COLOURS[stage]
+            said = stage_text(stage, card.load_heard, card.load_step)
+            pieces.append(self._chip(said, colour))
         if pieces:
             painted.space(2)
             painted.row(pieces, gap=6)
+
+    def _counterpart(self, painted: _Painted, card: Card) -> None:
+        """ "Here: ngân hàng" - what the word is in its line's translation
+        (polyglotic-hq 328): the label faint, the words in the card's text
+        colour. Larger where the row's language has no dictionary: the
+        card's main content there."""
+        text, (start, end) = here(card.counterpart)
+        faint = QTextCharFormat()
+        faint.setForeground(QColor(FAINT))
+        formats = [(a, b, faint) for a, b in ((0, start), (end, len(text))) if a < b]
+        main = card.shows is Shows.NO_DICTIONARY
+        painted.space(4 if main else 3)
+        painted.text(text, _here_font(card), TEXT, formats=formats)
+
+    def _answered_by(self, painted: _Painted, card: Card) -> None:
+        """Which dictionary answered, when it isn't the row's language's -
+        a fallback found the word (polyglotic-hq 337): faint, one line."""
+        painted.space(3)
+        painted.text(answered_by(card.answered_by), _ui(12), FAINT)
 
     def _readings(self, painted: _Painted, card: Card) -> None:
         meanings = _font(13, _meanings(card))
@@ -884,7 +1064,7 @@ class LookupCard(QWidget):
 
     def _not_found(self, painted: _Painted, card: Card) -> None:
         painted.space(3)
-        if not self.model.is_chinese:
+        if not self.model.is_chinese and not card.meaning:
             painted.text(_tr("Not in the dictionary"), _ui(13), DIM)
             return
         text = (
@@ -942,7 +1122,34 @@ class LookupCard(QWidget):
         pieces = [add, known, save]
         if saved is not None:
             pieces.append(_Piece(_tr("Remove"), _ui(12), DIM, (None, None), "remove"))
+        pieces.append(  # the word, its reading and meaning (333)
+            _Piece(
+                f"✓ {_tr('Copied')}" if self._copied else _tr("Copy"),
+                _ui(12),
+                TEXT,
+                (None, QColor(LINE)),
+                "copy",
+            )
+        )
         painted.row(pieces, gap=6)
+        if card.load_stage is Stage.READY:  # the load's one-click check (324)
+            know, not_yet = check_texts()
+            painted.space(2)
+            painted.row(
+                [
+                    _Piece(know, _ui(12), TEXT, (None, QColor(LINE)), "load_know"),
+                    _Piece(
+                        not_yet, _ui(12), TEXT, (None, QColor(LINE)), "load_not_yet"
+                    ),
+                ],
+                gap=6,
+            )
+        elif card.load_offer:
+            painted.space(2)
+            painted.row(
+                [_Piece(add_text(), _ui(12), TEXT, (None, QColor(LINE)), "load_add")],
+                gap=6,
+            )
         if self._saving:
             painted.space(2)
             chips = []
@@ -979,7 +1186,11 @@ class LookupCard(QWidget):
         }[card.parts_title or PartsTitle.INSIDE]
         painted.space(8)
         painted.row([_Piece(title.upper(), _ui(12, bold=True), FAINT)])
-        hanzi = _font(17, (*CJK_FAMILIES["zh"], *LATIN_FAMILIES))
+        hanzi = (  # a basic pack's parts in its script's fonts (390)
+            _font(17, _families(card))
+            if card.basic
+            else _font(17, (*CJK_FAMILIES["zh"], *LATIN_FAMILIES))
+        )
         small = _font(13)  # pinyin
         meanings = _font(13, _meanings(card))
         for index, part in enumerate(card.parts):
@@ -987,9 +1198,11 @@ class LookupCard(QWidget):
             words = QFontMetricsF(hanzi)
             baseline = top + 4 + words.ascent()
             x = PAD + 8.0
+            number = painted.new_line()
             painted.runs.append(
                 _Run(part.word, hanzi, QColor(TEXT), QPointF(x, baseline))
             )
+            painted.selectable(part.word, hanzi, x, baseline, number)
             x += words.horizontalAdvance(part.word) + 10
             meaning = part.meaning or _tr("not in the dictionary")
             meaning_font = meanings if part.meaning else _ui(13)
@@ -998,6 +1211,7 @@ class LookupCard(QWidget):
                 painted.runs.append(
                     _Run(part.reading, small, QColor(ACCENT), QPointF(x, baseline))
                 )
+                painted.selectable(part.reading, small, x, baseline, number)
                 x += rest.horizontalAdvance(part.reading) + 8
             room = painted.right - 8 - x
             shown = QFontMetricsF(meaning_font).elidedText(
@@ -1006,6 +1220,7 @@ class LookupCard(QWidget):
             painted.runs.append(
                 _Run(shown, meaning_font, QColor(DIM), QPointF(x, baseline))
             )
+            painted.selectable(shown, meaning_font, x, baseline, number)
             height = words.height() + 8
             rect = QRectF(PAD, top, painted.right - PAD, height)
             if card.pinned:
@@ -1061,6 +1276,10 @@ class LookupCard(QWidget):
                 )
             for shape, square, color in self._painted.glyphs:
                 glyphs.paint(painter, shape, square, color)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(_alpha(ACCENT, SELECTED))
+            for rect in self.selection.highlights():
+                painter.drawRect(rect)
             for run in self._painted.runs:
                 painter.setFont(run.font)
                 painter.setPen(run.color)
@@ -1074,12 +1293,28 @@ class LookupCard(QWidget):
         return next((hit for rect, hit in self._hits if rect.contains(pos)), None)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        hit = self._hit_at(event.position())
+        pos = event.position()
+        if self._press is not None:  # the left button is down: a drag selects
+            start, _ = self._press
+            far = (pos - start).manhattanLength() >= QApplication.startDragDistance()
+            self._dragging = self._dragging or far
+            if self._dragging:
+                self.selection.extend(pos)
+                self.update()
+            return
+        hit = self._hit_at(pos)
+        if hit and not hit.startswith(ROW):
+            shape = Qt.CursorShape.PointingHandCursor
+        elif self.selection.on_text(pos):  # a part row's too: a drag selects
+            shape = Qt.CursorShape.IBeamCursor
+        elif hit:
+            shape = Qt.CursorShape.PointingHandCursor
+        else:
+            shape = Qt.CursorShape.ArrowCursor
+        if self.cursor().shape() != shape:
+            self.setCursor(shape)
         if hit != self._hot:
             self._hot = hit
-            self.setCursor(
-                Qt.CursorShape.PointingHandCursor if hit else Qt.CursorShape.ArrowCursor
-            )
             tip = self.tip(hit) if hit else ""
             if tip:
                 QToolTip.showText(event.globalPosition().toPoint(), tip, self)
@@ -1096,7 +1331,10 @@ class LookupCard(QWidget):
         language, state = saying
         if state is Say.NO_VOICE:
             name = learned_name("zh" if language == "zh-hant" else language)
-            return _tr("No {language} voice on this PC").format(language=name)
+            return pc_or_mac(
+                _tr("No {language} voice on this PC"),
+                _tr("No {language} voice on this Mac"),
+            ).format(language=name)
         if state is Say.SPEAKING:
             return _tr("Stop (R)")
         if self.speech.times_said(card.word, language) % 2:
@@ -1130,15 +1368,51 @@ class LookupCard(QWidget):
             "not_now": _tr("Don't ask about this language again"),
             "back": _tr("Back (Backspace)"),
             "close": _tr("Close (Esc)"),
-            "add_voice": _tr("Opens Windows' Settings, where voices are added"),
+            "add_voice": pc_or_mac(
+                _tr("Opens Windows' Settings, where voices are added"),
+                _tr("Opens System Settings, where voices are added"),
+            ),
+            "copy": hotkeys_here(
+                _tr("Copy the word, its reading and meaning (Ctrl+C)")
+            ),
         }.get(what, "")
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
+        """A button acts at once. Elsewhere the left button starts a
+        selection (on a part row, a click without a drag looks the part up,
+        on release); the right one copies the selection - no menu, never
+        the keyboard."""
         event.accept()
-        if event.button() == Qt.MouseButton.LeftButton:
-            hit = self._hit_at(event.position())
-            if hit is not None:
-                self.do(hit)
+        pos = event.position()
+        if event.button() == Qt.MouseButton.RightButton:
+            if not self.selection.empty:
+                at = event.globalPosition().toPoint()
+                copy_quietly(self.selection.text(), at, self)
+            return
+        if event.button() != Qt.MouseButton.LeftButton:
+            return
+        hit = self._hit_at(pos)
+        if hit is not None and not hit.startswith(ROW):
+            self.do(hit)
+            return
+        self._press, self._dragging = (pos, hit), False
+        self.selection.start(pos)
+        self.update()
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        event.accept()
+        if event.button() != Qt.MouseButton.LeftButton or self._press is None:
+            return
+        _, hit = self._press
+        dragged = self._dragging
+        self._end_press()
+        if dragged and self.keys is not None:
+            self.keys("mouse")  # the drag's press, perhaps let go off the card
+        if not dragged and hit is not None:
+            self.do(hit)  # a part row, clicked
+
+    def _end_press(self) -> None:
+        self._press, self._dragging = None, False
 
     def enterEvent(self, event: QEnterEvent) -> None:
         self._leave.stop()
@@ -1157,7 +1431,10 @@ class LookupCard(QWidget):
             if what == "close":
                 self.close_card()
                 return
-            if what == "say":
+            self._copied = what == "copy"
+            if what == "copy":  # to the clipboard, nowhere else (333)
+                QGuiApplication.clipboard().setText(copy_text(model.card()))
+            elif what == "say":
                 self._say()
             elif what == "add_voice":
                 if self.speech is not None:
@@ -1183,6 +1460,10 @@ class LookupCard(QWidget):
             elif what == "new_category":
                 self.act(lambda: model.new_category(_tr("New category")))
                 self._saving = False
+            elif what in ("load_know", "load_not_yet"):
+                self.act(lambda: model.load_check(what == "load_know"))
+            elif what == "load_add":
+                self.act(model.load_add)
             else:
                 self.act(
                     {
@@ -1204,7 +1485,7 @@ class LookupCard(QWidget):
         if state is Say.NO_VOICE:
             self._voice_help = not self._voice_help
         else:
-            self.speech.toggle(card.word, language)
+            self.speech.toggle(card.word, language, card.simplified)
 
     @staticmethod
     def _say_key(watched: QObject, event: QKeyEvent) -> bool:
@@ -1219,6 +1500,29 @@ class LookupCard(QWidget):
         if isinstance(focus, _TYPING):
             return False
         return watched is (focus or QApplication.activeWindow())
+
+    def _copy_key(self, watched: QObject, event: QKeyEvent) -> bool:
+        """Ctrl+C pressed, for this card's Copy (333): as R is (`_say_key`) -
+        while one of the app's windows has the keyboard, not in a text
+        field, and only while the card shows Copy."""
+        if not event.matches(QKeySequence.StandardKey.Copy) or event.isAutoRepeat():
+            return False
+        selected = not self.selection.empty
+        if not (selected or self.model.card().actions):
+            return False
+        focus = QApplication.focusWidget()
+        if isinstance(focus, _TYPING):
+            return False
+        if not selected and _has_selection(focus):
+            return False  # words selected where the keyboard is: theirs (343)
+        return watched is (focus or QApplication.activeWindow())
+
+    def _copy(self) -> None:
+        """Ctrl+C: what's selected on the card, else the whole card (Copy)."""
+        if self.selection.empty:
+            self.do("copy")
+        else:
+            copy_quietly(self.selection.text(), QCursor.pos(), self)
 
     # -- closing without the focus ---------------------------------------------------------
 
@@ -1235,7 +1539,7 @@ class LookupCard(QWidget):
             return
         if keys("backspace"):
             self._back()
-        if keys("mouse"):
+        if keys("mouse") and self._press is None:  # not a drag from the card
             at = QCursor.pos()
             # a click on this app's own windows is the event filter's
             if (
@@ -1259,6 +1563,9 @@ class LookupCard(QWidget):
             ):
                 self.do("say")
                 return True  # the card's: not a list's search for "r"
+            elif isinstance(event, QKeyEvent) and self._copy_key(watched, event):
+                self._copy()
+                return True  # the card's: not a list's own copy
         elif (
             kind == QEvent.Type.MouseButtonPress
             and isinstance(watched, QWidget)

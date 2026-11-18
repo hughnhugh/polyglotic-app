@@ -88,4 +88,4 @@ def test_the_default_timing_is_named_first_wherever_it_s_chosen(
     order = [CaptionMode.STEADY, CaptionMode.PREVIEW, CaptionMode.LIVE]
     places = [said.index(timing_name(mode)) for mode in order]
     assert places == sorted(places)
-    assert "Settings > Captions > Timing" in said  # Home's panel went in 261
+    assert "Settings > Timing" in said  # Home's panel went in 261, a section in 304

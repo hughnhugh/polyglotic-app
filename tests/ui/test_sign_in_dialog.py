@@ -4,16 +4,19 @@ dialog stays open to try again; success closes it."""
 
 import os
 import re
+import sys
 import threading
 import time
 
 import pytest
 from PySide6.QtCore import QLocale
 from PySide6.QtWidgets import QApplication, QDialog, QLabel, QMessageBox
+from tests.stopped_clock import AFTER_MIDNIGHT_IN_MELBOURNE, qt_stopped_at
 from tests.ui.test_consent_dialog import SCREENSHOTS
 
 from polyglotic_desktop.core.listening.unreachable import Unreachable
 from polyglotic_desktop.main import window_theme
+from polyglotic_desktop.ui import sign_in
 from polyglotic_desktop.ui.interface_language import ENGLISH, formats, install
 from polyglotic_desktop.ui.sign_in import (
     SignInDialog,
@@ -22,6 +25,7 @@ from polyglotic_desktop.ui.sign_in import (
     confirm_sign_out,
 )
 from polyglotic_desktop.ui_next import style
+from polyglotic_desktop.ui_next.os_words import pc_or_mac
 
 
 def settle(qapp: QApplication, dialog: SignInDialog, timeout: float = 5.0) -> None:
@@ -85,7 +89,8 @@ def test_signed_in_here_before_the_screen_says_the_same_code_works_again(
     try:
         assert not before.again.isHidden()
         assert before.again.text() == (
-            "This PC has signed in before: the invite code you used then works "
+            pc_or_mac("This PC", "This Mac")
+            + " has signed in before: the invite code you used then works "
             "again here."
         )
         assert never.again.isHidden()
@@ -110,7 +115,10 @@ def test_every_problem_has_a_plain_explanation(qapp: QApplication) -> None:
         problem: dialog.explain(SignInFailed(problem, 420)) for problem in SignInProblem
     }
     assert "16 letters and digits" in texts[SignInProblem.NOT_A_CODE]
-    assert "used on another PC" in texts[SignInProblem.NOT_VALID]
+    assert (
+        "used on another " + pc_or_mac("PC", "computer")
+        in texts[SignInProblem.NOT_VALID]
+    )
     assert "7 minutes" in texts[SignInProblem.TOO_MANY_ATTEMPTS]
     assert "internet connection" in texts[SignInProblem.UNREACHABLE]
     assert texts[SignInProblem.SIGN_OUT_FIRST] == (
@@ -131,7 +139,9 @@ def test_every_problem_has_a_plain_explanation(qapp: QApplication) -> None:
     assert soon.endswith("Try again in a minute.")  # not "1 minutes" (137)
 
 
-def test_the_server_unreachable_says_whose_side(qapp: QApplication) -> None:
+def test_the_server_unreachable_says_whose_side(
+    qapp: QApplication, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """A first sign-in while our server was down said "Check your internet
     connection" (polyglotic-hq 251): now whose side it's on, as Home says."""
     dialog = SignInDialog(Redeem())
@@ -145,7 +155,20 @@ def test_the_server_unreachable_says_whose_side(qapp: QApplication) -> None:
     assert "internet connection" in said(Unreachable.OFFLINE)
     assert said(None) == said(Unreachable.OFFLINE)  # not known: as before
     assert "another network" in said(Unreachable.BLOCKED)
-    assert "date and time" in said(Unreachable.CLOCK)
+    # 313: wrong for certain - the date it says, and where to set it; the
+    # app's date and the test's read once (polyglotic-hq 344: midnight)
+    stopped_date, _ = qt_stopped_at(AFTER_MIDNIGHT_IN_MELBOURNE)
+    monkeypatch.setattr(sign_in, "QDate", stopped_date)
+    today = QLocale().toString(
+        stopped_date.currentDate(), QLocale.FormatType.LongFormat
+    )
+    this = pc_or_mac("This PC", "This Mac")
+    assert said(Unreachable.CLOCK).startswith(f"{this} says it's {today}")
+    assert pc_or_mac(
+        "Set time automatically", "Set time and date automatically"
+    ) in said(Unreachable.CLOCK)
+    # a certificate out of date, the clock right: an antivirus or a VPN first
+    assert "antivirus's HTTPS scanning, or a VPN" in said(Unreachable.OUT_OF_DATE)
 
 
 def test_a_screenshot_when_asked(qapp: QApplication) -> None:
@@ -184,7 +207,10 @@ def test_signing_out_says_unsent_changes_are_dropped_only_when_there_are_some(
     assert "hasn't sent to our server yet are dropped" in with_unsent
     assert "dropped" not in without
     # the same code signs in again (288): no "new invite code from us"
-    assert "with the same invite code: it works again on this PC" in without
+    assert (
+        "with the same invite code: it works again on this " + pc_or_mac("PC", "Mac")
+        in without
+    )
     assert "new invite code" not in without
 
 
@@ -210,7 +236,10 @@ def test_the_sign_out_question_is_in_the_interfaces_language(
             qapp.removeTranslator(translator)
         QLocale.setDefault(formats(ENGLISH, QLocale.system()))
     title, question, why, button = shown
-    assert (title, button) == ("退出登录", "退出登录")
+    # Qt drops a message box's title on a Mac, as macOS' own alerts have none
+    # (polyglotic-hq 420: the first Mac run of the suite)
+    assert title == ("" if sys.platform == "darwin" else "退出登录")
+    assert button == "退出登录"
     assert question == "要在这台电脑上退出 Polyglotic 的登录吗？"
     assert "邀请码" in why and "丢弃" in why
     assert not re.search(r"[A-Za-z]{3,}", why)

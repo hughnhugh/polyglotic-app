@@ -106,6 +106,22 @@ class DictionaryFile(Protocol):
         run of ranks with them)."""
         ...
 
+    def headwords_ranked(self, after: int, limit: int) -> Sequence[tuple[str, int]]:
+        """The headwords whose own first entry (`records(headword)[0]`: the
+        one a caption counts the word for) has a frequency rank past
+        `after`: each with that rank, commonest first, at most `limit` -
+        the words a learning load takes in, in order (polyglotic-hq 324).
+        Empty for a dictionary without frequencies."""
+        ...
+
+    def headwords_at_levels(self, scheme: str) -> Sequence[tuple[str, int, int | None]]:
+        """The headwords whose own first entry the level scheme `scheme`
+        gives a level: each with that level and the entry's frequency rank
+        (None: it has none) - a syllabus's words, which a learning load
+        places by their level where that is earlier than their rank. None
+        for a scheme of frequency cut-offs."""
+        ...
+
     def words_at_levels(self, scheme: str) -> Mapping[int, int]:
         """How many headwords the level scheme `scheme` puts at each level,
         by the entries' own levels - none for a scheme of frequency

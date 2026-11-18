@@ -40,8 +40,12 @@ def help_on(app: DesktopApp) -> HelpPage:
 def lines(app: DesktopApp) -> dict[str, str]:
     help_page = help_on(app)
     help_page.refresh()
-    return {
-        step.value: label.text() + " | " + help_page.fixes[step].text()
+    return {  # each line as it reads: its mark, its words, its fix
+        step.value: help_page.marks[step].text()
+        + "  "
+        + label.text()
+        + " | "
+        + help_page.fixes[step].text()
         for step, label in help_page.rows.items()
     }
 
@@ -102,7 +106,7 @@ def test_not_signed_in_is_the_first_broken_link(qapp: QApplication) -> None:
 def test_nothing_ticked_then_the_mic_and_everything_the_pc_plays(
     qapp: QApplication,
 ) -> None:
-    app = make_app()
+    app = make_app(MemorySettingsStore({"whole_system": False}))  # all stopped
     app.set_connection(ConnectionState.LISTENING)
     assert lines(app)["ticked"].startswith("✗")
     app.settings.update(caption_mic=True)
@@ -120,10 +124,10 @@ def test_check_again_runs_the_check_on_the_facts_as_they_are(
     now = time.monotonic()
     activity[APP] = SourceActivity(now - 300, None, None, None)
     help_page.check_again.click()
-    assert help_page.rows[help_page.links[2].step].text().startswith("✗")
+    assert help_page.marks[help_page.links[2].step].text() == "✗"
     activity[APP] = SourceActivity(now - 300, now - 1, now - 1, None)
     help_page.check_again.click()
-    assert help_page.rows[help_page.links[2].step].text().startswith("✓")
+    assert help_page.marks[help_page.links[2].step].text() == "✓"
     app.close()
 
 

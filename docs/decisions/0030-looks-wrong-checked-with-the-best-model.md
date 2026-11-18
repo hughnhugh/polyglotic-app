@@ -1,6 +1,6 @@
 # 0030 "Looks wrong?": a line checked with the best model, over the listening session, nothing kept
 
-- **Status:** accepted
+- **Status:** accepted; its interface taken out by [0131](0131-looks-wrong-leaves-the-interface.md) (2026-11-15) - the protocol and the server's side stay
 - **Date:** 2026-11-06
 - **Decided by:** the user's idea (2026-11-06); project 087's picks taken as defaults (polyglotic-hq DECISIONS.md #42); brief 101. The server's side is polyglotic-server decision 0031. Keeping a flagged line (the consent box) is not part of this: it changes the privacy line and waits for the notice (project 040).
 

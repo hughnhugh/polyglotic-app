@@ -26,7 +26,7 @@ import urllib.request
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 
-from polyglotic_desktop.connection import protocol
+from polyglotic_desktop.connection import protocol, tls
 from polyglotic_desktop.connection.addresses import server_address
 from polyglotic_desktop.connection.feedback import TIMEOUT_SEC, Outcome
 from polyglotic_desktop.core.shared.client import USER_AGENT
@@ -92,7 +92,7 @@ def send_problem_report(
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        with tls.urlopen(request, timeout) as response:
             protocol.validate(protocol.ProblemReportResponse, json.load(response))
     except urllib.error.HTTPError as error:
         if error.code in REFUSED_FOR_GOOD:

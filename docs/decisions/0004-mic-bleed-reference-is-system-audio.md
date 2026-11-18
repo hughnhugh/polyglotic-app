@@ -7,7 +7,9 @@
   request, and the user may overrule it.
 - **Amended by:** [0082](0082-mic-bleed-lag-up-to-1s-and-quiet-loopback.md)
   (how the mic is compared with this reference: up to 1s late, a quieter
-  loopback, a correlation of 0.65)
+  loopback, a correlation of 0.65) and
+  [0154](0154-the-mic-bleed-check-cancels-what-played.md) (what played is
+  cancelled out of the mic, and what's left is judged)
 
 ## Situation
 

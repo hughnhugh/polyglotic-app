@@ -74,6 +74,7 @@ from polyglotic_desktop.ui_next.caption_window import (
     bar_ink,
     fit_glyph,
     least_size,
+    lock_tip,
     notice_style,
     preset_name,
     restore_minimised,
@@ -87,6 +88,7 @@ from polyglotic_desktop.ui_next.settings_popover import (
     KeyState,
     SettingsPopover,
 )
+from polyglotic_desktop.ui_next.strip_tips import StripTips
 from polyglotic_desktop.ui_next.views import placement
 from polyglotic_desktop.ui_next.views.caption_window import CaptionLook, JoinedChoices
 from polyglotic_desktop.ui_next.views.placement import Edge, Preset, Rect, Size
@@ -127,6 +129,9 @@ class JoinedWindow(QWidget):
         super().__init__(None, WINDOW_FLAGS)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+        # on a Mac a tool window hides while the app isn't active - and the
+        # app is never active while the learner is in another (polyglotic-hq 429)
+        self.setAttribute(Qt.WidgetAttribute.WA_MacAlwaysShowToolWindow)
         self.setObjectName("joined_window")
         self.setFont(style.ui_font())  # its own words, painted or not
         self.setWindowTitle(_tr("Captions"))
@@ -249,7 +254,7 @@ class JoinedWindow(QWidget):
             "lock",
             _tr("Lock all windows"),
             self.lock_wanted.emit,
-            _tr("Lock - clicks pass through to what's underneath, Ctrl+Alt+L"),
+            lock_tip("Ctrl+Alt+L"),
         )
         self._action(
             "settings",
@@ -294,6 +299,10 @@ class JoinedWindow(QWidget):
             button.setAccessibleName(self.controls[name].text())
             self.buttons[name] = button
             row.addWidget(button)
+        # never active, so Qt never shows their tooltips (polyglotic-hq 395)
+        self.tips = StripTips(self)
+        for button in self.buttons.values():
+            self.tips.watch(button)
         self._draw_glyphs()
         bar.adjustSize()
         bar.hide()
@@ -503,6 +512,11 @@ class JoinedWindow(QWidget):
     def _saved(self) -> None:
         self.choices = replace(self.choices, geometry=self._place())
 
+    def set_unlock_keys(self, keys: str) -> None:
+        """The hotkey that unlocks now ("" if it doesn't work here): the
+        lock button's tip says it, or how else to unlock (398)."""
+        self.controls["lock"].setToolTip(lock_tip(keys))
+
     def set_locked(self, locked: bool) -> None:
         """Locked: clicks pass through the whole window; no band."""
         if locked == self.locked:
@@ -556,8 +570,10 @@ class JoinedWindow(QWidget):
                 self.choices = replace(self.choices, shares=moved)
                 with spans.span("joined_window.divider_step"):
                     self.lay_out()
-                    for column in self.columns:
-                        column.canvas.repaint()
+                    # the window painted once, as a resize step is: a
+                    # column's own repaint painted its neighbour too (both
+                    # moved), so three columns were four paints (355)
+                    self.repaint()
             return
         drag = self._drag
         if drag is None:
@@ -575,14 +591,16 @@ class JoinedWindow(QWidget):
 
     def resize_by(self, drag: _Drag, dx: int, dy: int) -> None:
         """A resize step: the dragged edges moved, the width shared equally,
-        every column laid out again in this frame."""
+        every column laid out again and painted in this frame - the window
+        painted once: a column's own repaint painted all three (the resize
+        left the whole window to paint), so three of them were five paints
+        (polyglotic-hq 355)."""
         area = self._area(drag.start)
         rect = placement.resized(
             drag.start, drag.edges, dx, dy, self.choices.preset, self._minimum(), area
         )
         self._set_place(rect)
-        for column in self.columns:
-            column.canvas.repaint()
+        self.repaint()
 
     def move_by(self, drag: _Drag, dx: int, dy: int) -> None:
         """A move step: kept on the screen; near a preset, snapped to it."""

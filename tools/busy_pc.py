@@ -12,6 +12,7 @@ or busy PC gets the one retry it always had.
 """
 
 import ctypes
+import os
 import sys
 import time
 from pathlib import Path
@@ -29,6 +30,19 @@ SAMPLE_SECONDS = 0.2
 MOST_TRIES = 4
 """Tries for an action over budget: the retry every action gets, then up
 to two more while the PC measures saturated."""
+
+CALM = 0.3
+"""The share of the PC's CPU time in use below which the PC counts as calm
+for the start (decision 0103). The start spreads over seven threads, about
+1.3 cores at once, so on this 8-core, 16-thread PC it slows from well below
+`SATURATED`: 45 ms more for each 10 % of the PC in use, over its 400 ms
+budget from about 44 % busy, and 353 ms at 26 % (polyglotic-hq 312,
+2026-11-14). From this share its tries count as taken on a busy PC."""
+
+CALM_WAIT_SECONDS = 60.0
+"""How long a try of the start waits for the PC to calm before it's taken
+anyway: a busy spell of other agents' tests lasts minutes, so a retry
+taken at once lands in the same spell."""
 
 
 def _cpu_times() -> tuple[float, float] | None:
@@ -59,8 +73,48 @@ def busy_share(seconds: float = SAMPLE_SECONDS) -> float | None:
     return 1 - (after[0] - before[0]) / (after[1] - before[1])
 
 
-def saturated(share: float | None) -> bool:
-    return share is not None and share >= SATURATED
+def saturated(share: float | None, level: float = SATURATED) -> bool:
+    """Whether `share` counts as busy enough for more tries: `level` and up."""
+    return share is not None and share >= level
+
+
+def wait_for_calm(
+    level: float = CALM, most_seconds: float = CALM_WAIT_SECONDS, sample: float = 1.0
+) -> float | None:
+    """The PC's load over `sample` seconds, read again until it's under
+    `level` or `most_seconds` have passed: the last reading. None (and no
+    waiting) where the counters can't be read."""
+    give_up = time.monotonic() + most_seconds
+    while True:
+        share = busy_share(sample)
+        if share is None or share < level or time.monotonic() >= give_up:
+            return share
+
+
+def _seconds_per_unit() -> float:
+    """What one unit of `_cpu_times` is, in seconds."""
+    if sys.platform == "win32":
+        return 1e-7  # GetSystemTimes: 100 ns
+    return 1 / os.sysconf("SC_CLK_TCK")  # /proc/stat: clock ticks
+
+
+class OthersMeanwhile:
+    """The share of the PC's CPU time that everything but this process
+    used from now until `share()`: how busy the rest of the PC was while
+    this process did the timed work (its own CPU time, every thread's, left
+    out)."""
+
+    def __init__(self) -> None:
+        self._from = _cpu_times()
+        self._own = time.process_time()
+
+    def share(self) -> float | None:
+        now, own = _cpu_times(), time.process_time() - self._own
+        if self._from is None or now is None or now[1] <= self._from[1]:
+            return None
+        total = now[1] - self._from[1]
+        busy = total - (now[0] - self._from[0]) - own / _seconds_per_unit()
+        return min(1.0, max(0.0, busy / total))
 
 
 def describe(share: float | None) -> str:

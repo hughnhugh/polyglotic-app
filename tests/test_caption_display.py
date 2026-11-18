@@ -108,6 +108,32 @@ def test_a_clause_already_in_the_target_is_translated_into_the_second_language()
     ]
 
 
+def test_a_second_language_line_kept_under_the_target_is_in_the_second() -> None:
+    """The server keeps a caption's line in the target's second language
+    under the target ({"en": "明天见。"}: English heard, English the target,
+    Chinese its second - its `target_language`): the row is in Chinese, for
+    its font and pinyin, and its links are the target's (polyglotic-hq 427:
+    the user's preview 2, "translation lines still don't have
+    pinyin/zhuyin" - the row said English)."""
+    said = caption(
+        Clause("See you tomorrow.", {EN: "明天见。"}, {EN: (link(4, 7, 0, 1),)}),
+        language="en",
+    )
+    rows = caption_rows(said, EN, ZH, COLOURS)
+    assert texts(rows) == [
+        ("See you tomorrow.", RowKind.ORIGINAL),
+        ("明天见。", RowKind.TRANSLATION),
+    ]
+    assert (rows[1].language, rows[1].target) == (ZH, EN)
+    assert rows[0].links == (LinkedWords(4, 7, 0),)
+    assert rows[1].links == (LinkedWords(0, 1, 0),)
+    # a caption in another language: its line under the target is the target's
+    heard = caption(Clause("明天见。", {EN: "See you tomorrow."}), language="zh")
+    assert caption_rows(heard, EN, ZH, COLOURS)[1].language == EN
+    # no second language: the target's own (a mixed line rewritten in it)
+    assert caption_rows(said, EN, None, COLOURS)[1].language == EN
+
+
 def test_a_live_captions_last_row_trails_off() -> None:
     rows = caption_rows(
         caption(Clause("你好，", {EN: "Hello,"}), Clause("今天"), live=True),
@@ -127,7 +153,34 @@ def test_word_links_are_drawn_on_settled_clauses_only() -> None:
     assert rows[1].links == (LinkedWords(0, 5, 0),)
     assert rows[2].links == () and rows[3].links == ()
     finished = caption_rows(caption(first, last), EN, None, COLOURS)
-    assert finished[3].links == (LinkedWords(0, 5, 0),)
+    assert finished[3].links == (LinkedWords(0, 5, 1),)  # the caption's second
+
+
+def test_links_are_numbered_across_the_caption_not_from_0_in_each_clause() -> None:
+    """Numbered from 0 in each clause, two clauses on one line of a
+    caption that fills the width shared a colour: 我们 and 好不好 both
+    orange (polyglotic-hq 340's fault 1)."""
+    first = Clause(
+        "我们周末去，", {EN: "We go at the weekend,"},
+        {EN: (link(0, 2, 0, 2), link(2, 4, 13, 20))},
+    )  # fmt: skip
+    plain = Clause("嗯，", {EN: "mm,"})
+    last = Clause("好不好？", {EN: "okay?"}, {EN: (link(0, 3, 0, 4),)})
+    rows = caption_rows(caption(first, plain, last), EN, None, COLOURS)
+    numbers = [[words.link for words in row.links] for row in rows]
+    assert numbers == [[0, 1], [0, 1], [], [], [2], [2]]
+    # a clause that comes later renumbers none before it
+    shorter = caption_rows(caption(first, plain), EN, None, COLOURS)
+    assert [row.links for row in shorter] == [row.links for row in rows[:4]]
+
+
+def test_the_cap_is_still_each_clauses_own() -> None:
+    both = (link(0, 1, 0, 1), link(1, 2, 2, 3))
+    first = Clause("ab", {EN: "a b"}, {EN: both})
+    last = Clause("cd", {EN: "c d"}, {EN: both})
+    capped = DisplayOptions(word_links=WordLinks.COLOURS, max_links=1)
+    rows = caption_rows(caption(first, last), EN, None, capped)
+    assert [[words.link for words in row.links] for row in rows] == [[0], [0], [1], [1]]
 
 
 def test_word_links_need_the_original_shown_and_links_on() -> None:

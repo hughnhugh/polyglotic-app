@@ -14,7 +14,10 @@ from polyglotic_desktop.ports.learning import (
     StoredExposures,
     StoredLevel,
     StoredListening,
+    StoredLoadWord,
+    StoredLookups,
     StoredSavedWord,
+    StoredSentence,
     StoredStatus,
 )
 
@@ -30,10 +33,14 @@ class MemoryLearningStore:
         self.exposures: dict[str, StoredExposures] = {}
         self.daily: dict[date, dict[str, int]] = {}
         self.deck_words: dict[str, StoredDeckWord] = {}
-        self.anki_exports: dict[str, StoredAnkiExport] = {}
+        # by entry and kind of file: each kind its own (368)
+        self.anki_exports: dict[tuple[str, str], StoredAnkiExport] = {}
         self.coverage: dict[date, StoredCoverage] = {}
         self.listening: dict[tuple[date, str], float] = {}
         self.handed_over: set[date] = set()
+        self.load_words: dict[str, StoredLoadWord] = {}
+        self.lookups: dict[str, StoredLookups] = {}
+        self.sentences: dict[str, StoredSentence] = {}
 
     def load(self) -> LearningSnapshot:
         return LearningSnapshot(
@@ -46,10 +53,15 @@ class MemoryLearningStore:
             list(self.anki_exports.values()),
             [self.coverage[day] for day in sorted(self.coverage)],
             [StoredListening(d, c, s) for (d, c), s in sorted(self.listening.items())],
+            list(self.load_words.values()),
+            list(self.lookups.values()),
         )
 
     def save_level(self, level: StoredLevel) -> None:
         self.level = level
+
+    def clear_level(self) -> None:
+        self.level = None
 
     def save_status(self, status: StoredStatus) -> None:
         self.statuses[status.entry_id] = status
@@ -62,12 +74,24 @@ class MemoryLearningStore:
         self.words = {
             k: w for k, w in self.words.items() if w.category_id != category_id
         }
+        self.sentences = {
+            k: s for k, s in self.sentences.items() if s.category_id != category_id
+        }
 
     def save_word(self, word: StoredSavedWord) -> None:
         self.words[word.entry_id] = word
 
     def delete_word(self, entry_id: str) -> None:
         self.words.pop(entry_id, None)
+
+    def saved_sentences(self) -> list[StoredSentence]:
+        return list(self.sentences.values())
+
+    def save_sentence(self, sentence: StoredSentence) -> None:
+        self.sentences[sentence.id] = sentence
+
+    def delete_sentence(self, sentence_id: str) -> None:
+        self.sentences.pop(sentence_id, None)
 
     def save_deck_word(self, word: StoredDeckWord) -> None:
         self.deck_words[word.entry_id] = word
@@ -77,11 +101,25 @@ class MemoryLearningStore:
 
     def save_anki_exports(self, exports: Iterable[StoredAnkiExport]) -> None:
         for export in exports:
-            self.anki_exports[export.entry_id] = export
+            self.anki_exports[export.entry_id, export.kind] = export
+
+    def save_load_words(self, words: Sequence[StoredLoadWord]) -> None:
+        for word in words:
+            self.load_words[word.entry_id] = word
+
+    def delete_load_words(self, entry_ids: Sequence[str]) -> None:
+        for entry_id in entry_ids:
+            self.load_words.pop(entry_id, None)
+
+    def save_lookups(self, lookups: StoredLookups) -> None:
+        self.lookups[lookups.entry_id] = lookups
 
     def forget_entry(self, entry_id: str) -> None:
+        self.lookups.pop(entry_id, None)
+        self.load_words.pop(entry_id, None)
         self.deck_words.pop(entry_id, None)
-        self.anki_exports.pop(entry_id, None)
+        for key in [k for k in self.anki_exports if k[0] == entry_id]:
+            del self.anki_exports[key]
         self.statuses.pop(entry_id, None)
         self.words.pop(entry_id, None)
         self.exposures.pop(entry_id, None)
@@ -128,6 +166,7 @@ class MemoryLearningStore:
     def delete_learning_data(self) -> None:
         self.statuses.clear()
         self.words.clear()
+        self.sentences.clear()
         self.deck_words.clear()
         self.anki_exports.clear()
         self.exposures.clear()
@@ -135,12 +174,18 @@ class MemoryLearningStore:
         self.coverage.clear()
         self.listening.clear()
         self.handed_over.clear()
+        self.load_words.clear()
+        self.lookups.clear()
 
 
 def facts(
-    name: str, level: int | None = 1, rank: int | None = 100, is_name: bool = False
+    name: str,
+    level: int | None = 1,
+    rank: int | None = 100,
+    is_name: bool = False,
+    level_words: int | None = None,
 ) -> EntryFacts:
-    return EntryFacts(EntryId(f"test:{name}"), level, rank, is_name)
+    return EntryFacts(EntryId(f"test:{name}"), level, rank, is_name, level_words)
 
 
 def words_of(line: str, known: Mapping[str, EntryFacts]) -> list[WordInLine]:

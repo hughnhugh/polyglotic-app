@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 from pytest import MonkeyPatch
+from tests.lexicon.sample import FakeDictionaryFile
 from tests.lexicon.test_basic import SPANISH, FakeSplit
 from tests.tools.test_packs import sources
 from tools.dictionaries import coverage, packs
@@ -18,6 +19,7 @@ from tools.dictionaries.packs import PACKS
 
 from polyglotic_desktop.adapters.sqlite_dictionary import SqliteDictionary
 from polyglotic_desktop.core.lexicon.basic import BasicDictionary
+from polyglotic_desktop.ports.dictionary import EntryRecord
 from polyglotic_desktop.ports.word_split import SplitWord
 
 
@@ -89,3 +91,76 @@ def test_russian_finds_its_target_share_of_running_words(language: str) -> None:
     info = SqliteDictionary(Path(str(PACKS_BUILT)) / f"{pack.name}.sqlite").info
     print(f"{pack.name}: {info['running_words']} of running words")
     assert float(info["running_words"]) >= RUNNING_WORDS_TARGETS[language]
+
+
+def test_the_commonest_words_are_each_found_or_said_why_not(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """A pack's build checks wordfreq's 200 commonest words in its script
+    (polyglotic-hq 390): Polish's "i" had had no entry."""
+    spanish = BasicDictionary(SPANISH, FakeSplit(), "es")
+    freq = {"casa": 1e-2, "the": 5e-3, "supe": 1e-3, "1990": 9e-4, "xyz": 1e-4}
+    monkeypatch.setitem(coverage.EXEMPT, "es", {"the": "English"})
+    result = coverage.top_words(spanish, freq, "es", top=4)
+    # "1990" isn't in the script; the top 4 are casa, the, supe, xyz
+    assert result.missing == [(4, "xyz")] and result.exempt == [(2, "the")]
+    assert str(result) == "missing xyz (4); exempt the (2)"
+
+
+def test_thais_build_checks_its_commonest_words_by_common_voice(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+) -> None:
+    """wordfreq has no Thai list, so the check had skipped Thai; its pack
+    is ranked by Common Voice's sentences, and their commonest words are
+    checked instead, commonest first (polyglotic-hq 394, 396)."""
+    monkeypatch.setattr(packs, "REGISTRY", tmp_path / "registry")
+    (tmp_path / "registry").mkdir()
+    out = tmp_path / "out"
+    out.mkdir()
+    stats = packs.build(PACKS["th"], sources(tmp_path / "upstream"), out)
+    assert stats["finds its commonest words"] is True
+    assert str(stats["top words"]).startswith("missing none")
+    top = coverage.probe_top_words_of(
+        out / "wiktth.sqlite", "th", {"กิน": 1e-1, "ฟฟฟ": 5e-1, "หมา": 1e-2}
+    )
+    assert top.missing == [(1, "ฟฟฟ")]
+
+
+def test_an_elided_word_is_looked_up_as_captions_write_it() -> None:
+    """wordfreq cuts "l'homme" into "l" and "homme"; the split gives "l'",
+    looked up as le or la (polyglotic-hq 390). French's "l" and "j" had
+    passed only as the letters' entries, which 387 dropped."""
+    french = FakeDictionaryFile(
+        [EntryRecord("wiktfr:le", "le", "", "", ("(article) the",), 3)],
+        {"le": ["wiktfr:le"]},
+    )
+    assert coverage.finds(BasicDictionary(french, FakeSplit(), "fr"), "l")
+    assert not coverage.finds(BasicDictionary(french, FakeSplit(), "es"), "l")
+
+
+def test_the_commonest_running_words_open_as_the_treebanks_use_them() -> None:
+    """The top-words check asks only whether a word is found: Hindi's लिए,
+    the 12th commonest running word, was - on लेना, "to take", though the
+    treebanks use it as a postposition (के लिए, "for"). The build lists
+    such words (polyglotic-hq 448, 461): here "vengo" opens on venir, a
+    verb, but is used as an adposition; "casa" (a noun, used so) and "supe" (too
+    few uses) pass."""
+    hindi_like = FakeDictionaryFile(
+        [
+            EntryRecord("wiktes:venir", "venir", "", "", ("(verb) to come",), 270),
+            EntryRecord("wiktes:casa", "casa", "", "", ("(noun) house",), 300),
+            EntryRecord("wiktes:saber", "saber", "", "", ("(verb) to know",), 160),
+        ],
+        {"venir": ["wiktes:venir"], "casa": ["wiktes:casa"], "saber": ["wiktes:saber"]},
+        lemmas={"vengo": "venir", "supe": "saber"},
+    )
+    dictionary = BasicDictionary(hindi_like, FakeSplit(), "es")
+    freq = {"vengo": 1e-2, "casa": 5e-3, "supe": 1e-3}
+    uses = {
+        "vengo": {"ADP": 30, "VERB": 2},
+        "casa": {"NOUN": 40, "PROPN": 1},
+        "supe": {"ADP": 3},
+    }
+    result = coverage.opened_as_used(dictionary, freq, "es", uses)
+    assert result.mismatched == [(1, "vengo", "venir (verb)", "ADP")]
+    assert str(result) == "vengo (1): venir (verb), used as ADP"

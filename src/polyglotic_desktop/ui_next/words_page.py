@@ -22,11 +22,17 @@ Top to bottom, in a column up to 960 px wide (`main_window.WORDS_COLUMN`):
   another program, the folder read-only; polyglotic-hq project 145); and
   How to import into Anki, the site's help, in the browser (polyglotic-hq
   250).
+- **Saved sentences** (polyglotic-hq 459, `saved_sentences`): what was
+  selected in captions and saved, searched in either language, filtered
+  by category or saved word; moved or removed.
 
-When the language learned was changed to another full dictionary's this
-run, the page says whose words it shows until the next start, when the
-other's run (`show_in_use`; polyglotic-hq 299: a learner who chose English
-saw Chinese words, unnamed, and "Words don't work for English").
+Every full language learned is open at once, each its own section with
+its own level, words, categories and Anki export (DECISIONS #110,
+decision 0095). When the main language was changed this run to a full
+dictionary not open yet, the page says whose words it shows until the
+next start, when it opens (`show_in_use`; polyglotic-hq 299: a learner who
+chose English saw Chinese words, unnamed, and "Words don't work for
+English").
 
 Clicking a word pins its lookup - the card every caption window shares
 (`lookup_card`). The word lists are tables (`word_table`): their rows are
@@ -49,6 +55,7 @@ from PySide6.QtCore import (
     QT_TRANSLATE_NOOP,
     QDir,
     QEvent,
+    QLocale,
     QRect,
     Qt,
     QTimer,
@@ -58,12 +65,11 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QColor, QPalette, QShowEvent
 from PySide6.QtWidgets import (
     QApplication,
-    QCheckBox,
-    QComboBox,
     QFileDialog,
     QHBoxLayout,
     QLineEdit,
     QMenu,
+    QMessageBox,
     QPushButton,
     QScrollArea,
     QToolButton,
@@ -72,9 +78,14 @@ from PySide6.QtWidgets import (
 )
 
 from polyglotic_desktop.core.learning.exposures import ExposureCount
+from polyglotic_desktop.core.learning.languages import Tier, tier_of
 from polyglotic_desktop.core.learning.lookups import LookupContext
 from polyglotic_desktop.core.learning.saved_words import Category, CategoryId
-from polyglotic_desktop.core.learning.vocabulary import AnkiWords
+from polyglotic_desktop.core.learning.vocabulary import (
+    AnkiFormat,
+    AnkiWords,
+    words_and_sentences,
+)
 from polyglotic_desktop.core.shared import EntryId, WordStatus
 from polyglotic_desktop.core.shared.papers import HELP_ANKI
 from polyglotic_desktop.perf import spans
@@ -82,12 +93,23 @@ from polyglotic_desktop.ports.settings import SettingsStore
 from polyglotic_desktop.ui_next import style
 from polyglotic_desktop.ui_next.caption_window import to_rect, work_areas
 from polyglotic_desktop.ui_next.colour_controls import pick_colour
-from polyglotic_desktop.ui_next.controls import Card, label, page_button, swatch
+from polyglotic_desktop.ui_next.controls import (
+    Card,
+    Combo,
+    Flow,
+    WrapCheckBox,
+    focus_kept,
+    label,
+    page_button,
+    swatch,
+)
 from polyglotic_desktop.ui_next.heard_card import HeardCard
 from polyglotic_desktop.ui_next.home import Page
+from polyglotic_desktop.ui_next.languages import learned_name
 from polyglotic_desktop.ui_next.lookup_card import LookupCard
 from polyglotic_desktop.ui_next.main_window import WORDS_COLUMN
 from polyglotic_desktop.ui_next.save_folder import SaveFolder
+from polyglotic_desktop.ui_next.saved_sentences import SavedSentences
 from polyglotic_desktop.ui_next.views.lookup import WordAt
 from polyglotic_desktop.ui_next.views.placement import area_for
 from polyglotic_desktop.ui_next.views.words import (
@@ -104,9 +126,27 @@ from polyglotic_desktop.ui_next.views.words import (
     level_line,
     word_text,
 )
-from polyglotic_desktop.ui_next.word_table import Column, Item, WordTable, status_name
+from polyglotic_desktop.ui_next.word_table import (
+    Column,
+    Item,
+    SelectionBar,
+    WordTable,
+    status_name,
+)
 
 log = logging.getLogger(__name__)
+
+KNOWN, DECK, NEW, IGNORE, MOVE, REMOVE = (
+    "known", "deck", "new", "ignore", "move", "remove"
+)  # fmt: skip
+"""What can be done to several words picked at once (342): the keys of the
+lists' `SelectionBar`s."""
+PICKED_STATUSES = {
+    KNOWN: WordStatus.KNOWN,
+    DECK: WordStatus.LEARNING,
+    NEW: WordStatus.NEW,
+    IGNORE: WordStatus.IGNORED,
+}
 
 HEARD_EVERY_MS = 1000
 """While captions come in, Words shows the counts again at most this often."""
@@ -130,15 +170,22 @@ def _trn(text: str, n: int) -> str:
     return QApplication.translate("Words", text, None, n)
 
 
-def export_said(count: int | None, name: str, only_new: bool) -> str:
-    """What Export for Anki says once it's done: how many words went into
-    `name`, or (`count` None) that the file couldn't be written."""
+def export_said(
+    count: int | None, name: str, only_new: bool, sentences: int = 0
+) -> str:
+    """What Export for Anki says once it's done: how many words (`count`)
+    and saved sentences went into `name`, or (`count` None) that the file
+    couldn't be written."""
     if count is None:
         return _tr(
             "Couldn't write {name}. It may be open in another program, or the "
             "folder may be read-only - close it or pick another folder, and "
             "try again."
         ).format(name=name)
+    if count == 0 and sentences:
+        return _trn("%Ln saved sentence(s) written to {name}.", sentences).format(
+            name=name
+        )
     if count == 0:
         if only_new:
             return _tr("No new words since the last export - {name} is empty.").format(
@@ -148,7 +195,11 @@ def export_said(count: int | None, name: str, only_new: bool) -> str:
             "No words to export yet - {name} is empty. Save a word or add it to "
             "your deck first."
         ).format(name=name)
-    return _trn("%Ln word(s) written to {name}.", count).format(name=name)
+    said = _trn("%Ln word(s) written to {name}.", count).format(name=name)
+    if sentences:
+        #: after "12 words written to polyglotic-words.apkg."
+        said += " " + _trn("And %Ln saved sentence(s).", sentences)
+    return said
 
 
 def heard_times(count: int) -> str:
@@ -176,6 +227,15 @@ def heard_line(heard: ExposureCount) -> str:
 def words_count(count: int) -> str:
     """A category's words: "1 word", "3 words"."""
     return _trn("%Ln word(s)", count)
+
+
+def words_level_text(words: int) -> str:
+    """A level said in words (polyglotic-hq 323), for Words and Learning."""
+    if words <= 0:
+        return _tr("Just starting - no words known yet")
+    return _tr("About {count} of the most common words").format(
+        count=QLocale().toString(words)
+    )
 
 
 class Field(QLineEdit):
@@ -213,9 +273,7 @@ class CategoryRow(QWidget):
     def __init__(self, category: Category, count: int, deletable: bool) -> None:
         super().__init__()
         self.category = category
-        row = QHBoxLayout(self)
-        row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(10)
+        row = Flow(self, spacing=10)  # Delete under the name where it's narrow
         self.colour = QToolButton()
         self.colour.setObjectName(f"category.color.{category.id}")
         self.colour.setIcon(swatch(category.color, 18))
@@ -230,9 +288,9 @@ class CategoryRow(QWidget):
         self.name.setAccessibleName(_tr("Category name"))
         self.name.setMinimumWidth(style.px(140))
         self.name.setMaximumWidth(style.px(260))
-        row.addWidget(self.name, 1)
+        row.add_widget(self.name, 1)
         row.addWidget(label(words_count(count), "Dim"))
-        row.addStretch(1)
+        row.add_stretch(1)
         self.delete = QPushButton(_tr("Delete"))
         self.delete.setObjectName(f"category.delete.{category.id}")
         self.delete.setProperty("kind", "ghost")
@@ -274,6 +332,9 @@ class LanguageWords(QWidget):
         chinese = learner.is_chinese
         self._dirty = True
         self._categories_dirty = True
+        self.count_dirty = True
+        """Its words met not counted since Learning last changed, while it
+        was closed: its heading is counted when the page shows (`count`)."""
         self._later = QTimer(self, singleShot=True)
         self._later.timeout.connect(self.refresh)
 
@@ -315,6 +376,10 @@ class LanguageWords(QWidget):
             chinese,
         )
         self.hearing.setAccessibleName(_tr("Words you keep hearing"))
+        self.hearing_bar = SelectionBar("words.keep_hearing_picked")
+        self.hearing_bar.add(KNOWN, _tr("I know these"))
+        self.hearing_bar.add(DECK, _tr("Add to deck"))
+        hearing.add(self.hearing_bar)
         self.hearing_empty = label(
             _tr(
                 "Nothing yet - words new to you show here once you've heard them "
@@ -343,9 +408,8 @@ class LanguageWords(QWidget):
         words = Card(
             _tr("Your words"), _tr("Every word you've met. Correct any status by hand.")
         )
-        filters = QHBoxLayout()
-        filters.setSpacing(8)
-        self.status = QComboBox()
+        filters = Flow()
+        self.status = Combo()
         self.status.setObjectName("words.filter")
         self.status.setAccessibleName(_tr("Show words with this status"))
         self.status.addItem(_tr("All statuses"), None)
@@ -363,7 +427,7 @@ class LanguageWords(QWidget):
         self._searching.timeout.connect(self._refresh_words)
         self.search.textChanged.connect(lambda _: self._searching.start())
         filters.addWidget(self.status)
-        filters.addWidget(self.search, 1)
+        filters.add_widget(self.search, 1)
         words.add(filters)
         self.words = WordTable(
             "words.your_words",
@@ -372,6 +436,12 @@ class LanguageWords(QWidget):
             chinese,
         )
         self.words.setAccessibleName(_tr("Your words"))
+        self.words_bar = SelectionBar("words.your_words_picked")
+        self.words_bar.add(KNOWN, _tr("I know these"))
+        self.words_bar.add(DECK, _tr("Add to deck"))
+        self.words_bar.add(NEW, _tr("New again"), "ghost")
+        self.words_bar.add(IGNORE, _tr("Ignore"), "ghost")
+        words.add(self.words_bar)
         words.add(self.words)
         # a few rows, then Show all - or the search (`YOUR_WORDS_ROWS`)
         self.all_words = False
@@ -397,17 +467,16 @@ class LanguageWords(QWidget):
         self.categories = QWidget()
         self.category_rows = _column(self.categories)
         saved.add(self.categories)
-        add = QHBoxLayout()
-        add.setSpacing(8)
+        add = Flow()
         self.new_category = Field("words.new_category", _tr("New category"))
         self.new_category.setMinimumWidth(style.px(140))
         self.new_category.setMaximumWidth(style.px(260))
         self.new_category.returnPressed.connect(self._add_category)
-        add.addWidget(self.new_category, 1)
+        add.add_widget(self.new_category, 1)
         self.add_category = _button(_tr("Add"), "words.add_category")
         self.add_category.clicked.connect(self._add_category)
         add.addWidget(self.add_category)
-        add.addStretch(1)
+        add.add_stretch(1)
         saved.add(add)
         self.saved = WordTable(
             "words.saved",
@@ -416,6 +485,10 @@ class LanguageWords(QWidget):
             chinese,
         )
         self.saved.setAccessibleName(_tr("Saved words"))
+        self.saved_bar = SelectionBar("words.saved_picked")
+        self.saved_bar.add(MOVE, _tr("Move to…"))
+        self.saved_bar.add(REMOVE, _tr("Remove"), "ghost")
+        saved.add(self.saved_bar)
         saved.add(self.saved)
         # a few rows, then Show all (`SAVED_WORDS_ROWS`), as Your words
         self.all_saved = False
@@ -434,6 +507,11 @@ class LanguageWords(QWidget):
         saved.add(self.saved_empty)
         self.content.addWidget(saved)
 
+        self.sentences = SavedSentences(lambda: self.learner.vocabulary)
+        """Saved sentences, searched (polyglotic-hq 459)."""
+        self._sentences_dirty = True
+        self.content.addWidget(self.sentences)
+
         export = Card(
             _tr("Export for Anki"),
             _tr(
@@ -442,20 +520,19 @@ class LanguageWords(QWidget):
                 "adds them with Polyglotic's card style, no set-up."
             ),
         )
-        line = QHBoxLayout()
-        line.setSpacing(8)
-        self.only_new = QCheckBox(_tr("Only words not exported yet"))
+        choice = Flow()  # the buttons under the choice where it's narrow (354)
+        self.only_new = WrapCheckBox(_tr("Only words not exported yet"))
         self.only_new.setObjectName("words.export_only_new")
-        line.addWidget(self.only_new)
-        line.addStretch(1)
+        choice.addWidget(self.only_new)
+        choice.add_stretch(1)
         self.export_csv = _button(_tr("CSV file"), "words.export_csv")
         self.export_csv.clicked.connect(self._export_csv)
-        line.addWidget(self.export_csv)
+        choice.addWidget(self.export_csv)
         self.export_deck = _button(_tr("Anki deck file (.apkg)"), "words.export_deck")
         self.export_deck.setEnabled(learner.deck_writer is not None)
         self.export_deck.clicked.connect(self._export_deck)
-        line.addWidget(self.export_deck)
-        export.add(line)
+        choice.addWidget(self.export_deck)
+        export.add(choice)
         # how to import it, on the site's help (polyglotic-hq 250, F25)
         self.anki_help = page_button(
             _tr("How to import into Anki"), HELP_ANKI, "words.anki_help"
@@ -474,11 +551,21 @@ class LanguageWords(QWidget):
         self._written.connect(self._export_written)  # queued: from that thread
         self.content.addWidget(export)
         self._read_parts: tuple[QWidget, ...] = (
-            self.heard, self.summary, hearing, words, saved, export
+            self.heard, self.summary, hearing, words, saved, self.sentences, export
         )  # fmt: skip
 
         for table in (self.hearing, self.words, self.saved):
             table.acted.connect(self._acted)
+        # several words picked at once (342): the bar above each list
+        self.ask_remove: Callable[[int], bool] = self._ask_remove
+        """Whether to remove `n` saved words picked together - asked first."""
+        for table, bar in (
+            (self.hearing, self.hearing_bar),
+            (self.words, self.words_bar),
+            (self.saved, self.saved_bar),
+        ):
+            table.picked_changed.connect(bar.show_count)
+            bar.chosen.connect(lambda key, t=table, b=bar: self._for_picked(t, b, key))
 
     # -- refreshing --------------------------------------------------------------------
 
@@ -488,8 +575,11 @@ class LanguageWords(QWidget):
         while listening, at most once every `HEARD_EVERY_MS` - else when it
         next shows."""
         self._dirty = True
+        self.count_dirty = True
         if what in ("", "saved_words"):
             self._categories_dirty = True
+        if what in ("", "saved_words", "sentences"):
+            self._sentences_dirty = True
         if not self.isVisible():
             return
         if what == "exposures":  # a finished caption's words
@@ -514,6 +604,7 @@ class LanguageWords(QWidget):
                 return
             self._dirty = False
             self.heard.refresh(self.learner)
+            self.count_dirty = False
             self.counted.emit(self.heard.words_met)
             self.summary.setText(self.heard.summary)
             self.summary.setHidden(not self.heard.summary)
@@ -522,6 +613,20 @@ class LanguageWords(QWidget):
             if self._categories_dirty:
                 self._refresh_categories()
             self._refresh_saved()
+            if self._sentences_dirty:  # read the first time it shows (459)
+                self._sentences_dirty = False
+                self.sentences.refresh()
+
+    def count(self) -> None:
+        """Its words met counted for its heading alone, while it's closed
+        (polyglotic-hq 306: a second language's section said "0 words met"
+        until opened) - as the heard card counts them, once what Words reads
+        is read ahead (`main` starts that before the page is built); until
+        then it waits (`count_dirty` stays)."""
+        if self.learner.reading_ahead:
+            return
+        self.count_dirty = False
+        self.counted.emit(len(self.learner.vocabulary.met_words()))
 
     def _text(self, entry_id: EntryId) -> WordText | None:
         vocabulary = self.learner.vocabulary
@@ -530,9 +635,11 @@ class LanguageWords(QWidget):
         )
 
     def _refresh_level(self) -> None:
-        line = level_line(self.learner.vocabulary.curve)
+        line = level_line(self.learner.vocabulary.line)
         if not line.picked:
             text = _tr("Not set yet - words count as known up to a middle level.")
+        elif line.words is not None:
+            text = words_level_text(line.words)
         elif not line.level:
             text = _tr("{scheme}: just starting").format(scheme=_tr(line.scheme))
         else:
@@ -630,33 +737,38 @@ class LanguageWords(QWidget):
 
     def _refresh_categories(self) -> None:
         self._categories_dirty = False
-        vocabulary = self.learner.vocabulary
-        while self.category_rows.count():
-            taken = self.category_rows.takeAt(0)
-            widget = taken.widget() if taken is not None else None
-            if widget is not None:
-                widget.hide()
-                widget.deleteLater()
-        counts: dict[CategoryId, int] = {}
-        for word in vocabulary.saved_words:
-            counts[word.category_id] = counts.get(word.category_id, 0) + 1
-        deletable = len(vocabulary.categories) > 1
-        before: QWidget = self.words_all
-        for category in vocabulary.categories:
-            row = CategoryRow(category, counts.get(category.id, 0), deletable)
-            row.colour.clicked.connect(lambda _=False, c=category: self._recolour(c))
-            row.name.editingFinished.connect(
-                lambda c=category, field=row.name: self._rename(c, field.text())
-            )
-            row.delete.clicked.connect(
-                lambda _=False, c=category: vocabulary.remove_category(c.id)
-            )
-            self.category_rows.addWidget(row)
-            # made after the page: Tab reaches the rows where they are,
-            # between Your words and New category, not after the sidebar
-            for control in (row.colour, row.name, row.delete):
-                QWidget.setTabOrder(before, control)
-                before = control
+        # a category renamed or recoloured keeps the keyboard on its row made
+        # again, and the page its place (polyglotic-hq 480)
+        with focus_kept(self.categories):
+            vocabulary = self.learner.vocabulary
+            while self.category_rows.count():
+                taken = self.category_rows.takeAt(0)
+                widget = taken.widget() if taken is not None else None
+                if widget is not None:
+                    widget.hide()
+                    widget.deleteLater()
+            counts: dict[CategoryId, int] = {}
+            for word in vocabulary.saved_words:
+                counts[word.category_id] = counts.get(word.category_id, 0) + 1
+            deletable = len(vocabulary.categories) > 1
+            before: QWidget = self.words_all
+            for category in vocabulary.categories:
+                row = CategoryRow(category, counts.get(category.id, 0), deletable)
+                row.colour.clicked.connect(
+                    lambda _=False, c=category: self._recolour(c)
+                )
+                row.name.editingFinished.connect(
+                    lambda c=category, field=row.name: self._rename(c, field.text())
+                )
+                row.delete.clicked.connect(
+                    lambda _=False, c=category: vocabulary.remove_category(c.id)
+                )
+                self.category_rows.addWidget(row)
+                # made after the page: Tab reaches the rows where they are,
+                # between Your words and New category, not after the sidebar
+                for control in (row.colour, row.name, row.delete):
+                    QWidget.setTabOrder(before, control)
+                    before = control
 
     def _refresh_saved(self) -> None:
         vocabulary = self.learner.vocabulary
@@ -715,9 +827,65 @@ class LanguageWords(QWidget):
         elif column == Column.REMOVE:
             vocabulary.unsave(entry_id)
 
+    def _for_picked(self, table: WordTable, bar: SelectionBar, key: str) -> None:
+        """An action for every word picked in `table` (342): a status for
+        them all, moved to a category, or removed from the saved words -
+        or "Clear", which lets them go."""
+        entries = table.picked_entries()
+        vocabulary = self.learner.vocabulary
+        if key in PICKED_STATUSES and entries:
+            vocabulary.set_statuses(entries, PICKED_STATUSES[key])
+        elif key == MOVE and entries:
+            button = bar.buttons[MOVE]
+            self.menu = self._category_menu_for(entries)
+            self.menu.popup(button.mapToGlobal(button.rect().bottomLeft()))
+            return  # picked until a category is chosen
+        elif key == REMOVE and entries:
+            if not self.ask_remove(len(entries)):
+                return
+            for entry_id in entries:
+                vocabulary.unsave(entry_id)
+        table.let_go()
+
+    def _ask_remove(self, count: int) -> bool:
+        box = QMessageBox(
+            QMessageBox.Icon.Question,
+            _tr("Remove saved words"),
+            _trn(
+                "Remove %Ln saved word(s)? The lines they were saved from go with them.",
+                count,
+            ),
+            parent=self,
+        )
+        yes = box.addButton(_tr("Remove"), QMessageBox.ButtonRole.DestructiveRole)
+        box.addButton(QMessageBox.StandardButton.Cancel)
+        box.setDefaultButton(QMessageBox.StandardButton.Cancel)
+        box.exec()
+        answer = box.clickedButton() is yes
+        box.deleteLater()
+        return answer
+
+    def _category_menu_for(self, entries: Sequence[EntryId]) -> QMenu:
+        """Move to…: the categories; one chosen takes every word picked."""
+        menu = QMenu(self)
+        menu.setObjectName("words.picked_category_menu")
+        for category in self.learner.vocabulary.categories:
+            action = menu.addAction(swatch(category.color), category.name)
+            action.setObjectName(f"words.picked_category.{category.id}")
+            action.triggered.connect(
+                lambda _=False, c=category.id: self._move_picked(entries, c)
+            )
+        return menu
+
+    def _move_picked(self, entries: Sequence[EntryId], category_id: CategoryId) -> None:
+        for entry_id in entries:
+            self._move(entry_id, category_id)
+        self.saved.let_go()
+
     def look_up(self, entry_id: EntryId, cell: QRect) -> None:
         """The word's lookup, pinned beside its cell (the caption windows'
-        card)."""
+        card), in this section's language: its own dictionary and learning
+        data, with several open (306)."""
         text = self.rows.text(entry_id)
         if self.card is None or text is None:
             return
@@ -735,6 +903,7 @@ class LanguageWords(QWidget):
                 rect,
                 area,
                 (id(self) % 1_000_000, cell.x(), cell.y(), len(text.headword)),
+                language_of(self.learner),
             )
         )
 
@@ -805,7 +974,7 @@ class LanguageWords(QWidget):
             _tr("CSV files (*.csv)"),
         )
         if path:
-            self._export(write_csv, Path(path))
+            self._export(write_csv, Path(path), AnkiFormat.CSV)
 
     def _export_deck(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
@@ -815,18 +984,19 @@ class LanguageWords(QWidget):
             _tr("Anki deck files (*.apkg)"),
         )
         if path:
-            self._export(write_deck, Path(path))
+            self._export(write_deck, Path(path), AnkiFormat.DECK)
 
-    def _export(self, write: "Write", path: Path) -> None:
+    def _export(self, write: "Write", path: Path, file: AnkiFormat) -> None:
         """Writes the export on a thread of its own - the deck file took
         5.4 s and the CSV 1.6-1.8 s on the interface thread in the user's
         log (polyglotic-hq 273) - with the buttons busy meanwhile; then
         says what it wrote, and where (`_export_written`). The words are
-        copied here, so the vocabulary can change while it writes."""
+        copied here, so the vocabulary can change while it writes. "Only
+        words not exported yet" is per kind of `file` (polyglotic-hq 368)."""
         if self.exporting is not None:
             return
         only_new = self.only_new.isChecked()
-        words = self.learner.vocabulary.anki_words(only_new)
+        words = self.learner.vocabulary.anki_words(only_new, file)
         learner, written = self.learner, self._written
 
         def run() -> None:
@@ -839,7 +1009,7 @@ class LanguageWords(QWidget):
                 log.warning("Anki export not written: %s", type(problem).__name__)
                 ids = None
             with contextlib.suppress(RuntimeError):  # the page went meanwhile
-                written.emit(_Exported(path, only_new, ids))
+                written.emit(_Exported(path, only_new, ids, file))
 
         self._show_exporting(path)
         self.exporting = threading.Thread(target=run, name="anki export")
@@ -858,11 +1028,12 @@ class LanguageWords(QWidget):
         way, with where it went."""
         self.exporting = None
         if done.entry_ids is not None:
-            self.learner.vocabulary.mark_exported(done.entry_ids)
+            self.learner.vocabulary.mark_exported(done.entry_ids, done.file)
             self.save_folder.saved(done.path)  # the next export opens there
-        count = None if done.entry_ids is None else len(done.entry_ids)
+        words, sentences = words_and_sentences(done.entry_ids or ())
+        count = None if done.entry_ids is None else words
         where = QDir.toNativeSeparators(str(done.path))
-        self.export_result.setText(export_said(count, where, done.only_new))
+        self.export_result.setText(export_said(count, where, done.only_new, sentences))
         self.export_result.show()
         self.export_csv.setEnabled(True)
         self.export_deck.setEnabled(self.learner.deck_writer is not None)
@@ -873,11 +1044,12 @@ class LanguageWords(QWidget):
 @dataclass(frozen=True)
 class _Exported:
     """An export, written: its file, whether only new words were asked for,
-    and the words in it - None if it couldn't be written."""
+    the words in it - None if it couldn't be written - and its kind."""
 
     path: Path
     only_new: bool
     entry_ids: tuple[EntryId, ...] | None
+    file: AnkiFormat
 
 
 LANGUAGE_NAMES = {
@@ -890,16 +1062,26 @@ OPEN_KEY = "words_open"
 
 
 def language_of(learner: WordsLearner) -> str:
-    """The language `learner` learns (settings' codes: `zh`, `en`)."""
-    return "zh" if learner.is_chinese else "en"
+    """The language `learner` learns (settings' codes: `zh`, `en`, or a
+    pack language's - `ru`)."""
+    return learner.language
 
 
-def heading(language: str, met: int) -> str:
-    """A language section's heading: "Chinese · 360 words met"."""
+def language_said(language: str) -> str:
+    """A language learned, by name, as a section's heading and Words'
+    lines say it: Chinese and English in Words' own words, a pack
+    language's as Learning names it (`learned_name`)."""
     name = LANGUAGE_NAMES.get(language)
-    return _trn("{language} · %Ln word(s) met", met).format(
-        language=_tr(str(name)) if name else language
-    )
+    return _tr(str(name)) if name else learned_name(language)
+
+
+def heading(language: str, met: int | None) -> str:
+    """A language section's heading: "Chinese · 360 words met" - or, not
+    counted yet, "Chinese"."""
+    said = language_said(language)
+    if met is None:
+        return said
+    return _trn("{language} · %Ln word(s) met", met).format(language=said)
 
 
 class OpenLanguages:
@@ -946,7 +1128,9 @@ class LanguageSection(QWidget):
         super().__init__()
         self.language = group.language
         self.words = words
-        self._met = 0
+        self._met: int | None = None
+        """Words met, once counted; until then the heading names the
+        language alone."""
         column = QVBoxLayout(self)
         column.setContentsMargins(0, 0, 0, 0)
         column.setSpacing(12)
@@ -962,10 +1146,16 @@ class LanguageSection(QWidget):
         self.heading.setVisible(group.folds)
         words.setVisible(group.open)
         words.counted.connect(self.count)
-        self.count(0)
+        self.count(None)
 
-    def count(self, met: int) -> None:
-        """The heading with `met` words met, marked open or closed."""
+    def fold(self, folds: bool) -> None:
+        """Whether it opens and closes under its heading: with one language
+        it doesn't - simply open - with several it does (`LanguageGroup`)."""
+        self.heading.setVisible(folds)
+
+    def count(self, met: int | None) -> None:
+        """The heading with `met` words met (None: not counted yet - the
+        language alone), marked open or closed."""
         self._met = met
         said = heading(self.language, met)
         mark = "▾" if self.heading.isChecked() else "▸"
@@ -980,15 +1170,16 @@ class LanguageSection(QWidget):
 
 class WordsPage(Page):
     """Words: a section per language learned (polyglotic-hq 250, the user's
-    F23), each that language's words (`LanguageWords`). With one language -
-    always, until polyglotic-hq 248's model lets a learner have several -
+    F23), each that language's words (`LanguageWords`). With one language
     it's simply open and the page looks as it did; with several, each opens
     and closes under a heading with its count, and stays as the learner
-    left it (`OpenLanguages`). `main` hands over a learner per language, the
-    lookup card and where save dialogs open."""
+    left it (`OpenLanguages`). `main` hands over a learner per full language
+    open (306), and one opened during the run (`add_learner`), the lookup
+    card and where save dialogs open."""
 
-    change_level_wanted = Signal()
-    """A language's Change your level: `main` opens the level picker."""
+    change_level_wanted = Signal(str)
+    """A language's Change your level (its code): `main` opens the level
+    picker."""
 
     def __init__(
         self,
@@ -1005,34 +1196,62 @@ class WordsPage(Page):
         self.content.addWidget(self.in_use)
         each = list(learners) if isinstance(learners, Sequence) else [learners]
         self.opened = opened or OpenLanguages()
-        folder = save_folder or SaveFolder()
+        self._card = card
+        self._folder = save_folder or SaveFolder()
         groups = language_groups([language_of(e) for e in each], self.opened.opened)
         self.languages: list[LanguageWords] = []
         self.sections: list[LanguageSection] = []
         for learner, group in zip(each, groups, strict=True):
-            words = LanguageWords(learner, card, folder)
-            words.change_level_wanted.connect(self.change_level_wanted)
-            section = LanguageSection(group, words)
-            section.toggled.connect(self.opened.set)
-            self.content.addWidget(section)
-            self.languages.append(words)
-            self.sections.append(section)
+            self._add(learner, group)
         self.content.addStretch(1)
 
-    def show_in_use(self, running: str, chosen: str | None) -> None:
-        """Whose words these are, when the language learned (`chosen`) is
-        another full dictionary's than the one in use (`running`): that one
-        is used from the next start, and until then the page shows
-        `running`'s (polyglotic-hq 299). Hidden otherwise."""
+    def _add(self, learner: WordsLearner, group: LanguageGroup) -> None:
+        words = LanguageWords(learner, self._card, self._folder)
+        words.change_level_wanted.connect(
+            lambda c=group.language: self.change_level_wanted.emit(c)
+        )
+        section = LanguageSection(group, words)
+        section.toggled.connect(self.opened.set)
+        # before the stretch, once there is one: in the order opened
+        self.content.insertWidget(
+            self.content.indexOf(self.sections[-1]) + 1
+            if self.sections
+            else self.content.count(),
+            section,
+        )
+        self.languages.append(words)
+        self.sections.append(section)
+
+    def add_learner(self, learner: WordsLearner) -> None:
+        """A full language opened during the run (Learning's "Learn it", a
+        lookup's "Learn it too"; 306): its section, last, closed unless the
+        learner left it open before; the first section then gets its
+        heading, as with several from the start. The same language twice:
+        nothing."""
+        language = language_of(learner)
+        if any(s.language == language for s in self.sections):
+            return
+        languages = [s.language for s in self.sections] + [language]
+        groups = language_groups(languages, self.opened.opened)
+        for section, group in zip(self.sections, groups, strict=False):
+            section.fold(group.folds)
+        self._add(learner, groups[-1])
+
+    def show_in_use(self, running: Sequence[str], chosen: str | None) -> None:
+        """Whose words these are, when the main language (`chosen`) is a full
+        dictionary not open now (`running`: those open, main first): it opens
+        from the next start, and until then the page shows the others'
+        (polyglotic-hq 299). Hidden otherwise."""
         names = {code: _tr(str(name)) for code, name in LANGUAGE_NAMES.items()}
-        switching = chosen in names and running in names and chosen != running
+        shown = next((code for code in running if code in names), None)
+        switching = chosen in names and shown is not None and chosen not in running
         self.in_use.setVisible(switching)
-        if switching:
+        if switching and shown is not None:
             self.in_use.setText(
                 _tr(
                     "These are your {running} words. {chosen} is used from the "
                     "next time Polyglotic starts, and keeps its own words."
-                ).format(running=names[running], chosen=names[str(chosen)])
+                ).format(running=names[shown], chosen=names[str(chosen)])
             )
 
     @property
@@ -1042,9 +1261,26 @@ class WordsPage(Page):
 
     def learning_changed(self, what: str = "") -> None:
         """Learning changed (`LearningTools.changed`): each language shows
-        it again (`LanguageWords.learning_changed`)."""
+        it again (`LanguageWords.learning_changed`); a closed one's heading
+        is counted again at once while the page shows - not for every
+        finished caption's words, which wait for the page's next showing."""
         for words in self.languages:
             words.learning_changed(what)
+        if what != "exposures" and self.isVisible():
+            self._count_closed()
+
+    def showEvent(self, event: QShowEvent) -> None:
+        self._count_closed()
+        super().showEvent(event)
+
+    def _count_closed(self) -> None:
+        """Each closed section's heading counted, if Learning changed since
+        (`LanguageWords.count`): with several languages, the ones folded
+        away still say how many words they hold (306)."""
+        for section in self.sections:
+            words = section.words
+            if not section.heading.isChecked() and words.count_dirty:
+                words.count()
 
     def refresh(self) -> None:
         for words in self.languages:
@@ -1060,8 +1296,12 @@ def write_deck(
     and the deck writer."""
     if learner.deck_writer is None:
         raise RuntimeError("no deck file writer")
-    export = words.export(learner.describe)
-    path.write_bytes(learner.deck_writer.build(export.notes))
+    pack = None if tier_of(learner.language) is Tier.FULL else learner.language
+    # its own note type (0175); sentences in the language they were spoken in
+    export = words.export(learner.describe, pack, learner.language)
+    path.write_bytes(
+        learner.deck_writer.build(export.notes, sentences=export.sentences)
+    )
     return export.entry_ids
 
 
@@ -1082,18 +1322,20 @@ Write = Callable[[AnkiWords, WordsLearner, Path], tuple[EntryId, ...]]
 def export_deck(learner: WordsLearner, path: Path, only_new: bool = False) -> int:
     """Writes the saved words and the deck's to `path` as an Anki deck file
     - only the words not exported yet if `only_new` - and remembers they
-    were exported once it's written. Returns how many words are in the
-    file. All on this thread: Words writes on one of its own
+    were exported once it's written. Returns how many words - and saved
+    sentences (polyglotic-hq 459) - are in the file. All on this thread: Words writes on one of its own
     (`LanguageWords`)."""
-    written = write_deck(learner.vocabulary.anki_words(only_new), learner, path)
-    learner.vocabulary.mark_exported(written)
+    words = learner.vocabulary.anki_words(only_new, AnkiFormat.DECK)
+    written = write_deck(words, learner, path)
+    learner.vocabulary.mark_exported(written, AnkiFormat.DECK)
     return len(written)
 
 
 def export_csv(learner: WordsLearner, path: Path, only_new: bool = False) -> int:
     """`export_deck`, as a CSV file."""
-    written = write_csv(learner.vocabulary.anki_words(only_new), learner, path)
-    learner.vocabulary.mark_exported(written)
+    words = learner.vocabulary.anki_words(only_new, AnkiFormat.CSV)
+    written = write_csv(words, learner, path)
+    learner.vocabulary.mark_exported(written, AnkiFormat.CSV)
     return len(written)
 
 

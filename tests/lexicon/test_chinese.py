@@ -8,7 +8,7 @@ import threading
 from collections.abc import Iterable, Mapping
 
 from pytest import MonkeyPatch
-from tests.lexicon.sample import chinese_sample
+from tests.lexicon.sample import chinese_sample, phrases_sample
 from tools.dictionaries.entry_ids import default_id
 
 from polyglotic_desktop.core.lexicon import chinese
@@ -103,6 +103,29 @@ def test_ties_between_equally_short_even_splits_go_to_the_commoner_words() -> No
     assert words("这个人") == ["这个", "人"]
 
 
+def test_a_phrase_of_two_common_words_is_split_into_them() -> None:
+    # polyglotic-hq 359 (decision 0151): CC-CEDICT's 中的 ("to hit the
+    # target") has no frequency rank, yet as one word it beat 中 + 的 on the
+    # fewest-words rule - 生活中的 read "to hit the target"; 有了 ("to be
+    # pregnant") likewise. Kept whole: a name (马里, Mali), an idiom, a word
+    # HSK lists (有的, "some"), and one with a part past COMMON_PARTS (沧龙).
+    d = ChineseDictionary(phrases_sample())
+
+    def split(text: str, d: ChineseDictionary = d) -> list[str]:
+        return [text[a:b] for a, b in d.split(text)]
+
+    assert split("生活中的人") == ["生活", "中", "的", "人"]
+    assert split("有了人") == ["有", "了", "人"]
+    assert split("有的人") == ["有的", "人"]
+    assert split("去马里") == ["去", "马里"]
+    assert split("自由自在") == ["自由自在"]
+    assert split("沧龙") == ["沧龙"]
+    assert d.is_word("中的") and d.lookup("中的")  # still looked up as itself
+    # without ranks nothing is common: the split is as before
+    without = ChineseDictionary(phrases_sample(ranked=False))
+    assert split("生活中的", without) == ["生活", "中的"]
+
+
 def test_the_word_under_a_character_the_parts_of_a_word_and_pinyin_for_a_phrase() -> (
     None
 ):
@@ -112,6 +135,34 @@ def test_the_word_under_a_character_the_parts_of_a_word_and_pinyin_for_a_phrase(
     assert d.parts("打游戏") == ["游戏"]
     assert d.pinyin_of("电脑游戏") == "diàn nǎo yóu xì"
     assert has_han("OK电脑") and not has_han("OK")
+
+
+NAMES = """德克薩斯 德克萨斯 [De2 ke4 sa4 si1] /Texas, US state/
+薩斯 萨斯 [sa4 si1] /SARS/
+北京大學 北京大学 [Bei3 jing1 Da4 xue2] /Peking University/
+北京 北京 [Bei3 jing1] /Beijing/
+大學 大学 [da4 xue2] /university/
+奧巴馬 奥巴马 [Ao4 ba1 ma3] /Barack Obama/
+巴馬 巴马 [Ba1 ma3] /Bama county/
+電腦遊戲 电脑游戏 [dian4 nao3 you2 xi4] /computer game/
+遊戲 游戏 [you2 xi4] /game/
+上海話 上海话 [Shang4 hai3 hua4] /Shanghainese/
+上海 上海 [Shang4 hai3] /Shanghai/
+"""
+
+
+def test_a_names_parts_are_never_cut_out_of_its_sound_spelling() -> None:
+    """346's validation loop: the card's "Inside this word" for 德克萨斯
+    (Texas) showed 萨斯 as SARS. A part of a name is shown only where it is
+    one of the name's own units (CC-CEDICT capitalises each), and never
+    cut out of a unit spelt by sound."""
+    d = ChineseDictionary(chinese_sample(NAMES))
+    assert d.parts("德克萨斯") == []
+    assert d.parts("德克萨斯州") == ["德克萨斯"]  # not found: still no 萨斯
+    assert d.parts("奥巴马") == []
+    assert d.parts("北京大学") == ["北京", "大学"]  # a name of two units
+    assert d.parts("上海话") == ["上海"]  # a name, not spelt by sound
+    assert d.parts("电脑游戏") == ["游戏"]  # not a name: as before
 
 
 def test_english_to_chinese() -> None:
@@ -201,3 +252,18 @@ def test_the_split_data_is_read_once_however_many_threads_ask() -> None:
     assert d.ready
     assert reads == ["headwords"]
     assert words("打游戏") == ["打游戏"]  # and the split works as before
+
+
+def test_hangul_and_other_scripts_past_the_unified_ideographs_arent_han() -> None:
+    """The compatibility block was once written from a character that
+    looks like U+F900 but is U+8C48: Hangul, Yi and the private use area
+    were then "Chinese", and a Korean word was looked up in CC-CEDICT
+    (polyglotic-hq 337)."""
+    assert not any(chinese.is_han(c) for c in "은행에가요")  # Hangul syllables
+    assert not chinese.is_han("ꀀ")  # Yi
+    assert not chinese.is_han("")  # private use
+    assert not any(chinese.is_han(c) for c in "ひらカタ")  # kana
+    assert not has_han("은행에 가요 OK")
+    for char in ("㐀", "豈", "鿿", "豈", "﫿", "\U00020000", "〇"):
+        assert chinese.is_han(char), hex(ord(char))
+    assert has_han("我们") and has_han("用iPhone打")

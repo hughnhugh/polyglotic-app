@@ -3,6 +3,7 @@
 - **Status:** accepted
 - **Date:** 2026-11-08
 - **Decided by:** polyglotic-hq project 186 (brief: "a level gain in front of speech detection"), from project 180's finding; Claude reviews it with the pull request. Adds to decision 0003 (the model) and to #219's reset after digital silence (`platform/speech_detection.py`'s docstring); replaces neither.
+- **Amended by:** [0145](0145-the-mic-raises-quiet-audio-6db-at-most.md) - the mic's audio is raised +6 dB at most.
 
 ## Situation
 

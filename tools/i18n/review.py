@@ -34,7 +34,6 @@ WHERE = {
     "CaptionPreview": "Settings > Captions > Look",
     "CaptionWindow": "a caption window",
     "ColourControls": "Settings > Captions > Look > colours",
-    "ComparisonCard": 'a caption\'s "Looks wrong?"',
     "ConsentDialog": "the question about what to share",
     "DeleteLearningDialog": "deleting your learning data",
     "DesktopApp": "the tray menu and the app's messages",

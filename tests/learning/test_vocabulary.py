@@ -11,7 +11,7 @@ from datetime import date
 from tests.learning.fakes import Clock, MemoryLearningStore, facts, words_of
 
 from polyglotic_desktop.core.learning.highlights import WordIntroductions
-from polyglotic_desktop.core.learning.levels import LevelCurve
+from polyglotic_desktop.core.learning.levels import KnownLine
 from polyglotic_desktop.core.learning.lookups import LookupContext
 from polyglotic_desktop.core.learning.statuses import StatusSource
 from polyglotic_desktop.core.learning.vocabulary import (
@@ -30,6 +30,7 @@ from polyglotic_desktop.core.shared import (
     WordStatusChanged,
     WordUnsaved,
 )
+from polyglotic_desktop.ports.learning import StoredLevel
 
 # A made-up dictionary: word -> facts on an HSK-like scale.
 ENTRIES = {
@@ -86,7 +87,7 @@ LINE = "我 今天 去 超市 买 水果 和 酸奶 还有 榴莲 张伟"
 
 def test_first_run_starts_with_no_level_and_the_default_categories() -> None:
     s = Setup()
-    assert s.vocab.curve is None and s.vocab.scheme == "hsk-2025"
+    assert s.vocab.line is None and s.vocab.scheme == "hsk-2025"
     assert [c.name for c in s.vocab.categories] == ["Saved", "Tricky"]
     assert len(s.store.categories) == 2  # kept, so they can be renamed
 
@@ -94,10 +95,10 @@ def test_first_run_starts_with_no_level_and_the_default_categories() -> None:
 def test_the_level_picker_sets_the_curve_and_it_is_kept() -> None:
     s = Setup()
     s.vocab.set_level(Level("hsk-2025", 2))
-    assert s.vocab.curve == LevelCurve("hsk-2025", 2.5)
+    assert s.vocab.line == KnownLine("hsk-2025", 2)
     assert VocabularyChanged(Changed.LEVEL) in s.events
     again = Vocabulary(s.store, lookup, "hsk-2025")
-    assert again.curve == LevelCurve("hsk-2025", 2.5)
+    assert again.line == KnownLine("hsk-2025", 2)
 
 
 def test_until_a_level_is_set_words_are_estimated_at_a_middle_one() -> None:
@@ -105,7 +106,7 @@ def test_until_a_level_is_set_words_are_estimated_at_a_middle_one() -> None:
     who hasn't set one is estimated at HSK 3, so a caption doesn't mark
     every word as new - and still has no level of their own."""
     s = Setup()
-    assert s.vocab.curve is None
+    assert s.vocab.line is None
     status = s.vocab.status_of_entry
     assert status(eid("超市")).status is WordStatus.KNOWN  # HSK 2
     assert status(eid("酸奶")).status is WordStatus.KNOWN  # HSK 3
@@ -137,11 +138,15 @@ def test_a_lookup_save_and_click_change_the_highlights() -> None:
     s.vocab.set_level(Level("hsk-2025", 2))
     s.sent()
     super_market = ENTRIES["超市"]
-    # a pinned lookup of a word only estimated known turns it back to new
+    # pinned lookups of a word only estimated known turn it back to new:
+    # the second (one click alone doesn't, 397)
+    s.vocab.looked_up(super_market, pinned=True)
+    assert "超市" not in s.unfamiliar(LINE)[0]
     s.vocab.looked_up(super_market, pinned=True)
     status = s.vocab.status(super_market)
     assert (status.status, status.source) == (WordStatus.NEW, StatusSource.ESTIMATED)
-    assert s.sent() == [WordLookedUp(eid("超市"), s.clock.now)]  # estimate not sent
+    looked = WordLookedUp(eid("超市"), s.clock.now)
+    assert s.sent() == [looked, looked]  # estimate not sent
     assert "超市" in s.unfamiliar(LINE)[0]
 
     # saved: drawn in its category's colour wherever it's heard
@@ -338,3 +343,126 @@ def test_the_whole_learning_state_is_what_was_published_last_per_word() -> None:
     expected = [e for e in expected if e.entry_id != eid("酸奶")]  # unsaved since
     assert sorted(s.vocab.learning_state(), key=repr) == sorted(expected, key=repr)
     assert len(expected) == 2
+
+
+def test_how_many_words_the_learner_knows_is_a_line_in_words() -> None:
+    """polyglotic-hq 323: "I know about the 1,000 most common words" is
+    kept as the scale `words` and the number, read back the same, and the
+    words' levels are still read in the language's own scheme."""
+    s = Setup()
+    s.vocab.set_known_words(1000)
+    assert s.vocab.line == KnownLine.words(1000)
+    assert VocabularyChanged(Changed.LEVEL) in s.events
+    assert s.store.level == StoredLevel("words", 1000.0)
+    assert s.vocab.scheme == "hsk-2025"  # not "words": Words' bands are HSK's
+    again = Vocabulary(s.store, lookup, "hsk-2025")
+    assert again.line == KnownLine.words(1000) and again.scheme == "hsk-2025"
+    status = again.status_of_entry
+    assert status(eid("买")).status is WordStatus.KNOWN  # rank 300
+    assert status(eid("水果")).status is WordStatus.NEW  # rank 2,500: rarer
+    # a level picked again (an older version's picker) is a line by level again
+    again.set_level(Level("hsk-2021", 2))
+    assert again.line == KnownLine("hsk-2021", 2) and again.scheme == "hsk-2021"
+
+
+def test_a_caption_points_out_the_learning_windows_words_at_the_size_chosen() -> None:
+    s = Setup()
+    s.vocab.set_known_words(1000)
+    line = "我 超市 水果 酸奶 榴莲 折扣 张伟"  # ranks 5, 3,000, 2,500, 9,000, 30,000, 7,000
+
+    def shown(size: int | None) -> list[str]:
+        (found,) = s.vocab.highlights(
+            [(line, words_of(line, ENTRIES))], WordIntroductions.EVERY, size
+        )
+        return [line[w.start : w.end] for w in found.unfamiliar]
+
+    assert shown(None) == []  # the default window ends at 2,000
+    assert shown(2000) == ["超市", "水果"]  # to 3,000
+    assert s.vocab.window(2000).last == 3000
+    # the learner's own word wins over the estimate: new again, though known
+    s.vocab.set_status(eid("我"), WordStatus.NEW)
+    assert shown(2000) == ["我", "超市", "水果"]
+    s.vocab.set_status(eid("水果"), WordStatus.KNOWN)
+    assert shown(2000) == ["我", "超市"]
+
+
+def test_a_word_needs_no_link_when_known_by_hand_or_by_the_line() -> None:
+    """Word links "past what I know" (polyglotic-hq 323): the learner's own
+    word wins; a name is linked; where links start can be moved."""
+    s = Setup()
+    s.vocab.set_known_words(1000)
+    no_link = s.vocab.needs_no_link
+    assert no_link(ENTRIES["买"])  # rank 300: known by the line
+    assert not no_link(ENTRIES["水果"])  # rank 2,500
+    assert not no_link(ENTRIES["榴莲"]) and not no_link(ENTRIES["张伟"])  # rare; a name
+    assert no_link(ENTRIES["水果"], 3000) and not no_link(ENTRIES["买"], 200)
+    s.vocab.set_status(eid("买"), WordStatus.LEARNING)  # in the deck: linked
+    s.vocab.set_status(eid("水果"), WordStatus.KNOWN)
+    s.vocab.set_status(eid("张伟"), WordStatus.IGNORED)
+    assert not no_link(ENTRIES["买"]) and not no_link(ENTRIES["买"], 5000)
+    assert no_link(ENTRIES["水果"]) and no_link(ENTRIES["张伟"])
+    # a level kept from before 323 says it the same way
+    old = Setup()
+    old.vocab.set_level(Level("hsk-2025", 1))
+    assert old.vocab.needs_no_link(ENTRIES["我"])  # HSK 1
+    assert not old.vocab.needs_no_link(ENTRIES["超市"])  # HSK 2
+
+
+# Measured on real captions (polyglotic-hq 338, tools.links_measured): the
+# words below were linked "past what you know" for learners who know them.
+COMMON_NAME = facts("美国", level=None, rank=149, is_name=True)
+"""美国 (the United States): CC-CEDICT marks it a name; the 149th word."""
+OUT_OF_SYLLABUS = facts("与", level=4, rank=27, level_words=2000)
+"""与 (and): HSK 4 on the 2025 syllabus, but the 27th commonest word."""
+NOT_IN_SYLLABUS = facts("一个", level=None, rank=34)
+"""一个 (a, one): no HSK level of its own; the 34th commonest word."""
+
+
+def hsk_words(scheme: str, level: int) -> int | None:
+    """Lexicon's `HSK_2025.words_at`, as `main` hands it in."""
+    return (0, 300, 500, 1000, 2000, 3600, 5400, 11000)[level]
+
+
+def test_a_common_name_needs_no_link_and_an_unplaced_one_is_linked() -> None:
+    s = Setup()
+    s.vocab.set_known_words(1000)
+    assert s.vocab.needs_no_link(COMMON_NAME)  # was linked for every learner
+    assert not s.vocab.needs_no_link(ENTRIES["张伟"])  # no place: linked
+    assert not Setup().vocab.needs_no_link(
+        facts("北马里亚纳", level=None, rank=None, is_name=True)
+    )
+
+
+def test_a_number_in_numerals_needs_no_link_and_counts_as_known() -> None:
+    """二十 (twenty) is skipped as 20 is (polyglotic-hq 360); the learner's
+    own status still wins."""
+    twenty = EntryFacts(EntryId("test:二十"), None, 5165, False, is_number=True)
+    s = Setup()
+    s.vocab.set_known_words(1000)
+    assert s.vocab.needs_no_link(twenty)
+    assert s.vocab.status(twenty).status is WordStatus.KNOWN
+    assert not s.vocab.could_be_in_load(twenty)
+    s.vocab.set_status(twenty.entry_id, WordStatus.LEARNING)
+    assert not s.vocab.needs_no_link(twenty)
+    assert s.vocab.could_be_in_load(twenty)
+
+
+def test_a_level_line_places_the_words_its_scheme_leaves_out() -> None:
+    """A line kept as a level - and the one a learner who never set their
+    level is estimated at (HSK 3), which every language added since 323
+    starts with - knows a word its scheme puts higher or leaves out by how
+    common it is: 与 and 一个 were linked for a learner of HSK 3."""
+    for picked in (None, 3):
+        s = Setup()
+        s.vocab = Vocabulary(s.store, lookup, "hsk-2025", level_words=hsk_words)
+        if picked is not None:
+            s.vocab.set_level(Level("hsk-2025", picked))
+        no_link = s.vocab.needs_no_link
+        assert no_link(OUT_OF_SYLLABUS) and no_link(NOT_IN_SYLLABUS)
+        assert no_link(ENTRIES["我"])  # HSK 1, as before
+        assert no_link(ENTRIES["超市"])  # HSK 2, the 3,000th: by its level
+        assert not no_link(ENTRIES["折扣"])  # HSK 4, the 7,000th: past both
+        assert not no_link(ENTRIES["榴莲"])  # no level, the 30,000th
+    # without the scheme's sizes, by level alone (as before 338)
+    alone = Setup()
+    assert not alone.vocab.needs_no_link(NOT_IN_SYLLABUS)

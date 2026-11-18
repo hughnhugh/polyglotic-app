@@ -23,8 +23,9 @@ if the learner opts in to sharing them (D3b sends them).
 
 from collections import OrderedDict
 from collections.abc import Iterable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import date
+from typing import NamedTuple
 
 from polyglotic_desktop.core.shared import EntryId, WordInLine
 
@@ -33,8 +34,11 @@ RECENT_CAPTIONS = 100
 so this is plenty."""
 
 
-@dataclass(frozen=True)
-class ExposureCount:
+class ExposureCount(NamedTuple):
+    """One entry's counts. A named tuple: there's one for every word met,
+    all made at start, and a frozen dataclass takes about three times as
+    long to make (polyglotic-hq 314)."""
+
     heard: int = 0  # captions from what the PC played
     heard_by_you: int = 0  # captions from the user's own mic
     heard_in_deck: int = 0  # from what the PC played, since it went into the deck
@@ -127,7 +131,7 @@ def apply(count: ExposureCount, change: ExposureChange, in_deck: bool) -> Exposu
     """`count` after `change`; `in_deck` says whether the word is in the
     deck now. Never below zero."""
     if change.by_you:
-        return replace(count, heard_by_you=max(0, count.heard_by_you + change.delta))
+        return count._replace(heard_by_you=max(0, count.heard_by_you + change.delta))
     heard = max(0, count.heard + change.delta)
     first = count.first_heard
     if heard == 0:

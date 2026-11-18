@@ -7,7 +7,8 @@ rewrite all of it, words read seconds ago among them (the user,
 polyglotic-hq 296, decision 0088). The rule:
 
 - **Settled words.** Words a caption has shown unchanged for
-  `SETTLE_AFTER_SEC`, and every clause above its last `OPEN_CLAUSES`, are
+  `SETTLE_AFTER_SEC` (or the shorter time the learner chose, down to none:
+  `SETTLE_RANGE`), and every clause above its last `OPEN_CLAUSES`, are
   settled: an update never changes them. Only what comes after them is
   taken from the update. Never half a word; and not the last word of a
   live caption, which trails off mid-speech.
@@ -37,12 +38,21 @@ text: never log it.
 
 from bisect import bisect_left, bisect_right
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from difflib import SequenceMatcher
 
 from polyglotic_desktop.core.listening.captions import Clause
 
 SETTLE_AFTER_SEC = 3.0
-"""Words shown unchanged this long are settled (the user's "3 seconds")."""
+"""Words shown unchanged this long are settled (the user's "3 seconds"),
+unless the learner chose less (`SETTLE_RANGE`)."""
+
+SETTLE_RANGE = (0.0, SETTLE_AFTER_SEC)
+"""How long the learner may let shown words still change (the user,
+2026-11-14: "changing lines up to 3 seconds in live updates is a bit too
+long anyway, make this a configurable setting. After 0s - 3seconds";
+polyglotic-hq 309, decision 0099). 0: a word is settled as soon as it is
+shown - but for the last word of a live caption, which may be half said."""
 
 OPEN_CLAUSES = 2
 """Only a caption's last clauses may still be rewritten, however new the
@@ -184,8 +194,33 @@ def settle(
         if text.strip() == clause.original.strip():
             result.append(clause)
         elif text.strip():
-            result.append(Clause(text.strip(), clause.translations))
+            result.append(_shown_with_links(text.strip(), clause))
     return tuple(result)
+
+
+def _shown_with_links(shown: str, update: Clause) -> Clause:
+    """A row of settled words that differ from the update's - with the
+    update's translations, and its word links for the words both have
+    (polyglotic-hq 340: the row had no links at all, though one word in
+    twelve differed). A link to a word the update changed goes: it would
+    underline other characters than the ones it was made for. The
+    translation is the update's own, so its ends there stand."""
+    matcher = SequenceMatcher(None, update.original, shown, autojunk=False)
+    same = [block for block in matcher.get_matching_blocks() if block.size]
+    links = {}
+    for language, sent in update.links.items():
+        kept = []
+        for link in sent:
+            start, end = link.original
+            block = next(
+                (b for b in same if b.a <= start and end <= b.a + b.size), None
+            )
+            if block is not None:
+                moved = block.b - block.a
+                kept.append(replace(link, original=(start + moved, end + moved)))
+        if kept:
+            links[language] = tuple(kept)
+    return Clause(shown, update.translations, links)
 
 
 def _with_links(shown: Clause, again: Clause | None) -> Clause:

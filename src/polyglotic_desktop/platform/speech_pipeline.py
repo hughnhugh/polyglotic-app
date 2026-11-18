@@ -1,7 +1,8 @@
 """From captured audio to speech ready to send, for every source at once.
 
 For each source: its audio goes into an `AudioBuffer` (the last 30s) and
-through a `SpeechDetector`; each frame's result goes to core's
+through a `SpeechDetector` - the same for every source, but the mic's
+raises quiet audio less (`MIC_GAIN_MAX`, decision 0145); each frame's result goes to core's
 `CaptionTiming`; each transcription request it makes is cut from the
 buffer (padded 0.2s each side) and encoded as Ogg Opus; and the result
 waits in core's `PendingSpeech` (latest wins) until the connection takes
@@ -38,6 +39,7 @@ import logging
 import threading
 import time
 from collections.abc import Callable
+from dataclasses import replace
 from typing import Protocol
 
 import numpy as np
@@ -60,7 +62,7 @@ from polyglotic_desktop.platform.audio_buffer import AudioBuffer
 from polyglotic_desktop.platform.mic_bleed import MicBleed, log_line
 from polyglotic_desktop.platform.opus import encode_ogg_opus
 from polyglotic_desktop.platform.speech_detection import Audio, FrameResult
-from polyglotic_desktop.ports.capture import AudioCapture, SourceCategory
+from polyglotic_desktop.ports.capture import NOT_ALLOWED, AudioCapture, SourceCategory
 
 SOUND_PEAK = 0.001
 """A frame of audio whose loudest sample is above this (about -60 dB) is
@@ -99,15 +101,20 @@ class SpeechPipeline:
         on_ready: Callable[[], None] = lambda: None,
         recent: RecentSpeech | None = None,
         outputs_playing: Callable[[], int | None] = lambda: None,
+        new_mic_detector: Callable[[], FrameDetector] | None = None,
     ) -> None:
         """`on_ready` is called (on a capture thread) whenever something new
         is waiting; `take` returns it. Each finished caption `take` hands
         over is also kept in `recent` (audio as sent, in memory only).
         `outputs_playing` says how many outputs play sound now (None: not
-        known), for the caption log's line on each mic-bleed check."""
+        known), for the caption log's line on each mic-bleed check.
+        `new_mic_detector` makes the mic's speech detection (its gain at
+        most `MIC_GAIN_MAX`, decision 0145); `new_detector` every other
+        source's, and the mic's when it's not given."""
         self._outputs_playing = outputs_playing
         self.recent = recent or RecentSpeech(time.monotonic)
         self._new_detector = new_detector
+        self._new_mic_detector = new_mic_detector or new_detector
         self.timing = timing
         self._pending: PendingSpeech[bytes | None] = PendingSpeech()
         self._on_ready = on_ready
@@ -127,10 +134,17 @@ class SpeechPipeline:
         self._hush_lock = threading.Lock()  # for the writers
 
     def activity(self) -> dict[SourceId, SourceActivity]:
-        """Per source: when it started, and when sound and speech were
-        first and last heard (`time.monotonic` seconds). From any thread."""
+        """Per source: when it started, when sound and speech were first
+        and last heard (`time.monotonic` seconds), and whether its capture
+        says the OS doesn't allow it (`NOT_ALLOWED`). From any thread."""
         with self._lock:
-            return dict(self._activity)
+            found = dict(self._activity)
+            captures = dict(self._captures)
+        for source_id, act in found.items():
+            capture = captures.get(source_id)
+            if capture is not None and capture.error == NOT_ALLOWED:
+                found[source_id] = replace(act, not_allowed=True)
+        return found
 
     def add_source(
         self,
@@ -149,13 +163,14 @@ class SpeechPipeline:
             MicBleed(buffer, bleed_reference) if bleed_reference is not None else None
         )
         the_mic = source.category is SourceCategory.MIC
+        new_detector = self._new_mic_detector if the_mic else self._new_detector
         with self._lock:
             self.timing.add_source(source, bleed)
 
         def on_audio(start: float, samples: bytes) -> None:
             nonlocal detector
             if detector is None:  # on the capture's thread, not the caller's
-                detector = self._new_detector()
+                detector = new_detector()
             audio = np.frombuffer(samples, dtype=np.float32)
             if hears_the_app and self._hushes:
                 audio = _silenced(start, audio, self._hushes)
@@ -281,6 +296,13 @@ class SpeechPipeline:
             self.recent.remove_source(source_id)
             self._hearing = self.timing.hearing()
 
+    def hold_speech(self, holding: bool) -> None:
+        """False while the server is away for a planned maintenance window:
+        nothing is kept to send after it (`PendingSpeech.hold`;
+        polyglotic-hq 319). From any thread."""
+        with self._lock:
+            self._pending.hold(holding)
+
     def take(self) -> Ready | None:
         """The next decision to send, with its speech; None if none waits."""
         with self._lock:
@@ -335,6 +357,14 @@ class SpeechPipeline:
         """Pause or resume: nothing is sent while paused. From any thread."""
         with self._lock:
             self.timing.paused = paused
+            self._hearing = self.timing.hearing()
+
+    def set_paused_sources(self, sources: frozenset[SourceId]) -> None:
+        """These sources paused on their own - caption windows hidden past
+        the learner's limit (polyglotic-hq 335) - and every other resumed:
+        nothing is sent for them. From any thread."""
+        with self._lock:
+            self.timing.paused_sources = sources
             self._hearing = self.timing.hearing()
 
     def set_timing(

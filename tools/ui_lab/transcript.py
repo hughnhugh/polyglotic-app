@@ -306,7 +306,6 @@ def my_speech(lab: Lab) -> QWidget:
         first.languages_heard,
     )
     shown.refresh()
-    shown.list.flagged = shown.transcript.all_lines[-1]  # "Looks wrong?" on hover
     shown.list.repaint()
     lab.pump()
     return shown
@@ -407,15 +406,19 @@ class _Together(QWidget):
         self.origin = QPoint(left, top)
         self.resize(right - left, bottom - top)
 
+    def places(self) -> list[tuple[QWidget, QPoint, float]]:
+        """Each window showing and where it's drawn (`checks.place_in`)."""
+        return [
+            (each, each.pos() - self.origin, 1.0)
+            for each in self.shown
+            if each.isVisible()
+        ]
+
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.fillRect(self.rect(), QColor("#000000"))
-        for each in self.shown:
-            if each.isVisible():
-                each.render(
-                    painter, QPoint(each.x(), each.y()) - self.origin, QRegion(),
-                    QWidget.RenderFlag.DrawChildren,
-                )  # fmt: skip
+        for each, at, _scale in self.places():
+            each.render(painter, at, QRegion(), QWidget.RenderFlag.DrawChildren)
         painter.end()
 
 

@@ -8,7 +8,7 @@ from tests.lexicon.sample import chinese_sample, english_sample
 from polyglotic_desktop.core.lexicon import chinese
 from polyglotic_desktop.core.lexicon.chinese import ChineseDictionary
 from polyglotic_desktop.core.lexicon.english import EnglishDictionary
-from polyglotic_desktop.core.lexicon.entries import DictionaryEntry
+from polyglotic_desktop.core.lexicon.entries import DictionaryEntry, is_number_word
 from polyglotic_desktop.core.lexicon.meanings import (
     definitions,
     meaning_of,
@@ -130,3 +130,38 @@ def test_the_level_picker_knows_about_how_many_words_each_level_is() -> None:
     ]
     assert ENGLISH_FREQUENCY.words_at(3) == 3000  # the band's cutoff
     assert HSK_2021.words_at(1) is None  # not given
+
+
+NUMBERS_SAMPLE = """二十 二十 [er4 shi2] /twenty; 20/
+十五 十五 [shi2 wu3] /fifteen/
+兩千 两千 [liang3 qian1] /two thousand/
+二 二 [er4] /two; 2/
+千萬 千万 [qian1 wan4] /ten million; one must by all means/
+十分 十分 [shi2 fen1] /very; completely/
+"""
+
+
+def test_a_number_in_numerals_is_flagged_but_a_numeral_alone_is_a_word() -> None:
+    """二十 and 十五 are numbers, not words to point out (polyglotic-hq
+    351); 二 alone is a word, and 十分 (very) has a character that isn't a
+    numeral."""
+    zh = ChineseDictionary(chinese_sample(NUMBERS_SAMPLE))
+    line = "二十，十五，两千，二，十分"
+    found = zh.words_in(line, "hsk-2025")
+    flagged = {line[w.start : w.end]: w.entry.is_number for w in found}
+    assert flagged == {
+        "二十": True, "十五": True, "两千": True, "二": False, "十分": False,
+    }  # fmt: skip
+    twenty = zh.lookup("二十")[0]
+    facts = zh.facts(twenty.entry_id, "hsk-2025")  # read without the entry
+    assert twenty.is_number and facts is not None and facts.is_number
+
+
+def test_a_compound_of_numerals_a_syllabus_teaches_stays_a_word() -> None:
+    """千万 ("by all means", HSK 4) and 万一 ("just in case", HSK 5) are
+    words of their own; written digits are numbers too."""
+    assert not is_number_word("千万", (("hsk-2025", 4),))
+    assert is_number_word("千万", ())
+    assert is_number_word("20", ()) and is_number_word("7", ())
+    assert not is_number_word("万", ()) and not is_number_word("", ())
+    assert not is_number_word("twenty", ())

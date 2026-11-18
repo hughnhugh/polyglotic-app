@@ -122,6 +122,12 @@ CHECKED = {
     "plan.free",
     "plan.grace",
     "limit_reached",
+    # planned maintenance (server decision 0066; polyglotic-hq 319)
+    "welcome.maintenance",
+    "maintenance",
+    "maintenance.cleared",
+    "server_busy.maintenance",
+    "notice.maintenance_started",
 }
 
 NOT_USED_YET: set[str] = {
@@ -629,6 +635,10 @@ def test_welcome_names_the_account_from_servers_that_send_it() -> None:
         ("minutes", protocol.Minutes),
         ("notice", protocol.Notice),
         ("notice.server_restarting", protocol.Notice),
+        ("notice.maintenance_started", protocol.Notice),
+        ("server_busy.maintenance", protocol.ServerBusy),
+        ("maintenance", protocol.Maintenance),
+        ("maintenance.cleared", protocol.Maintenance),
         ("error", protocol.Error),
         ("error.rate_limited", protocol.Error),
         ("error.consent_missing", protocol.Error),
@@ -936,3 +946,27 @@ def test_limit_reached_with_the_plan_as_it_is_now() -> None:
     )
     assert message.plan is not None and message.plan.status == "ended"
     assert message.model_dump(mode="json") == example("limit_reached")
+
+
+def test_a_planned_maintenance_window_in_welcome_and_as_its_own_message() -> None:
+    """Server decision 0066 (polyglotic-hq 319): the window and the server's
+    time in `welcome`; set, moved or cleared as a `maintenance` message;
+    a refusal for it says so and until when."""
+    welcome = decoded("welcome.maintenance")
+    assert isinstance(welcome, protocol.Welcome)
+    assert welcome.server_time == "2026-11-15T03:12:45.120Z"
+    assert welcome.maintenance is not None
+    assert welcome.maintenance.ends_at == "2026-11-15T04:30:00Z"
+    assert decoded("welcome").maintenance is None  # type: ignore[attr-defined]
+    told = decoded("maintenance")
+    assert isinstance(told, protocol.Maintenance) and told.window is not None
+    cleared = decoded("maintenance.cleared")
+    assert isinstance(cleared, protocol.Maintenance) and cleared.window is None
+    busy = decoded("server_busy.maintenance")
+    assert isinstance(busy, protocol.ServerBusy)
+    assert (busy.reason, busy.until, busy.retry_after) == (
+        "maintenance",
+        "2026-11-15T04:30:00Z",
+        120,
+    )
+    assert decoded("server_busy").reason is None  # type: ignore[attr-defined]

@@ -293,6 +293,45 @@ def test_a_finished_caption_still_rewrites_what_is_new() -> None:
     assert originals(history) == ["我去了超市。"]
 
 
+def test_how_long_shown_words_may_change_is_the_learners_choice() -> None:
+    """The user, 2026-11-14: "changing lines up to 3 seconds in live
+    updates is a bit too long anyway, make this a configurable setting.
+    After 0s - 3seconds" (polyglotic-hq 309). At 1s, words shown 1.5s ago
+    stay - at the 3s it was fixed at, the update rewrote them."""
+    for seconds, kept in ((3.0, "We went"), (1.0, "We walked")):
+        clock = Clock()
+        history = CaptionHistory(clock=clock)
+        history.set_settle_after(seconds)
+        history.apply(live("a", clause("We walked to this")))
+        clock.advance(1.5)
+        history.apply(live("a", clause("We went to this door")))
+        assert originals(history)[0].startswith(kept), seconds
+
+
+def test_at_no_seconds_a_shown_word_never_changes() -> None:
+    """0: text never changes once shown - an update only adds to it. The
+    last word of a live caption may be half said, so it alone is still
+    the update's ("th" becomes "this")."""
+    clock = Clock()
+    history = CaptionHistory(clock=clock)
+    history.set_settle_after(0.0)
+    history.apply(live("a", clause("We walked to th")))
+    history.apply(live("a", clause("We went to this door and")))
+    assert originals(history) == ["We walked to this door and"]
+    clock.advance(0.2)
+    history.apply(finished("a", clause("He wants to the store and bought milk.")))
+    assert originals(history) == ["We walked to this door and bought milk."]
+
+
+def test_the_time_to_settle_stays_between_none_and_three_seconds() -> None:
+    history = CaptionHistory()
+    assert history.settle_after == 3.0  # as it was (decision 0088)
+    history.set_settle_after(-1)
+    assert history.settle_after == 0.0
+    history.set_settle_after(10)
+    assert history.settle_after == 3.0
+
+
 def test_clauses_above_a_captions_last_two_settle_at_once() -> None:
     """ "After 1-2 lines, lines should settle": only a caption's last two
     clauses may still be rewritten, however new the ones above them."""
@@ -317,6 +356,47 @@ def test_clauses_above_a_captions_last_two_settle_at_once() -> None:
     assert [c.original for c in caption.clauses] == ["一二三，", "肆伍陆，", "七八九。"]
     assert caption.clauses[0].translations[EN] == "one two three,"
     assert caption.clauses[1].translations[EN] == "FOUR FIVE SIX,"
+
+
+def test_settled_words_keep_the_links_of_the_words_the_update_shares() -> None:
+    """Shown for 3 s, a caption's words stay (decision 0088) - and when the
+    finished caption heard one of them differently, the row had no word
+    links at all (polyglotic-hq 340: 0 of 3). The links of the words both
+    have are the row's; the changed word's goes."""
+    clock = Clock()
+    history = CaptionHistory(clock=clock)
+    said = "Let's go play games together this weekend"
+    history.apply(live("a", clause("我们周末一起去打游戏吧", said)))
+    clock.advance(4)
+    heard = "我们周末一块去打游戏吧，"
+    links = tuple(
+        WordLink(
+            (heard.index(word), heard.index(word) + len(word)),
+            (said.index(meant), said.index(meant) + len(meant)),
+            True,
+            0.9,
+        )
+        for word, meant in (
+            ("周末", "weekend"),
+            ("一块", "together"),
+            ("打游戏", "play games"),
+        )
+    )
+    history.apply(
+        finished(
+            "a",
+            Clause(heard, {EN: said + ","}, {EN: links}),
+            clause("好不好？", "okay?"),
+        )
+    )
+    first = history.captions[0].clauses[0]
+    assert first.original.startswith("我们周末一起去打游戏吧")  # the words first shown
+    assert first.translations[EN] == said + ","
+    kept = {
+        (first.original[a:b], first.translations[EN][c:d])
+        for (a, b), (c, d) in ((k.original, k.translation) for k in first.links[EN])
+    }
+    assert kept == {("周末", "weekend"), ("打游戏", "play games")}
 
 
 def test_a_join_keeps_what_both_captions_had_settled() -> None:
@@ -354,3 +434,123 @@ def test_what_settled_is_forgotten_with_its_caption() -> None:
     history.apply(finished("d", clause("好的。"), replaces=("b",)))
     assert set(history._stable) == {c.caption_id for c in history.captions}
     assert set(history._heard) == set(history._stable)
+
+
+# -- how long a history keeps its captions (polyglotic-hq 334) -----------------------
+
+
+def test_with_a_time_limit_captions_older_than_it_drop_off_the_front() -> None:
+    """A transcript's "the last 3 hours": a caption that first appeared
+    longer ago than the limit goes at the next update - into `earlier`,
+    as text, so Copy all and Save still have it."""
+    clock = Clock()
+    history = CaptionHistory(
+        clock=clock, max_captions=1_000, keep_for=3600, keep_earlier=10
+    )
+    history.apply(finished("a", clause("一。")))
+    clock.advance(1800)
+    history.apply(finished("b", clause("二。")))
+    clock.advance(1800)  # "a" is exactly an hour old: kept
+    history.apply(finished("c", clause("三。")))
+    assert originals(history) == ["一。", "二。", "三。"]
+    clock.advance(1)
+    history.apply(finished("d", clause("四。")))
+    assert originals(history) == ["二。", "三。", "四。"]
+    assert [c.original for c in history.earlier] == ["一。"]
+
+
+def test_the_count_still_holds_under_a_time_limit() -> None:
+    clock = Clock()
+    history = CaptionHistory(clock=clock, max_captions=3, keep_for=3600)
+    for n in range(5):
+        history.apply(finished(str(n), clause(f"第{n}")))
+    assert originals(history) == ["第2", "第3", "第4"]
+
+
+def test_a_joined_caption_keeps_its_place_under_a_time_limit() -> None:
+    """A join takes the earliest caption's place and when it first
+    appeared: under the time limit it goes when that one would have."""
+    clock = Clock()
+    history = CaptionHistory(clock=clock, keep_for=60)
+    history.apply(finished("a", clause("我去了超市。")))
+    clock.advance(30)
+    history.apply(live("b", clause("买了水果")))
+    history.apply(
+        finished("a", clause("我去了超市，"), clause("买了水果。"), replaces=("b",))
+    )
+    assert originals(history) == ["我去了超市。买了水果。"]  # what stood, kept
+    clock.advance(31)
+    history.apply(finished("c", clause("好。")))
+    assert originals(history) == ["好。"]
+
+
+def test_lowered_limits_drop_captions_at_once_and_raised_ones_take_them_back() -> None:
+    """The learner's choice changes what's kept now, not only from the next
+    caption: lowered, the oldest go into `earlier`; raised, they come back
+    from it, as text (no word links), in their places and with their keys."""
+    linked = Clause("第0", {EN: "zero"}, {EN: (WordLink((0, 2), (0, 4), True, 0.9),)})
+    clock = Clock()
+    history = CaptionHistory(clock=clock, max_captions=10, keep_earlier=10)
+    history.apply(finished("0", linked))
+    for n in range(1, 5):
+        clock.advance(600)
+        history.apply(finished(str(n), clause(f"第{n}")))
+    keys = [c.key for c in history.captions]
+    version = history.version
+    history.set_limits(2)
+    assert originals(history) == ["第3", "第4"]
+    assert [c.original for c in history.earlier] == ["第0", "第1", "第2"]
+    assert history.version == version + 1
+    history.set_limits(10, keep_for=1500)  # the last 25 minutes: 第2 on
+    assert originals(history) == ["第2", "第3", "第4"]
+    assert [c.original for c in history.earlier] == ["第0", "第1"]
+    history.set_limits(10)
+    assert originals(history) == ["第0", "第1", "第2", "第3", "第4"]
+    assert [c.key for c in history.captions] == keys
+    assert history.captions[0].clauses[0].links == {}  # back as text
+    assert not history.earlier
+    version = history.version
+    history.set_limits(10)
+    assert history.version == version  # unchanged: nothing to redraw
+    assert history.limits == (10, None)
+
+
+def test_what_comes_back_is_never_more_than_the_limit() -> None:
+    history = CaptionHistory(max_captions=2, keep_earlier=10)
+    for n in range(6):
+        history.apply(finished(str(n), clause(f"第{n}")))
+    history.set_limits(4)
+    assert originals(history) == ["第2", "第3", "第4", "第5"]
+    assert [c.original for c in history.earlier] == ["第0", "第1"]
+
+
+def test_settled_text_holds_past_the_old_limit_of_300() -> None:
+    """With a long history kept, the rules for settled text work as they
+    did within the 300: a caption 3,000 captions in keeps the words it has
+    shown 3s, and a join reaches a caption past the old limit's front -
+    keeping what both captions it joins had settled."""
+    clock = Clock()
+    history = CaptionHistory(clock=clock, max_captions=4_000, keep_for=3 * 3600)
+    for n in range(3_000):
+        clock.advance(3)
+        history.apply(finished(f"c{n}", clause(f"第{n}句。")))
+    clock.advance(1)
+    history.apply(live("a", clause("We went to this door and", "我们去了这扇门然后")))
+    clock.advance(3.1)
+    history.apply(finished("a", clause("We want to the store and bought milk.")))
+    assert history.captions[-1].original == "We went to this door and bought milk."
+    assert len(history.captions) == 3_001
+    old = history.captions[-400]  # older than the 300 kept before
+    clock.advance(1)
+    history.apply(
+        finished(
+            str(old.caption_id),
+            clause(old.original),
+            clause("又一句。"),
+            replaces=(str(history.captions[-399].caption_id),),
+        )
+    )
+    assert len(history.captions) == 3_000
+    joined = history.captions[-399]
+    assert joined.original == "第2601句。第2602句。"  # both had stood: kept
+    assert joined.key == old.key

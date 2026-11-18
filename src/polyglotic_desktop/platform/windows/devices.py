@@ -25,6 +25,7 @@ from polyglotic_desktop.platform.windows.com import (
     ole32,
     release,
 )
+from polyglotic_desktop.ports.capture import SoundDevice, SoundDevices
 
 _CLSID_MMDeviceEnumerator = GUID.parse("{BCDE0395-E52F-467C-8E3D-C4579291692E}")
 _IID_IMMDeviceEnumerator = GUID.parse("{A95664D2-9614-4F35-A746-DE8DB63617E6}")
@@ -127,6 +128,22 @@ def active_devices(flow: Flow) -> list[AudioDevice]:
             return sorted(found, key=lambda d: d.name.lower())
         finally:
             release(collection)
+
+
+def sound_devices() -> SoundDevices:
+    """Every speaker and mic plugged in, by name, and Windows' defaults -
+    for Home's and Settings' choice of them (polyglotic-hq 372). Nothing,
+    if Windows can't say."""
+    try:
+        speaker, mic = default_device(Flow.OUTPUT), default_device(Flow.INPUT)
+        return SoundDevices(
+            tuple(SoundDevice(d.id, d.name) for d in active_devices(Flow.OUTPUT)),
+            tuple(SoundDevice(d.id, d.name) for d in active_devices(Flow.INPUT)),
+            speaker.id if speaker else None,
+            mic.id if mic else None,
+        )
+    except OSError:
+        return SoundDevices()
 
 
 def activate(device_id: str, iid: GUID) -> c_void_p:

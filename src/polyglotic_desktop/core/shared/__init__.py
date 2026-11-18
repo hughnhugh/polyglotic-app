@@ -55,12 +55,20 @@ class EntryFacts:
     """What Learning needs to know about a dictionary entry, from Lexicon:
     its level in the learner's level scheme (1 = the lowest; None if the
     scheme doesn't include it), its frequency rank (1 = the commonest) and
-    whether it's a name (never shown as unfamiliar)."""
+    whether it's a name (never shown as unfamiliar). `level_words` is
+    about how many words a learner at its level knows, the levels below
+    counted (1,000 at HSK 3); None if it has no level, or the scheme
+    doesn't say - Learning places the word by it and its rank
+    (`core.learning.levels.place`). `is_number`: a number written as a
+    word made of numerals (二十, 十五) - known once its numerals are, not
+    a word to point out (polyglotic-hq 360)."""
 
     entry_id: EntryId
     level: int | None
     frequency_rank: int | None
     is_name: bool
+    level_words: int | None = None
+    is_number: bool = False
 
 
 @dataclass(frozen=True, slots=True)

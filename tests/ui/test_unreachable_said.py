@@ -11,7 +11,9 @@ saying it through each try. Made-up apps only, offscreen.
 from collections.abc import Iterator
 
 import pytest
+from PySide6.QtCore import QLocale
 from PySide6.QtWidgets import QApplication
+from tests.stopped_clock import AFTER_MIDNIGHT_IN_MELBOURNE, qt_stopped_at
 from tests.ui.fakes import FakeAppList, MemorySettingsStore
 
 from polyglotic_desktop.connection.session import SessionState, Status
@@ -27,9 +29,11 @@ from polyglotic_desktop.main import (
     wire_caption_windows,
 )
 from polyglotic_desktop.ui.app import ConnectionState, DesktopApp
+from polyglotic_desktop.ui_next import home as home_page
 from polyglotic_desktop.ui_next.caption_window import notice_text
 from polyglotic_desktop.ui_next.caption_windows import CaptionWindows
 from polyglotic_desktop.ui_next.help_page import HelpPage
+from polyglotic_desktop.ui_next.os_words import pc_or_mac
 from polyglotic_desktop.ui_next.views.caption_window import Notice, Notices
 from polyglotic_desktop.ui_next.views.home import (
     HomeState,
@@ -70,19 +74,22 @@ def test_the_server_down_said_on_home_the_windows_and_the_tray(
     listener = QtListener(desktop, None)
     listener._show_status(waiting(Unreachable.DOWN))
     home = built.home.state
-    assert home.title_label.text() == "Polyglotic's server is down"
+    # what it knows (368): can't reach it, not the learner's internet
+    assert home.title_label.text() == "Can't reach Polyglotic's server"
     assert home.detail.text() == (
         "not your internet - the problem is ours. Captions come back by "
         "themselves · trying again in 6 s"
     )
     window = windows.windows["Web Browser"]
     window._tick()
-    assert window.notice.text() == "Polyglotic's server is down - trying again in 6 s"
-    assert desktop.state_title == "Polyglotic's server is down"  # the tray's tooltip
+    assert window.notice.text() == (
+        "Can't reach Polyglotic's server - trying again in 6 s"
+    )
+    assert desktop.state_title == "Can't reach Polyglotic's server"  # the tray's
     assert home.notice.isHidden()  # the banner's order is untouched (208)
     # each try keeps the reason, as "Reconnecting" was kept (133)
     listener._show_status(Status(SessionState.CONNECTING))
-    assert home.title_label.text() == "Polyglotic's server is down"
+    assert home.title_label.text() == "Can't reach Polyglotic's server"
     assert desktop.unreachable is Unreachable.DOWN
     # back: listening, and nothing more about it
     listener._show_status(Status(SessionState.LISTENING))
@@ -111,11 +118,90 @@ def test_what_the_learner_can_fix_says_see_home_on_the_windows(
 ) -> None:
     desktop, windows, built = hub
     QtListener(desktop, None)._show_status(waiting(Unreachable.CLOCK))
-    assert built.home.state.title_label.text() == "Check this PC's date and time"
-    assert "Time & language" in built.home.state.detail.text()
+    assert built.home.state.title_label.text() == pc_or_mac(
+        "Check this PC's date and time", "Check this Mac's date and time"
+    )
+    assert pc_or_mac("Time & language", "Date & Time") in (
+        built.home.state.detail.text()
+    )
     window = windows.windows["Web Browser"]
     window._tick()
-    assert window.notice.text() == "Check this PC's date and time - see Home"
+    assert window.notice.text() == pc_or_mac(
+        "Check this PC's date and time - see Home",
+        "Check this Mac's date and time - see Home",
+    )
+
+
+def test_a_certificate_out_of_date_on_a_right_clock_names_an_antivirus_or_a_vpn(
+    hub: tuple[DesktopApp, CaptionWindows, Hub],
+) -> None:
+    """313: refused after the try without the dates, and this PC's clock
+    isn't before the build - something in the way, not the clock."""
+    desktop, windows, built = hub
+    QtListener(desktop, None)._show_status(waiting(Unreachable.OUT_OF_DATE))
+    assert built.home.state.title_label.text() == "Can't connect securely"
+    assert built.home.state.detail.text().startswith(
+        "something on this network is in the way with an out-of-date certificate"
+        " - most often an antivirus's HTTPS scanning, or a VPN"
+    )
+    window = windows.windows["Web Browser"]
+    window._tick()
+    assert window.notice.text() == notice_text(Notice.NOT_SECURE, None)
+
+
+def test_the_date_a_wrong_clock_says_is_on_home(
+    hub: tuple[DesktopApp, CaptionWindows, Hub], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """313: refused with the clock wrong for certain - Home says the date
+    it says, and where to set it."""
+    desktop, _, built = hub
+    stopped_date, _ = qt_stopped_at(AFTER_MIDNIGHT_IN_MELBOURNE)
+    # the app's date and the test's one: read twice, they named two days when
+    # the PC's midnight fell between (polyglotic-hq 344)
+    monkeypatch.setattr(home_page, "QDate", stopped_date)
+    QtListener(desktop, None)._show_status(waiting(Unreachable.CLOCK))
+    today = QLocale().toString(
+        stopped_date.currentDate(), QLocale.FormatType.LongFormat
+    )
+    assert built.home.state.detail.text().startswith(
+        pc_or_mac(
+            f"this PC says it's {today}, which can't be right. Turn on Set time"
+            " automatically",
+            f"this Mac says it's {today}, which can't be right. Turn on Set time"
+            " and date automatically",
+        )
+    )
+
+
+def test_a_clock_that_looks_wrong_is_on_homes_banner_while_captions_work(
+    hub: tuple[DesktopApp, CaptionWindows, Hub], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """313: let through on this PC's clock - listening, and one quiet line
+    on Home's banner with what the clock says; gone once a session opens
+    without it."""
+    desktop, _, built = hub
+    listener = QtListener(desktop, None)
+    doubted: list[bool] = []
+    listener.clock_doubted.connect(doubted.append)
+    listener._show_status(Status(SessionState.LISTENING, clock_looks_wrong=True))
+    listener._show_status(Status(SessionState.WAITING, retry_in=5.0))
+    listener._show_status(Status(SessionState.LISTENING))
+    assert doubted == [True, False]  # said by each session's `welcome`
+    home = built.home.state
+    stopped_date, stopped_time = qt_stopped_at(AFTER_MIDNIGHT_IN_MELBOURNE)
+    monkeypatch.setattr(home_page, "QDateTime", stopped_time)  # read once (344)
+    home.set_clock_looks_wrong(True)
+    today = QLocale().toString(
+        stopped_date.currentDate(), QLocale.FormatType.LongFormat
+    )
+    assert home.notice.text().startswith(
+        pc_or_mac("This PC's", "This Mac's")
+        + f" date or time looks wrong: it says {today}, "
+    )
+    assert "Captions work" in home.notice.text()
+    assert not home.notice.isHidden()
+    home.set_clock_looks_wrong(False)
+    assert home.notice.isHidden()
 
 
 def test_a_restart_on_the_state_line_takes_the_banners_place(
@@ -150,12 +236,13 @@ def test_a_full_server_and_a_plain_drop_say_what_they_said() -> None:
     [
         (Unreachable.OFFLINE, Title.CANT_REACH, Tone.BAD),
         (Unreachable.NO_ANSWER, Title.CANT_REACH, Tone.WAIT),
-        (Unreachable.DOWN, Title.SERVER_DOWN, Tone.WAIT),
+        (Unreachable.DOWN, Title.CANT_REACH, Tone.WAIT),
         (Unreachable.RESTARTING, Title.SERVER_RESTARTING, Tone.WAIT),
         (Unreachable.SERVER_ERROR, Title.SERVER_PROBLEM, Tone.WAIT),
         (Unreachable.BLOCKED, Title.BLOCKED, Tone.BAD),
         (Unreachable.NOT_SECURE, Title.NOT_SECURE, Tone.BAD),
         (Unreachable.CLOCK, Title.CLOCK, Tone.BAD),
+        (Unreachable.OUT_OF_DATE, Title.NOT_SECURE, Tone.BAD),
         (Unreachable.TOO_MANY_SESSIONS, Title.TOO_MANY_SESSIONS, Tone.BAD),
         (Unreachable.TOO_MANY_TRIES, Title.TOO_MANY_TRIES, Tone.WAIT),
     ],
@@ -185,12 +272,16 @@ def test_too_many_sessions_says_what_to_do_not_reconnecting(
     desktop, windows, built = hub
     QtListener(desktop, None)._show_status(waiting(Unreachable.TOO_MANY_SESSIONS, 60.0))
     home = built.home.state
-    assert home.title_label.text() == "Polyglotic is open on too many of your PCs"
+    assert home.title_label.text() == (
+        "Polyglotic is open on too many of your " + pc_or_mac("PCs", "computers")
+    )
     assert home.detail.text().startswith("your account has as many open as it can")
     assert home.detail.text().endswith("trying again in 60 s")
     window = windows.windows["Web Browser"]
     window._tick()
-    assert window.notice.text() == "Open on too many of your PCs - see Home"
+    assert window.notice.text() == (
+        f"Open on too many of your {pc_or_mac('PCs', 'computers')} - see Home"
+    )
 
 
 def test_the_windows_count_down_only_where_waiting_is_the_answer() -> None:
@@ -199,7 +290,7 @@ def test_the_windows_count_down_only_where_waiting_is_the_answer() -> None:
     for counted in (
         Notice.OFFLINE,
         Notice.CANT_REACH,
-        Notice.SERVER_DOWN,
+        Notice.SERVER_RESTARTING,
         Notice.TOO_MANY_TRIES,
     ):
         notices.state = counted
@@ -224,7 +315,8 @@ def test_helps_check_says_why_in_homes_words(
     assert facts.unreachable is Unreachable.NO_ANSWER
     page = HelpPage(desktop.caption_facts)
     page.refresh()
-    assert page.rows[Step.CONNECTED].text() == "✗  Can't reach Polyglotic's server"
+    assert page.marks[Step.CONNECTED].text() == "✗"
+    assert page.rows[Step.CONNECTED].text() == "Can't reach Polyglotic's server"
     assert page.fixes[Step.CONNECTED].text() == (
         "Check your internet; if it's working, we're probably down."
     )

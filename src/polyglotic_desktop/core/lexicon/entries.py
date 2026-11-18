@@ -9,6 +9,7 @@ names aren't shown as unfamiliar.
 
 import bisect
 import re
+import unicodedata
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -118,12 +119,22 @@ class DictionaryEntry:
         own = self.level_in(scheme) if scheme else None
         return own is not None and own <= level.value
 
+    @property
+    def is_number(self) -> bool:
+        return is_number_word(self.headword, self.levels)
+
     def facts(self, scheme_id: str) -> EntryFacts:
         """What Learning needs to know about this entry, for a learner whose
         level is in the scheme `scheme_id`: its level there (None if the
-        scheme doesn't include it, or is unknown), rank and name flag."""
+        scheme doesn't include it, or is unknown), rank, and whether it's a
+        name or a number."""
         return entry_facts(
-            self.entry_id, self.frequency_rank, self.levels, self.is_name, scheme_id
+            self.entry_id,
+            self.frequency_rank,
+            self.levels,
+            self.is_name,
+            scheme_id,
+            self.is_number,
         )
 
 
@@ -144,22 +155,50 @@ def level_in(
     return dict(levels).get(scheme.id)
 
 
+_NUMERALS = frozenset("两")
+"""Numerals Unicode gives no number: 两 (its traditional 兩 has 2)."""
+
+
+def is_number_word(headword: str, levels: Sequence[tuple[str, int]]) -> bool:
+    """Whether a headword is a number written in numerals - 二十, 十五,
+    百万, "20" - that no syllabus teaches as a word of its own. The
+    frequency list ranks them as rare written forms (二十 5,165th, 十五
+    3,172nd: numbers are mostly written in digits), so a learner who
+    chose a big window saw them pointed out as new (polyglotic-hq 351).
+    One numeral alone (二, 万) is a word, placed as any word is; so is a
+    compound a syllabus teaches (千万 "by all means", 万一 "just in case")."""
+    if levels or not headword:
+        return False
+    if len(headword) < 2 and not headword.isdecimal():
+        return False
+    return all(
+        c in _NUMERALS or unicodedata.numeric(c, None) is not None for c in headword
+    )
+
+
 def entry_facts(
     entry_id: EntryId,
     frequency_rank: int | None,
     levels: Sequence[tuple[str, int]],
     is_name: bool,
     scheme_id: str,
+    is_number: bool = False,
 ) -> EntryFacts:
     """`DictionaryEntry.facts` from the parts it needs - for a dictionary
     that reads them without making the whole entry (its reading marked):
     Words asks for every word met (polyglotic-hq project 212)."""
     scheme = SCHEMES.get(scheme_id)
+    level = level_in(scheme, frequency_rank, levels) if scheme else None
     return EntryFacts(
         entry_id=entry_id,
-        level=level_in(scheme, frequency_rank, levels) if scheme else None,
+        level=level,
         frequency_rank=frequency_rank,
         is_name=is_name,
+        is_number=is_number,
+        # a syllabus's levels only: a frequency band's words are its rank's
+        level_words=scheme.sizes[level - 1]
+        if scheme and level and len(scheme.sizes) >= level
+        else None,
     )
 
 

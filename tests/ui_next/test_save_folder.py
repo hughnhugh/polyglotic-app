@@ -347,3 +347,23 @@ def test_an_export_that_cant_be_written_isnt_remembered(
     export_written(page)
     assert f"Couldn't write {gone}" in page.first.export_result.text()
     assert shared.folder() == places["documents"]
+
+
+def test_on_a_mac_the_install_folder_is_the_whole_app_bundle(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """409, 410: the packed executable is in `Polyglotic.app/Contents/MacOS`;
+    a save dialog must never start anywhere in the bundle, which an update
+    replaces whole."""
+    bundle = tmp_path / "Applications" / "Polyglotic.app"
+    executable = bundle / "Contents" / "MacOS" / "Polyglotic"
+    executable.parent.mkdir(parents=True)
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "executable", str(executable))
+    assert install_folder() == bundle.resolve()
+    saving = SaveFolder(
+        documents=bundle / "Contents" / "Resources", home=tmp_path / "home"
+    )
+    (tmp_path / "home").mkdir()
+    (bundle / "Contents" / "Resources").mkdir()
+    assert saving.folder() == tmp_path / "home"

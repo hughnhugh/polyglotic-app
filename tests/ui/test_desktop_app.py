@@ -3,9 +3,10 @@ remembered through the port and read leniently; the tray menu's named
 commands and the hotkeys; the session's state kept here, with the
 server's minutes and notices announced for Home and the caption windows,
 and the tray saying the state Home shows - and, once, that the app is
-still running there; the tray and "Looks wrong?" asking for the main
-window. Made-up apps only."""
+still running there; the tray asking for the main window. Made-up apps
+only."""
 
+import sys
 import threading
 
 import pytest
@@ -40,7 +41,8 @@ def test_stored_settings_are_read_leniently() -> None:
         }
     )
     assert settings.targets == ("zh", "en")
-    assert settings.text_scale == 1.0 and settings.word_links == "off"
+    assert settings.text_scale == 1.0
+    assert settings.word_links == AppSettings().word_links  # the default
     assert settings.caption_mic is False and settings.fade_after is None
     assert settings.overlay_geometry == {}  # one bad entry: the default
     assert AppSettings.from_stored(settings.to_stored()) == settings
@@ -169,11 +171,11 @@ def test_the_tray_menu_has_the_named_commands(qapp: QApplication) -> None:
 
 def test_the_tray_turns_dictation_on_and_follows_settings(qapp: QApplication) -> None:
     app = make_app()
-    assert not app.dictation.isChecked()  # off until turned on (283)
+    assert app.dictation.isChecked()  # on for a new learner (478; off in 283)
     app.dictation.trigger()
-    assert app.settings.value.dictation
-    app.settings.update(dictation=False)  # Settings' switch
-    assert not app.dictation.isChecked()
+    assert not app.settings.value.dictation
+    app.settings.update(dictation=True)  # Settings' switch
+    assert app.dictation.isChecked()
     app.close()
 
 
@@ -193,7 +195,7 @@ def test_the_tray_switches_dictations_language_like_a_mode(qapp: QApplication) -
         ]
 
     assert shown() == [
-        ("Detect the language", True),
+        ("Detect automatically", True),
         ("English", False),
         ("Mandarin", False),
         ("Cantonese", False),
@@ -218,15 +220,13 @@ def test_the_tray_switches_dictations_language_like_a_mode(qapp: QApplication) -
 
 def test_hotkeys_lock_pause_and_hide_from_any_thread(qapp: QApplication) -> None:
     """Ctrl+Alt+L, P and H, as the proof of concept: Windows calls them on
-    the hotkeys' own thread; they run on the Qt thread."""
+    the hotkeys' own thread; they run on the Qt thread. No Ctrl+Alt+W: it
+    checked the newest line ("Looks wrong?"), which went (polyglotic-hq
+    339)."""
     app = make_app()
     shown = {k: a.shortcut().toString() for k, a in app.hotkeys.items()}
-    assert shown == {
-        "L": "Ctrl+Alt+L",
-        "P": "Ctrl+Alt+P",
-        "H": "Ctrl+Alt+H",
-        "W": "Ctrl+Alt+W",  # "Looks wrong?" (project 101)
-    }
+    keys = "Meta+Ctrl+" if sys.platform == "darwin" else "Ctrl+Alt+"  # ⌃⌘ (428)
+    assert shown == {k: keys + k for k in "LPH"}
     for key in "LPH":
         worker = threading.Thread(target=app.hotkey_pressed.emit, args=(key,))
         worker.start()
@@ -240,24 +240,30 @@ def test_hotkeys_lock_pause_and_hide_from_any_thread(qapp: QApplication) -> None
     app.hotkey_pressed.emit("P")
     qapp.processEvents()
     assert not app.pause.isChecked()
-    app.hotkeys_taken(["H"])  # another app has Ctrl+Alt+H: not shown
+    app.hotkeys_not_working(["H"])  # another app has Ctrl+Alt+H: not shown
     assert app.hide_windows.shortcut().isEmpty()
     app.close()
 
 
-def test_the_tray_and_looks_wrong_ask_for_the_main_window(qapp: QApplication) -> None:
+def test_the_tray_asks_for_the_main_window(qapp: QApplication) -> None:
     """The tray's Open Polyglotic asks for it on the picker while nothing is
-    chosen (DECISIONS.md #25); "Looks wrong?"'s card on whatever page it
-    shows."""
+    chosen (DECISIONS.md #25)."""
     app = make_app()
     asked: list[bool] = []
     app.window_wanted.connect(asked.append)
     app.open_window.trigger()
-    app.feed.apply(finished("a", clause("你好。")))
-    app.check_line.trigger()  # Ctrl+Alt+W: the newest finished line
-    assert asked == [True, False]
-    assert app.looks_wrong.card is not None
-    app.looks_wrong.card.close()
+    assert asked == [True]
+    app.close()
+
+
+def test_nothing_offers_looks_wrong(qapp: QApplication) -> None:
+    """ "Looks wrong?" left the interface (polyglotic-hq 339; the user,
+    2026-11-15: "get rid of the looks wrong report button"): no comparison
+    card, no command to check the newest line, nothing in the tray."""
+    app = make_app()
+    assert not hasattr(app, "looks_wrong") and not hasattr(app, "check_line")
+    texts = [a.text() for a in app.tray_menu.actions()]
+    assert not any("best model" in t or "Looks wrong" in t for t in texts)
     app.close()
 
 

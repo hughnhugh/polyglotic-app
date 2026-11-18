@@ -4,6 +4,7 @@ only, search, following or scrolled back, what it remembers, and where it
 opens."""
 
 from dataclasses import replace
+from datetime import UTC, datetime, timedelta
 
 from tests.ui_next.made_up import EN, ZH, finished_updates, live_update
 
@@ -11,11 +12,14 @@ from polyglotic_desktop.core.listening.captions import CaptionKind, Language
 from polyglotic_desktop.core.listening.display import RowKind
 from polyglotic_desktop.ui.recorded_captions import APP, MIC
 from polyglotic_desktop.ui_next.views.captions import (
+    CAPTION_WINDOW_LINES,
     TRANSCRIPT_LINES,
+    TRANSCRIPT_MOST_LINES,
     CaptionLines,
 )
 from polyglotic_desktop.ui_next.views.placement import Rect, Size
 from polyglotic_desktop.ui_next.views.transcript import (
+    ASK_FROM_LINES,
     CASCADE,
     DEFAULT_SIZE,
     GAP,
@@ -23,6 +27,7 @@ from polyglotic_desktop.ui_next.views.transcript import (
     StoredTranscripts,
     Transcript,
     TranscriptChoices,
+    TranscriptLength,
     beside,
     clear_of,
     match_spans,
@@ -97,6 +102,106 @@ def test_it_keeps_a_thousand_lines() -> None:
     found = filled(TRANSCRIPT_LINES + 30)
     assert len(found.lines) == TRANSCRIPT_LINES
     assert found.lines[0].caption_id == finished_updates(1, start=30)[0].caption_id
+
+
+class Clock:
+    def __init__(self) -> None:
+        self.now = datetime(2026, 11, 14, 9, 0, tzinfo=UTC)
+
+    def __call__(self) -> datetime:
+        return self.now
+
+
+def test_kept_for_three_hours_it_lists_a_lecture_past_a_thousand_lines() -> None:
+    """The user's feedback 16 (2026-11-13): "a 3-hour lecture" - a
+    caption every 3 s for three hours, 3,600 lines, all listed; an hour
+    later the first hour's have gone from the list into Copy all and Save."""
+    clock = Clock()
+    found = Transcript(APP, EN, clock=clock, length=TranscriptLength.THREE_HOURS)
+    for update in finished_updates(3_600):
+        clock.now += timedelta(seconds=3)
+        found.apply(update)
+    assert len(found.lines) == 3_600
+    assert found.foot().earlier == 0
+    for update in finished_updates(1_200, start=3_600):
+        clock.now += timedelta(seconds=3)
+        found.apply(update)
+    oldest = clock.now - timedelta(hours=3)  # the lines since, to the second
+    assert found.lines[0].started_at == oldest and len(found.lines) == 3_601
+    assert len(found.captions_kept()) == 4_800  # Save still has them all
+
+
+def test_the_whole_session_is_listed_up_to_its_most() -> None:
+    found = filled(TRANSCRIPT_LINES + 30, length=TranscriptLength.SESSION)
+    assert len(found.lines) == TRANSCRIPT_LINES + 30
+    assert TranscriptLength.SESSION.limits == (TRANSCRIPT_MOST_LINES, None)
+    assert TranscriptLength.THREE_HOURS.limits == (TRANSCRIPT_MOST_LINES, 3 * 3600.0)
+
+
+def test_the_default_lists_the_newest_thousand_as_before() -> None:
+    assert TranscriptLength.NEWEST.limits == (TRANSCRIPT_LINES, None)
+    assert filled(5).length is TranscriptLength.NEWEST
+
+
+def test_a_longer_choice_lists_again_what_the_list_had_dropped() -> None:
+    """Chosen mid-lecture: the lines past the newest 1,000 come back to the
+    list from Copy all's - and a shorter choice sends them back there."""
+    found = filled(TRANSCRIPT_LINES + 30)
+    found.search("computer")
+    matches = len(found.lines)
+    found.set_length(TranscriptLength.SESSION)
+    assert len(found.all_lines) == TRANSCRIPT_LINES + 30
+    assert len(found.lines) > matches  # the search reaches them too
+    assert found.foot().earlier == 0
+    assert len(found.captions_kept()) == len(found.lines)
+    found.search("")
+    found.set_length(TranscriptLength.NEWEST)
+    assert len(found.lines) == TRANSCRIPT_LINES
+    assert found.foot().earlier == 30
+    assert len(found.captions_kept()) == TRANSCRIPT_LINES + 30
+
+
+def test_a_caption_window_keeps_its_own_lines_whatever_the_transcript_keeps() -> None:
+    """The long history lives in the transcript, never in the caption
+    window: its lines are its own 150, so a caption there costs what it
+    did."""
+    window = CaptionLines((APP,), EN, keep=CAPTION_WINDOW_LINES)
+    transcript = Transcript(APP, EN, length=TranscriptLength.SESSION)
+    for update in finished_updates(2_000):
+        window.apply(update)
+        transcript.apply(update)
+    assert len(window.lines) == CAPTION_WINDOW_LINES
+    assert len(transcript.lines) == 2_000
+
+
+def test_a_long_transcript_needs_saving_until_the_whole_of_it_is_saved() -> None:
+    """Quit asks about a transcript of more than 300 lines (the old
+    history's) with a line added or changed since its last whole save -
+    a save of a search's matches doesn't count."""
+    assert not filled(ASK_FROM_LINES).needs_saving()
+    found = filled(ASK_FROM_LINES + 1)
+    assert found.needs_saving() and found.kept == ASK_FROM_LINES + 1
+    found.search("computer")
+    found.mark_saved()
+    assert found.needs_saving()  # only the matches were written
+    found.search("")
+    found.mark_saved()
+    assert not found.needs_saving()
+    found.apply(live_update("still-speaking"))  # no line changes
+    assert not found.needs_saving()
+    found.apply(finished_updates(1, start=ASK_FROM_LINES + 1)[0])
+    assert found.needs_saving()
+
+
+def test_lines_kept_count_those_past_the_list() -> None:
+    found = filled(TRANSCRIPT_LINES + 30)
+    assert found.kept == TRANSCRIPT_LINES + 30
+
+
+def test_a_stored_length_that_isn_t_valid_is_the_default() -> None:
+    assert TranscriptLength.from_stored("session") is TranscriptLength.SESSION
+    for stored in (None, 3, "forever", ""):
+        assert TranscriptLength.from_stored(stored) is TranscriptLength.NEWEST
 
 
 def test_a_line_says_the_language_spoken_and_whether_it_was_checked() -> None:

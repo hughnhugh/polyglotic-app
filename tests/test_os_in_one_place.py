@@ -31,25 +31,24 @@ def test_main_loads_without_any_os_adapters() -> None:
     assert loaded.stdout.split() == []
 
 
-@pytest.mark.parametrize(
-    ("system", "missing"), [("linux", "linux"), ("darwin", "macos")]
-)
-def test_an_os_without_adapters_is_told_what_is_missing(
-    system: str, missing: str
-) -> None:
+def test_an_os_without_adapters_is_told_what_is_missing() -> None:
+    """Linux; macOS has its own since 409 (tests/test_macos_adapters.py)."""
     with pytest.raises(NoOsAdapters) as error:
-        os_adapters(system)
-    assert system in str(error.value) and f"platform/{missing}" in str(error.value)
+        os_adapters("linux")
+    assert "linux" in str(error.value) and "platform/linux" in str(error.value)
 
 
 class Item:
     """A collected test, as the hook sees it."""
 
-    def __init__(self, windows_only: bool) -> None:
+    def __init__(self, windows_only: bool, macos_only: bool = False) -> None:
         self.windows_only = windows_only
+        self.macos_only = macos_only
         self.added: list[pytest.MarkDecorator] = []
 
     def get_closest_marker(self, name: str) -> object | None:
+        if name == "macos_only":
+            return name if self.macos_only else None
         return name if name == "windows_only" and self.windows_only else None
 
     def add_marker(self, marker: pytest.MarkDecorator) -> None:
@@ -81,3 +80,18 @@ def test_whose_copy_is_asked_without_failing_where_an_os_has_no_adapters(
 
     monkeypatch.setattr(main, "os_adapters", none_here)
     assert main.store_copy_here() is None
+
+
+@pytest.mark.parametrize(
+    ("system", "skipped"), [("linux", 1), ("win32", 1), ("darwin", 0)]
+)
+def test_macos_only_tests_are_skipped_off_macos(
+    monkeypatch: pytest.MonkeyPatch, system: str, skipped: int
+) -> None:
+    """409: the Keychain's and macOS's own calls, run by the macOS job."""
+    marked = Item(windows_only=False, macos_only=True)
+    monkeypatch.setattr(sys, "platform", system)
+    conftest.pytest_collection_modifyitems(
+        cast(pytest.Config, None), cast(list[pytest.Item], [marked])
+    )
+    assert len(marked.added) == skipped

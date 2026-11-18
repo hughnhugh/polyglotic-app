@@ -102,10 +102,19 @@ def test_what_the_network_said_says_why(error: BaseException, why: Unreachable) 
 
 
 def test_the_servers_close_says_when_its_the_server() -> None:
-    assert why_closed(1001) is Unreachable.RESTARTING
+    assert why_closed(1001, announced=True) is Unreachable.RESTARTING
     assert why_closed(1011) is Unreachable.SERVER_ERROR
     for code in (None, 1000, 1006, 4008):  # dropped, timed out: try again first
         assert why_closed(code) is None
+
+
+def test_a_close_1001_is_a_restart_only_when_the_server_said_so() -> None:
+    """368: our server always sends `server_restarting` (or
+    `maintenance_started`) before its close 1001; one without came from
+    something else on the way, and the app said "restarting" all the same."""
+    assert why_closed(1001) is None  # tried again first, then said as found
+    assert why_closed(1001, announced=False) is None
+    assert why_closed(1001, announced=True) is Unreachable.RESTARTING
 
 
 def test_the_refusals_that_wait_say_what_they_are() -> None:
@@ -128,9 +137,15 @@ def test_whose_side_each_is_on() -> None:
         Unreachable.NOT_SECURE,
         Unreachable.TOO_MANY_SESSIONS,  # quit it on another PC
     }
-    ours = {Unreachable.DOWN, Unreachable.RESTARTING, Unreachable.SERVER_ERROR}
+    ours = {
+        Unreachable.DOWN,
+        Unreachable.RESTARTING,
+        Unreachable.SERVER_ERROR,
+        Unreachable.MAINTENANCE,  # planned: captions come back by themselves (319)
+    }
     assert {why for why in Unreachable if side(why) is Side.YOURS} == yours | {
-        Unreachable.CLOCK
+        Unreachable.CLOCK,
+        Unreachable.OUT_OF_DATE,  # an antivirus's or a VPN's certificate (313)
     }
     assert {why for why in Unreachable if side(why) is Side.OURS} == ours
     assert {why for why in Unreachable if side(why) is Side.EITHER} == {

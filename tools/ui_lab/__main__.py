@@ -7,6 +7,7 @@ python -m tools.ui_lab approve [--out DIR]   # the new parts' goldens
 python -m tools.ui_lab approve --only STATE...   # only these states' (or patterns: ui_next.w4_*)
 python -m tools.ui_lab prune                 # remove the goldens whose state is gone
 python -m tools.ui_lab judge [--out DIR]     # the judge's kit (JUDGE.md)
+python -m tools.ui_lab design [--accept]     # the design detector's findings (design.py)
 python -m tools.ui_lab seen                  # the strings shown most: build/ui-lab/seen.tsv
 python -m tools.ui_lab languages [--jobs 4]  # every other language, its checks gated
 
@@ -17,6 +18,7 @@ Approving never removes a golden; `prune` is the only step that does
 import argparse
 import fnmatch
 import os
+import statistics
 import subprocess
 import sys
 from collections.abc import Callable
@@ -28,9 +30,12 @@ from PySide6.QtWidgets import QWidget
 
 from polyglotic_desktop.ui import interface_language
 from polyglotic_desktop.ui_next import languages, style
+from tools import start_record, timing_record
 from tools.i18n import __main__ as i18n
 from tools.ui_lab import (
     caption_window,
+    design,
+    first_run,
     goldens,
     home,
     joined_window,
@@ -42,12 +47,13 @@ from tools.ui_lab import (
     panels,
     presets,
     qt_parts,
+    reference,
     seen,
     text_sizes,
     transcript,
 )
 
-COMMANDS = ("approve", "prune", "judge", "seen", "languages")
+COMMANDS = ("approve", "prune", "judge", "seen", "languages", "design")
 
 
 def new_states() -> list[lab.State]:
@@ -55,7 +61,7 @@ def new_states() -> list[lab.State]:
     new = new_parts.STATES + caption_window.STATES + lookup.STATES
     new += joined_window.STATES + transcript.STATES
     new += panels.STATES + presets.STATES
-    new += home.STATES + pages.STATES + qt_parts.STATES
+    new += home.STATES + pages.STATES + qt_parts.STATES + first_run.STATES
     return new + text_sizes.STATES
 
 
@@ -111,7 +117,14 @@ def main(argv: list[str] | None = None) -> int:
         metavar="STATE",
         help="approve: only these states (names, or patterns such as ui_next.w4_words_*)",
     )
+    parser.add_argument(
+        "--accept",
+        action="store_true",
+        help="design: make every finding now the baseline (design_baseline.json)",
+    )
     args = parser.parse_args(argv)
+    if args.accept and command != "design":
+        parser.error("--accept is for design")
     if args.only and command != "approve":
         parser.error("--only is for approve")
     if command == "approve" and args.app_text_size != "normal":
@@ -135,6 +148,8 @@ def main(argv: list[str] | None = None) -> int:
         judge.run(new_states(), out)
         print(f"The judge's kit: {out / 'judge.md'}")
         return 0
+    if command == "design":
+        return design_run(args.out or Path("build/ui-lab/design"), args.accept)
     if command == "seen":
         if args.language != interface_language.ENGLISH:
             parser.error("seen runs in English: the strings are matched as written")
@@ -160,6 +175,9 @@ def main(argv: list[str] | None = None) -> int:
         if result.gated
         for action in result.over_budget()
     ]
+    if args.gate and not args.checks_only:
+        of = timing_record.kind(args.text_size, args.app_text_size, args.language)
+        over = judged_beside_main(results, over, of)
     failed = [
         f"{result.state}: {finding.check} - {finding.where}: {finding.detail}"
         for result in results
@@ -177,6 +195,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"check failed - {line}", file=sys.stderr)
     for line in differ:
         print(f"golden - {line}", file=sys.stderr)
+    # the design detector, gated where its baseline was made: English at 100 %
+    new_design = design_gate(results) if golden_store is not None else []
+    for line in new_design:
+        print(f"design - {line}", file=sys.stderr)
+    (out / "design.md").write_text(judge.design_markdown(results), encoding="utf-8")
     if differ:
         note = goldens.machine_note()
         print(
@@ -185,7 +208,53 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
     gated_over = [] if args.checks_only else over
-    return 1 if args.gate and (gated_over or failed or differ) else 0
+    said = gate_failed(gated_over, failed, differ, new_design) if args.gate else None
+    if said:  # last, so a golden's long note doesn't hide the rest (357)
+        print(said, file=sys.stderr)
+    return 1 if said else 0
+
+
+def gate_failed(
+    over: list[str], failed: list[str], differ: list[str], new_design: list[str]
+) -> str | None:
+    """The gate's one line when it fails, every reason counted - or None
+    when it passes. A golden that differed hid the design findings that
+    failed beside it (polyglotic-hq 357)."""
+    if not (over or failed or differ or new_design):
+        return None
+
+    def counted(items: list[str], one: str, many: str) -> str:
+        return f"{len(items)} {one if len(items) == 1 else many}"
+
+    return "gate failed: " + ", ".join(
+        [
+            counted(over, "over budget", "over budget"),
+            counted(failed, "check failed", "checks failed"),
+            counted(differ, "golden differs", "goldens differ"),
+            counted(new_design, "new design finding", "new design findings"),
+        ]
+    )
+
+
+def design_gate(results: list[lab.Result]) -> list[str]:
+    """The design detector's findings on gated states that its baseline
+    doesn't hold (decision 0140): new ones fail the gate, old ones are
+    worked down."""
+    found = [(r.state, f) for r in results if r.gated for f in r.design]
+    return design.new(found, design.baseline())
+
+
+def design_run(out: Path, accept: bool) -> int:
+    """Every state, and `out/design.md`: the design detector's findings,
+    new ones marked. `accept`: every finding now becomes the baseline."""
+    results = lab.run(new_states(), out)
+    (out / "design.md").write_text(judge.design_markdown(results), encoding="utf-8")
+    found = [(r.state, f) for r in results if r.gated for f in r.design]
+    if accept:
+        print(f"{design.accept(found)} finding(s) in {design.BASELINE}")
+    new = design.new(found, design.baseline())
+    print(f"{len(found)} design finding(s), {len(new)} new: {out / 'design.md'}")
+    return 0
 
 
 def every_language(out: Path, jobs: int, app_text_size: str) -> int:
@@ -251,6 +320,117 @@ def see(out: Path) -> int:
     lab.run(new_states(), out, shown=shown)
     print(f"{seen.SEEN}: {seen.write(found)} strings shown")
     return 0
+
+
+def gated_timings(results: list[lab.Result]) -> dict[str, timing_record.Timing]:
+    """Each gated action's median and longest run, by "state: action" - and
+    each gated state's reference step (`reference.NAME`), timed just before
+    its actions (decision 0169)."""
+    found = {
+        f"{result.state}: {action}": timing_record.Timing(
+            statistics.median(timed.samples), max(timed.samples)
+        )
+        for result in results
+        if result.gated
+        for action, timed in result.actions.items()
+        if timed.budget is not None and timed.samples
+    }
+    for result in results:
+        if result.gated and result.reference_ms:
+            step = result.reference_ms
+            found[f"{result.state}: {reference.NAME}"] = timing_record.Timing(
+                step, step
+            )
+    return found
+
+
+LOAD_WINDOW = 5
+"""The states either side of a state whose reference steps are taken with
+its own for its load scale: a state's step alone varies by about a fifth
+on one load (2026-11-16, polyglotic-hq 381), and eleven states are about
+10-20 seconds of a run, short beside a busy spell of other jobs."""
+
+
+def load_scales(
+    timings: dict[str, timing_record.Timing], record: timing_record.Record
+) -> dict[str, float]:
+    """How much slower the PC is for each gated state, by name, than it
+    was for main's run of it (decision 0169): the median reference step of
+    the state and its `LOAD_WINDOW` neighbours either side, in the run's
+    order, now - over the same states' median in main's record. A state
+    missing from either has none: it is compared as 0136 has it."""
+    suffix = f": {reference.NAME}"
+    both = [
+        (name.removesuffix(suffix), now.median_ms, record.timings[name].median_ms)
+        for name, now in timings.items()
+        if name.endswith(suffix) and name in record.timings
+    ]
+    scales = {}
+    for i, (state, _now, _then) in enumerate(both):
+        near = both[max(0, i - LOAD_WINDOW) : i + LOAD_WINDOW + 1]
+        then = statistics.median(t for _s, _n, t in near)
+        if then > 0:
+            scales[state] = statistics.median(n for _s, n, _t in near) / then
+    return scales
+
+
+def judged_beside_main(
+    results: list[lab.Result], over: list[str], of: str
+) -> list[str]:
+    """The actions over budget that fail the gate (decision 0136). On main,
+    every one, and main's timings are kept as its record. On a pull
+    request, those slower than main's record (`timing_record.SLOWER`) at
+    like load - main's timings scaled by the reference steps now over then
+    (`load_scales`, decision 0169) - or with none; the rest are over their
+    budget as main is: said, as a warning on the run's page, and not
+    failed."""
+    timings = gated_timings(results)
+    if start_record.on_main():
+        timing_record.save(of, timings, os.environ.get("GITHUB_SHA", ""))
+        return over
+    record = timing_record.load(of)
+    if record is None:
+        return over
+    scales = load_scales(timings, record)
+    failing, as_main = [], []
+    for name in over:
+        main = record.timings.get(name)
+        scale = scales.get(name.split(": ", 1)[0], 1.0)
+        if main is None or timings[name].slower_than(main.scaled(scale)):
+            failing.append(name)
+            if main is not None:
+                line = _beside(name, timings, record, scale)
+                print(f"slower than main's - {line}", file=sys.stderr)
+        else:
+            as_main.append(_beside(name, timings, record, scale))
+    for line in as_main:
+        print(f"over its budget as main is - {line}", file=sys.stderr)
+        if os.environ.get("GITHUB_ACTIONS"):
+            print(f"::warning title=Over its budget as main is::{line}")
+    summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary and as_main:
+        with open(summary, "a", encoding="utf-8") as page:
+            page.write(
+                "\n### Over its budget as main is (not this change: decision 0136)\n\n"
+                + "".join(f"- {line}\n" for line in as_main)
+            )
+    return failing
+
+
+def _beside(
+    name: str,
+    timings: dict[str, timing_record.Timing],
+    record: timing_record.Record,
+    scale: float,
+) -> str:
+    """`name`'s timing now beside main's record of it, and the load scale."""
+    now, main = timings[name], record.timings[name]
+    return (
+        f"{name} - median {now.median_ms:.1f} ms, longest"
+        f" {now.longest_ms:.1f}; main's ({record.commit[:8]}) median"
+        f" {main.median_ms:.1f}, longest {main.longest_ms:.1f}; the PC"
+        f" {scale:.2f}x as slow as for main's (the reference step)"
+    )
 
 
 def at_app_text_size(states: list[lab.State], size: str) -> list[lab.State]:

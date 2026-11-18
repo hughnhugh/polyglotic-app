@@ -3,14 +3,20 @@ under the learner's word introductions (`WordIntroductions`).
 
 An unfamiliar word is a word in a finished caption whose status is new
 (glossary) - never a live update's, which keeps changing. Names are never
-unfamiliar. Highlighting every new word is noise for most learners: a
-learner at 2,000 words meets one about every 9 words (project 019,
-section 6). So with "common words only" on (the default), a caption shows
-- only new words up to about the next band above the learner's level;
+unfamiliar. The ones pointed out are those the learning window reaches
+(`levels.LearningWindow`): the next words past what the learner knows.
+Rarer words are never pointed out (polyglotic-hq 323): they stay on hover,
+and surface in "words you keep hearing" if they come up again.
+
+Highlighting every one of them is still noise for most learners: a
+learner at 2,000 words meets a new word about every 9 words (project 019,
+section 6). So with "a few per caption" (the default), a caption shows
 - at most about 5% of its words (at least one), and 2 per line;
 - each word once, the ones heard most first, then the commonest.
-Rarer words stay on hover, and surface in "words you keep hearing" if they
-come up again.
+
+A line kept as a level (`KnownLine.by_level`: every learner's before 323)
+keeps what it showed: with "every new word", every new word, the rarer
+ones too - until the learner says how many words they know.
 
 The numbers are 019's starting values, to tune with testers.
 
@@ -23,7 +29,7 @@ only", which nobody understood: the user's F19): none, a few per caption
 from collections.abc import Callable, Sequence
 from enum import StrEnum
 
-from polyglotic_desktop.core.learning.levels import LevelCurve
+from polyglotic_desktop.core.learning.levels import LearningWindow
 from polyglotic_desktop.core.shared import EntryFacts, EntryId, WordInLine, WordStatus
 
 CAP_SHARE = 0.05  # of a caption's words
@@ -69,26 +75,28 @@ def caption_cap(word_count: int) -> int:
 def unfamiliar_words(
     lines: Sequence[Sequence[WordInLine]],
     status: Callable[[EntryFacts], WordStatus],
-    curve: LevelCurve | None,
+    window: LearningWindow,
     heard: Callable[[EntryId], int],
     common_only: bool,
 ) -> list[list[WordInLine]]:
     """For each of a finished caption's lines (its words), the unfamiliar
-    words to show. `status` gives a word's status, `heard` how many
-    captions it's been heard in."""
+    words to show: the new words `window` reaches - a few of them
+    (`common_only`), or each one. `status` gives a word's status, `heard`
+    how many captions it's been heard in."""
     candidates = [
         [w for w in line if not w.entry.is_name and status(w.entry) is WordStatus.NEW]
         for line in lines
     ]
+    if not common_only and window.line.by_level:
+        return candidates  # as before 323: every new word, the rarer too
+    candidates = [[w for w in line if window.reaches(w.entry)] for line in candidates]
     if not common_only:
         return candidates
-    within = curve or LevelCurve("", 0.5)
     ranked = sorted(
         (
             (-heard(w.entry.entry_id), w.entry.frequency_rank or 10**9, n, w.start, w)
             for n, line in enumerate(candidates)
             for w in line
-            if within.within_reach(w.entry.level)
         ),
         key=lambda item: item[:4],
     )

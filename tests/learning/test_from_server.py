@@ -139,7 +139,7 @@ def test_deleting_the_learning_data_on_this_pc() -> None:
     s.vocab.delete_learning_data()
     assert s.vocab.saved_words == [] and s.vocab.vocabulary_list() == []
     assert s.vocab.exposures(eid("酸奶")).heard == 0
-    assert s.vocab.curve is not None and len(s.vocab.categories) == 2
+    assert s.vocab.line is not None and len(s.vocab.categories) == 2
     assert s.sent() == []  # no unsaves or statuses published
     assert not store.statuses and not store.words and not store.exposures
     assert not store.daily and store.level is not None and store.categories

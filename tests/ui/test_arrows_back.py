@@ -6,6 +6,7 @@ retired it while a window underlined Arrows as Colours."""
 
 from dataclasses import replace
 
+import pytest
 from PySide6.QtWidgets import QApplication
 from tests.ui.test_link_underline import TEXT, _bands, _line, _painted, _rows_with
 
@@ -30,12 +31,19 @@ def test_arrows_make_room_and_colours_don_t(qapp: QApplication) -> None:
     assert gap > 10  # room for the curve to cross
 
 
-def test_a_curve_crosses_from_each_word_to_its_counterpart(qapp: QApplication) -> None:
+@pytest.mark.parametrize("translation_size", [1.0, 0.5, 2.0])
+def test_a_curve_crosses_from_each_word_to_its_counterpart(
+    qapp: QApplication, translation_size: float
+) -> None:
+    """With the translation at half and twice what was said too
+    (polyglotic-hq 305)."""
     for words in TEXT:
         line = _line(*words)
         for text_size in (1.0, 2.0):
-            colours = _painted(line, caption_style(COLOURS), text_size)
-            arrows = _painted(line, caption_style(ARROWS), text_size)
+            colours = _painted(
+                line, caption_style(COLOURS, translation_size), text_size
+            )
+            arrows = _painted(line, caption_style(ARROWS, translation_size), text_size)
             # Colours: two underlines, each a bar's height of red rows
             plain = _bands(_rows_with(colours, "red"))
             assert len(plain) == 2
@@ -48,4 +56,8 @@ def test_a_curve_crosses_from_each_word_to_its_counterpart(qapp: QApplication) -
             assert top > white[0][1]  # the underline, below the upper row
             reach = max(b[1] for b in red if b[0] <= red[0][1] + 4 * text_size)
             assert reach - top > 10 * text_size, (words[1], text_size, red)
-            assert reach >= white[1][0] - 8 * text_size  # to the lower row's top
+            # to the lower row's top - its line's top, above its glyphs by
+            # its font's own leading: twice as far for a translation twice
+            # the size (305)
+            lower = text_size * max(1.0, translation_size)
+            assert reach >= white[1][0] - 8 * lower

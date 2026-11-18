@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QApplication
 from tests.releases.test_updates import FakeUpdater
 from tests.ui.fakes import FakeAppList, MemorySettingsStore
 
+from polyglotic_desktop.adapters.signed_feed import FeedNotTrusted
 from polyglotic_desktop.connection.reconnect import StopReason
 from polyglotic_desktop.connection.session import SessionState, Status
 from polyglotic_desktop.core.releases.updates import UpdateCheck, UpdateNow, Updates
@@ -60,6 +61,25 @@ def test_a_failure_is_logged_never_raised(caplog: pytest.LogCaptureFixture) -> N
     updates.at_exit()
     assert "updates: check failed (OSError)" in caplog.text
     assert "no network" not in caplog.text  # the kind of failure, not its details
+
+
+def test_a_feed_check_that_failed_is_named(caplog: pytest.LogCaptureFixture) -> None:
+    """302: a tester's log said only "check failed (FeedNotTrusted)" - a bad
+    signature and a download cut short read the same. The check's own
+    words are fixed text, never the feed's."""
+
+    class CutShort(FakeUpdater):
+        def find(self, channel: str | None, allow_downgrade: bool) -> Update | None:
+            raise FeedNotTrusted("a package isn't the size the feed says")
+
+    updates = BackgroundUpdates(Updates(CutShort({}), ALPHA))
+    updates.check()
+    settle(updates)
+    updates.at_exit()
+    assert (
+        "updates: check failed (FeedNotTrusted: a package isn't the size the feed"
+        " says)" in caplog.text
+    )
 
 
 def test_the_servers_channel_is_followed_and_looked_at_once(qapp: QApplication) -> None:

@@ -17,8 +17,9 @@ window has shown with no question over it, OUT gets `shown.json` (the windows' h
 questions asked and the ID the taskbar knows the app by) and each shown window's picture (Qt's own `grab()`). The
 test says what's next by a file in OUT, so it can look from outside first:
 - `captions`: caption windows show, as when three apps are captioned
-  while signed in - the app's own windows, told they're signed in and
-  given the apps (`CaptionWindows.set_connection`, `set_captioned`) - and
+  while signed in - the app's own windows, told they're signed in
+  (`CaptionWindows.set_connection`), for apps picked as Home's + picks
+  them (`adding_app`) - and
   OUT gets `captions.json` (their handles). Quit has to end the app with
   them up: Qt's `quit()` gave up when the main window, kept in the tray,
   came before one of them in Qt's order of windows, and the app ran on
@@ -30,6 +31,8 @@ test says what's next by a file in OUT, so it can look from outside first:
   in it, and `tray` goes.
 - `hide`: the main window closed - kept in the tray, it hides - and
   `hide` goes. Whether it shows is in `main.json`, each time it changes.
+- `minimise`: the main window minimised, and `minimise` goes; `main.json`
+  says that too (polyglotic-hq 310: a second start brings it back).
 - `quit`: the app's own Quit, the action the tray and the window use -
   pressed once, as a learner does: after it the tray icon is gone, so a
   Quit the app turned down is one the learner can't press again (205's
@@ -57,7 +60,6 @@ from PySide6.QtWidgets import QApplication, QDialog, QWidget
 from tools.private_desktop import grab_windows
 
 from polyglotic_desktop import main as app
-from polyglotic_desktop.core.listening.sources import SourceId
 from polyglotic_desktop.platform.windows import taskbar
 from polyglotic_desktop.ports.capture import PlayingApp
 from polyglotic_desktop.ui.app import DesktopApp
@@ -110,7 +112,7 @@ class Driven(QApplication):
         self.shown = False
         self.captioned = False
         self.quit_pressed = False
-        self.main_shows: bool | None = None
+        self.main_shows: tuple[bool, bool] | None = None
         self.startTimer(100)
 
     def timerEvent(self, _: object) -> None:
@@ -142,15 +144,22 @@ class Driven(QApplication):
             main = self.main_window()
             if main is not None:
                 main.close()  # kept in the tray: it hides
+        elif (OUT / "minimise").exists():
+            (OUT / "minimise").unlink()
+            main = self.main_window()
+            if main is not None:
+                main.showMinimized()
 
     def say_whether_main_shows(self) -> None:
-        """`main.json` says whether the main window shows, as Qt has it -
-        each time that changes (a service's session never shows a window
-        to Windows, so the test can't look from outside there)."""
-        shows = self.main_window() is not None
-        if shows != self.main_shows:
-            self.main_shows = shows
-            _write(OUT / "main.json", {"shows": shows})
+        """`main.json` says whether the main window shows, and whether it's
+        minimised, as Qt has it - each time that changes (a service's
+        session never shows a window to Windows, so the test can't look
+        from outside there)."""
+        main = self.main_window()
+        said = (main is not None, main is not None and main.isMinimized())
+        if said != self.main_shows:
+            self.main_shows = said
+            _write(OUT / "main.json", {"shows": said[0], "minimised": said[1]})
 
     def from_the_tray(self, name: str) -> None:
         """Once the taskbar's right click has opened the tray's menu: its
@@ -186,15 +195,19 @@ class Driven(QApplication):
         assert windows is not None
         if not self.captioned:
             self.captioned = True
-            # a later session: the tray's one-time note was said in the first.
-            # Said at Quit instead, it would change a setting, and the windows
-            # would follow the settings' apps (none here) and close before
-            # Quit looked at them
+            # a later session: the tray's one-time note was said in the first
             desktop.settings.update(tray_note_shown=True)
             windows.set_connection(None, None)  # signed in, as far as they know
-            windows.set_captioned(
-                [(k, SourceId(f"app:{k}")) for k in ("discord", "chrome", "zoom")]
-            )
+            # three apps picked, as Home's + picks them: the windows follow the
+            # settings, so a later change of any setting leaves them up. Put up
+            # behind the settings' back, they went at the next one - "Caption
+            # my own speech", turned by the windows themselves (478) - to the
+            # settings' own choice: none, or everything the PC plays (484;
+            # polyglotic-hq 500)
+            for name in ("discord", "chrome", "zoom"):
+                picked = app.adding_app(desktop.settings.value, name)
+                assert picked is not None
+                desktop.settings.update(**picked)
             return
         shown = [int(w.winId()) for w in windows.windows.values() if w.isVisible()]
         if shown:

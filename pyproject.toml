@@ -16,6 +16,10 @@ dependencies = [
     "soundfile>=0.14.0",
     "velopack>=1.2.161",
     "websockets>=17.4",
+    # macOS only (polyglotic-hq 411): Core Audio taps for one app, everything
+    # else and the whole system; PortAudio for the mic
+    "catap>=0.6.1; sys_platform == 'darwin'",
+    "sounddevice>=0.5.6; sys_platform == 'darwin'",
 ]
 
 [dependency-groups]
@@ -100,8 +104,13 @@ extra_checks = true
 # Libraries that ship no type information (checked 2026-11-04; PyInstaller
 # 2026-11-05 - only the release build uses it, and only its archive reader).
 # sudachipy ships a .pyi but no py.typed marker (0.7.0, 2026-11-07).
+# catap and sounddevice are installed only on a Mac (polyglotic-hq 411), so
+# mypy elsewhere - and `--platform darwin` on Windows and Linux - can't see them.
 [[tool.mypy.overrides]]
-module = ["onnxruntime", "soundfile", "genanki", "PyInstaller.*", "sudachipy"]
+module = [
+    "onnxruntime", "soundfile", "genanki", "PyInstaller.*", "sudachipy",
+    "catap", "sounddevice",
+]
 ignore_missing_imports = true
 
 # ---------------------------------------------------------------------------
@@ -116,6 +125,7 @@ pythonpath = ["."]
 addopts = ["-ra", "--strict-markers", "--strict-config", "--import-mode=importlib"]
 markers = [
     "windows_only: needs Windows itself - its APIs, paths or file rules, or the app's OS adapters (decision 0038); skipped on macOS and Linux",
+    "macos_only: needs macOS itself - its frameworks (the Keychain, Core Foundation) or file rules (polyglotic-hq 409); skipped on Windows and Linux",
 ]
 
 # ---------------------------------------------------------------------------
@@ -141,10 +151,11 @@ layers = [
 
 [[tool.importlinter.contracts]]
 id = "os-in-one-place"
-name = "The OS is picked in one place: only main's os_adapters (and the Windows-only harness) import platform.windows or the Windows credential store (decision 0038)"
+name = "The OS is picked in one place: only main's os_adapters (and the Windows-only harness) import platform.windows, platform.macos or the Windows credential store (decision 0038)"
 type = "protected"
 protected_modules = [
     "polyglotic_desktop.platform.windows",
+    "polyglotic_desktop.platform.macos",
     "polyglotic_desktop.adapters.windows_credentials",
 ]
 allowed_importers = ["polyglotic_desktop.main", "polyglotic_desktop.harness"]

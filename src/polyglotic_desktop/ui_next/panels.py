@@ -14,7 +14,8 @@ width - and 248's copy (section 2.4).
 - **Languages:** "This window" (its language - or
   Original only - and Show my speech here) only in a transcript's rail,
   otherwise one line saying each window picks its own; Spoken language;
-  Second language, a row per language in use; Translate live captions;
+  When they already speak the window's language (its second language,
+  named by the window's: 465), a row per language in use; Translate live captions;
   Names and slang. Settings > Captions shows it as **Speech**, without
   what's learned (the Learning page's) or live translation (Timing's).
 - **Timing:** Caption timing, with the chosen one's sentence, and under
@@ -29,8 +30,11 @@ width - and 248's copy (section 2.4).
   the panel is, the font, and the original / the language / the source
   shown.
 - **Word links:** the style, the underline and its gap, the detail.
-- **Behaviour:** Fade after quiet. (Which new words captions point out
-  is Learning's: word introductions, on its page - polyglotic-hq 262.)
+- **Behaviour:** New captions, Fade after quiet; and a hidden window -
+  how long it still listens (5, 15 or 60 minutes, or never) and whether
+  it's shown when speech starts (polyglotic-hq 335). (Which new words
+  captions point out is Learning's: word introductions, on its page -
+  polyglotic-hq 262.)
 - **Reset:** the look to Polyglotic's defaults.
 
 In Settings each setting has its line under its name (`notes`, F18); in a
@@ -49,7 +53,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLineEdit,
-    QPushButton,
     QSlider,
     QVBoxLayout,
     QWidget,
@@ -59,8 +62,12 @@ from polyglotic_desktop.core.listening.display import (
     LinkDetail,
     LinkGap,
     LinkLine,
+    ReadingColour,
+    ReadingSize,
+    ReadingSystem,
     WordLinks,
 )
+from polyglotic_desktop.core.listening.hidden import PAUSE_CHOICES
 from polyglotic_desktop.core.listening.timing import CaptionMode
 from polyglotic_desktop.perf import spans
 from polyglotic_desktop.ui_next import style
@@ -70,10 +77,12 @@ from polyglotic_desktop.ui_next.colour_controls import ExactColour, PresetTiles
 from polyglotic_desktop.ui_next.controls import (
     INSET,
     Card,
+    Combo,
     Row,
     Segmented,
     SwitchButton,
     SwitchRow,
+    WrapButton,
     label,
 )
 from polyglotic_desktop.ui_next.languages import (
@@ -81,6 +90,8 @@ from polyglotic_desktop.ui_next.languages import (
     not_offered_note,
     target_languages,
 )
+from polyglotic_desktop.ui_next.os_words import pc_or_mac
+from polyglotic_desktop.ui_next.spoken_list import SpokenPicker
 from polyglotic_desktop.ui_next.views.arrivals import Arrival
 from polyglotic_desktop.ui_next.views.caption_window import ORIGINAL_ONLY
 from polyglotic_desktop.ui_next.views.panels import (
@@ -93,6 +104,7 @@ from polyglotic_desktop.ui_next.views.panels import (
     TimingView,
     WindowLanguageView,
     interval_choices,
+    settle_choices,
     wait_choices,
 )
 from polyglotic_desktop.ui_next.views.presets import preset_of
@@ -104,6 +116,16 @@ def _tr(text: str) -> str:
 
 def _seconds(value: float) -> str:
     return _tr("{seconds}s").format(seconds=f"{value:g}")
+
+
+def _minutes(value: int | None) -> str:
+    """A hidden window's limit as Behaviour offers it: "5 min", "1 h",
+    "Never" (polyglotic-hq 335)."""
+    if value is None:
+        return _tr("Never")
+    if value % 60 == 0:
+        return _tr("{hours} h").format(hours=value // 60)
+    return _tr("{minutes} min").format(minutes=value)
 
 
 def _row(layout: QHBoxLayout | QVBoxLayout, widget: QWidget) -> None:
@@ -179,27 +201,47 @@ class LanguagesPanel(Panel):
             # after the window's own two rows, the rest is every window's
             self.add(label(_tr("Every window").upper(), "SectionLabel"))
 
-        self.spoken = Segmented(
-            [
-                (None, _tr("Detect")),
-                ("en", _tr("English")),
-                ("zh", _tr("Mandarin")),
-                ("yue", _tr("Cantonese")),
-            ],
-            value.spoken,
+        # every language the speech model hears, findable by name, the
+        # recent ones first (`spoken_list`; polyglotic-hq 317)
+        self.spoken = SpokenPicker(
+            value.spoken, recent=lambda: session.value.recent_spoken
         )
-        self.spoken.setObjectName("languages.spoken")
         self.spoken.changed.connect(lambda v: session.set_spoken(str(v) if v else None))
         spoken = Row(
             _tr("Spoken language"),
             _tr(
-                "Detect handles mixed conversations. Choosing one language stops "
-                "short or mumbled speech being heard as another - but anything said "
-                "in a different language is then shown untranslated."
+                "Detect finds the language each time someone speaks, and handles "
+                "mixed talk. Name it and every caption is heard as that language: "
+                "steadier for an app that speaks one, but a line in another may "
+                "come out wrong."
             ),
             self.spoken,
         )
         self.add(spoken)
+
+        # beside the language it's about: Mandarin's script, converted on
+        # this PC - with Detect too (polyglotic-hq 375; decision 0164)
+        self.mandarin_script = Segmented(
+            [
+                (False, _tr("Simplified ({sample})").format(sample="汉字")),
+                (True, _tr("Traditional ({sample})").format(sample="漢字")),
+            ],
+            value.traditional,
+        )
+        self.mandarin_script.setObjectName("languages.mandarin_script")
+        self.mandarin_script.changed.connect(
+            lambda on: session.set_traditional(bool(on))
+        )
+        self.mandarin_row = Row(
+            _tr("Show Mandarin in"),
+            _tr(
+                "The characters Mandarin's captions are written in, Detect "
+                "included. Lookups, the transcript, copy and Anki use the "
+                "same; translations into Chinese keep the language you picked."
+            ),
+            self.mandarin_script,
+        )
+        self.add(self.mandarin_row)
 
         self.second_box = QWidget()
         self.second_rows = QVBoxLayout(self.second_box)
@@ -209,7 +251,9 @@ class LanguagesPanel(Panel):
         self._in_use: tuple[str, ...] | None = None
         self.add(
             Row(
-                _tr("Second language"),
+                # named by the window's language, as each caption window
+                # names it (polyglotic-hq 465, 449: one name)
+                _tr("When they already speak the window's language"),
                 _tr(
                     "Lines already in a window's language get no translation there. "
                     "Pick a second language and they get one into it, in yellow like "
@@ -262,7 +306,7 @@ class LanguagesPanel(Panel):
     def _this_window(self, window: WindowLanguageView) -> None:
         self.window_title = label("", "SectionLabel")
         self.add(self.window_title)
-        box = QComboBox()
+        box = Combo()
         box.setObjectName("languages.translate_into")
         box.setAccessibleName(_tr("Translate into"))
         box.addItem(_tr("Original only (no translation)"), ORIGINAL_ONLY)
@@ -286,6 +330,9 @@ class LanguagesPanel(Panel):
     def refresh(self) -> None:
         value = self.session.value
         self.spoken.set_value(value.spoken)
+        self.mandarin_script.set_value(value.traditional)
+        # only where Mandarin can be heard: Detect, or Mandarin named
+        self.mandarin_row.setHidden(value.spoken not in (None, "zh"))
         if self.translate_live is not None:
             self.translate_live.set_quietly(value.translate_live)
         if not self.hints.hasFocus():
@@ -331,12 +378,13 @@ class LanguagesPanel(Panel):
                 )
             )
         for target in in_use:
-            box = QComboBox()
+            box = Combo()
             box.setObjectName(f"languages.second.{target}")
             box.setAccessibleName(
-                _tr("Lines already in {language} are translated into").format(
-                    language=language_name(target)
-                )
+                _tr(
+                    "Caption windows translating into {language} - when someone already "
+                    "speaks {language}, also translate into"
+                ).format(language=language_name(target))
             )
             box.addItem(_tr("None"), None)
             for code in target_languages():
@@ -352,9 +400,13 @@ class LanguagesPanel(Panel):
             row.setSpacing(3)
             row.addWidget(
                 label(
-                    _tr("Lines already in {language} are translated into:").format(
-                        language=language_name(target)
-                    ),
+                    # the user, 2026-11-17: "Why english? what if you're
+                    # targetting chinese translation?" - each row is the
+                    # windows translating into its language (465)
+                    _tr(
+                        "Caption windows translating into {language} - when someone "
+                        "already speaks {language}, also translate into:"
+                    ).format(language=language_name(target)),
                     "Dim",
                     wrap=True,
                 )
@@ -363,11 +415,11 @@ class LanguagesPanel(Panel):
             self.second_rows.addWidget(line)
             self.second[target] = box
         # made after the panel: Tab reaches them where they are, under
-        # Spoken language, not after Names and slang
-        before: QWidget = self.spoken.buttons[-1]
-        for box in self.second.values():
-            QWidget.setTabOrder(before, box)
-            before = box
+        # Spoken language and Show Mandarin in, not after Names and slang
+        before: QWidget = self.mandarin_script.buttons[-1]
+        for second in self.second.values():
+            QWidget.setTabOrder(before, second)
+            before = second
 
 
 # -- Timing ----------------------------------------------------------------------------
@@ -425,7 +477,7 @@ class TimingPanel(Panel):
             self.preview_at,
         )
         self.add(self.preview)
-        self.interval = QComboBox()
+        self.interval = Combo()
         self.interval.setObjectName("timing.live_interval")
         self.interval.setAccessibleName(_tr("Live updates every"))
         self.interval.setMinimumWidth(style.px(120))
@@ -466,7 +518,7 @@ class TimingPanel(Panel):
             self.translate_live = self.translate_row.switch
             self.translate_live.toggled.connect(languages.set_translate_live)
             self.add(self.translate_row)
-        self.wait = QComboBox()
+        self.wait = Combo()
         self.wait.setObjectName("timing.max_wait")
         self.wait.setAccessibleName(_tr("Longest wait for text"))
         self.wait.setMinimumWidth(style.px(120))
@@ -482,6 +534,29 @@ class TimingPanel(Panel):
             _left(self.wait),
         )
         self.add(self.wait_row)
+        self.settle = Combo()
+        self.settle.setObjectName("timing.settle_after")
+        self.settle.setAccessibleName(_tr("Text can still change for"))
+        self.settle.setMinimumWidth(style.px(120))
+        self._settles: list[float] = []
+        self.settle.currentIndexChanged.connect(self._settle_chosen)
+        # what each choice costs: said in words, so the choice is an informed
+        # one - the figures (309, read speech only) stay in decision 0099, as
+        # no accuracy figure is said that polyglotic-hq hasn't cleared (330).
+        # Shown in every timing, Steady too: its dim line at the longest wait
+        # and a short caption joined to the next are heard again, and this
+        # decides how much of them stays (core.listening.settling).
+        self.settle_row = Row(
+            _tr("Text can still change for"),
+            _tr(
+                "How long words on screen may still be corrected as more is "
+                "heard. Shorter: fewer words change while you read, and more "
+                "mistakes stay as first heard - most of all when Live updates "
+                "come faster than every second."
+            ),
+            _left(self.settle),
+        )
+        self.add(self.settle_row)
         if languages is not None:
             self.bind(view, languages)
         else:
@@ -545,6 +620,15 @@ class TimingPanel(Panel):
                 self.wait.addItem(_seconds(seconds), seconds)
         self.wait.setCurrentIndex(waits.index(value.max_wait))
         self.wait.blockSignals(blocked)
+        settles = settle_choices(value.settle_after)
+        blocked = self.settle.blockSignals(True)
+        if settles != self._settles:
+            self._settles = settles
+            self.settle.clear()
+            for seconds in settles:
+                self.settle.addItem(_seconds(seconds), seconds)
+        self.settle.setCurrentIndex(settles.index(value.settle_after))
+        self.settle.blockSignals(blocked)
 
     def _interval_chosen(self, index: int) -> None:
         if 0 <= index < len(self._intervals):
@@ -554,11 +638,15 @@ class TimingPanel(Panel):
         if 0 <= index < len(self._waits):
             self.view.set_max_wait(self._waits[index])
 
+    def _settle_chosen(self, index: int) -> None:
+        if 0 <= index < len(self._settles):
+            self.view.set_settle_after(self._settles[index])
+
 
 # -- Look ------------------------------------------------------------------------------
 
 
-class FontBox(QComboBox):
+class FontBox(Combo):
     """The fonts on this PC - listed only when first opened (there can be
     hundreds), so the panel opens at once."""
 
@@ -638,14 +726,16 @@ class LookPanel(_LookGroup):
         notes: bool = False,
         parent: QWidget | None = None,
         preview: bool = False,
+        languages: LanguagesView | None = None,
     ) -> None:
-        """`preview`: the live preview at its top (Settings > Captions)."""
+        """`preview`: the live preview at its top (Settings > Captions), in
+        the characters `languages` shows Mandarin in (polyglotic-hq 400)."""
         super().__init__(_tr("Look"), view, notes, _tr("Every caption window."), parent)
         value = view.value
 
         self.preview: CaptionPreview | None = None
         if preview:
-            self.preview = CaptionPreview(view)
+            self.preview = CaptionPreview(view, languages=languages)
             self.add(self.preview)
         self.presets = PresetTiles()
         self.presets.setObjectName("look.presets")
@@ -696,7 +786,7 @@ class LookPanel(_LookGroup):
         self.background.setObjectName("look.background")
         self.background.setAccessibleName(_tr("Panel: how solid"))
         self.background.setRange(0, 100)
-        self.background.setMinimumWidth(style.px(160))
+        self.background.setMinimumWidth(160)  # its handle doesn't grow with the text
         self.background.setValue(round(value.opacity * 100))
         self.background_shown = label("", "Dim")
         self.background_shown.setMinimumWidth(style.px(40))
@@ -721,9 +811,15 @@ class LookPanel(_LookGroup):
         )
         self._row(
             _tr("Font"),
-            _tr(
-                "Any font on this PC. Chinese and Japanese fall back to a font "
-                "that has them if yours doesn't."
+            pc_or_mac(
+                _tr(
+                    "Any font on this PC. Chinese and Japanese fall back to a font "
+                    "that has them if yours doesn't."
+                ),
+                _tr(
+                    "Any font on this Mac. Chinese and Japanese fall back to a font "
+                    "that has them if yours doesn't."
+                ),
             ),
             _left(self.font_box),
         )
@@ -871,6 +967,22 @@ class WordLinksPanel(_LookGroup):
             ),
             self.link_detail,
         )
+        self.said_in_link_colours = self._switch(
+            "said_in_link_colours",
+            _tr("Colour linked words in what was said"),
+            _tr("Each word a link joins takes its colour, as its underline has."),
+            view.set_said_in_link_colours,
+        )
+        self.translation_in_link_colours = self._switch(
+            "translation_in_link_colours",
+            _tr("Colour linked words in the translation"),
+            _tr(
+                "Each word a link joins takes its colour. With both on, and pinyin "
+                "in its word link's colour, a word, its pinyin and its translation "
+                "all match."
+            ),
+            view.set_translation_in_link_colours,
+        )
         if learning:
             to_learning = label(
                 _tr("Which words are pointed out as new is on {learning}.").format(
@@ -896,15 +1008,167 @@ class WordLinksPanel(_LookGroup):
         self.link_gap.set_value(value.link_gap)
         self.link_line.setEnabled(underlined)  # On hover draws no underline
         self.link_gap.setEnabled(underlined)
+        linked = value.word_links is not WordLinks.OFF  # no links: nothing to colour
+        self.said_in_link_colours.set_quietly(value.said_in_link_colours)
+        self.said_in_link_colours.setEnabled(linked)
+        self.translation_in_link_colours.set_quietly(value.translation_in_link_colours)
+        self.translation_in_link_colours.setEnabled(linked)
 
 
-class BehaviourPanel(_LookGroup):
-    """How new captions arrive (polyglotic-hq 267, DECISIONS.md #104), and
-    when captions fade."""
+class ReadingLinesPanel(_LookGroup):
+    """Pinyin above Chinese (polyglotic-hq 369, decision 0155) and Jyutping
+    above Cantonese (polyglotic-hq 450, decision 0160): a small syllable
+    over each character, on whichever row is in that language - what was
+    said or its translation - each with its own switch; over which words,
+    how big and in what colour, for both."""
 
     def __init__(
         self, view: LookView, notes: bool = False, parent: QWidget | None = None
     ) -> None:
+        #: Settings > Readings: the card of reading lines over captions - pinyin above Chinese, Jyutping above Cantonese
+        super().__init__(_tr("Readings"), view, notes, parent=parent)
+        value = view.value
+        self.chinese = self._switch(
+            "reading_zh",
+            _tr("Pinyin above Chinese"),
+            _tr(
+                "A small syllable over each Chinese character, in what was said "
+                "and in translations into Chinese. It isn't part of the text: "
+                "copying and looking up words work as before."
+            ),
+            lambda on: view.set_reading_line("zh", on),
+        )
+        self.reading_system = Segmented(
+            [
+                (ReadingSystem.PINYIN, _tr("Pinyin")),
+                (ReadingSystem.ZHUYIN, _tr("Zhuyin")),
+            ],
+            value.reading_system,
+        )
+        self.reading_system.setObjectName("look.reading_system")
+        self.reading_system.changed.connect(
+            lambda v: view.set_reading_system(ReadingSystem(v))
+        )
+        self._row(
+            _tr("Readings above Chinese"),
+            _tr(
+                "Zhuyin (bopomofo, ㄅㄆㄇㄈ) is how readers in Taiwan learn the sounds: "
+                "the same readings as pinyin, in its symbols and tone marks."
+            ),
+            self.reading_system,
+        )
+        self.cantonese = self._switch(
+            "reading_yue",
+            _tr("Jyutping above Cantonese"),
+            _tr(
+                "A small syllable over each Cantonese character, its tone as a "
+                "raised number (hai⁶), from the Cantonese dictionary - once you "
+                "learn Cantonese and its dictionary is here."
+            ),
+            lambda on: view.set_reading_line("yue", on),
+        )
+        self.reading_over = Segmented(
+            [(False, _tr("Every word")), (True, _tr("Past what you know"))],
+            value.reading_past,
+        )
+        self.reading_over.setObjectName("look.reading_past")
+        self.reading_over.changed.connect(lambda v: view.set_reading_past(bool(v)))
+        self._row(
+            _tr("Readings over"),
+            _tr(
+                "Past what you know: only over the words past your known line "
+                "on Learning, the ones word links point out. Less to read as you learn."
+            ),
+            self.reading_over,
+        )
+        self.reading_size = Segmented(
+            [
+                (ReadingSize.SMALL, _tr("Small")),
+                (ReadingSize.MEDIUM, _tr("Medium")),
+            ],
+            value.reading_size,
+        )
+        self.reading_size.setObjectName("look.reading_size")
+        self.reading_size.changed.connect(
+            lambda v: view.set_reading_size(ReadingSize(v))
+        )
+        self._row(
+            _tr("Reading size"),
+            _tr(
+                "Beside the characters' own size. Medium reads better in a small "
+                "window."
+            ),
+            self.reading_size,
+        )
+        self.reading_colour = Segmented(
+            [
+                (ReadingColour.SAME, _tr("Same as its line")),
+                (ReadingColour.LINK, _tr("Its word link's colour")),
+                (ReadingColour.CUSTOM, _tr("Custom")),
+            ],
+            value.reading_colour,
+        )
+        self.reading_colour.setObjectName("look.reading_colour")
+        self.reading_colour.changed.connect(
+            lambda v: view.set_reading_colour(ReadingColour(v))
+        )
+        self._row(
+            _tr("Reading colour"),
+            _tr(
+                "Its word link's colour: a reading takes the colour of its "
+                "word's link, where one joins it. Word links can colour the "
+                "linked words too."
+            ),
+            self.reading_colour,
+        )
+        self.reading_custom = ExactColour(
+            COLOUR_CHOICES["reading"],
+            value.reading_custom,
+            "look.reading_custom",
+            _tr("Reading colour"),
+        )
+        self.reading_custom.chosen.connect(view.set_reading_custom)
+        self.custom_row = self._row(
+            _tr("Custom reading colour"),
+            _tr("The one colour readings are drawn in, over any line."),
+            self.reading_custom,
+        )
+        self.bind(view)
+        self.refresh()
+
+    def refresh(self) -> None:
+        value = self.view.value
+        chinese = "zh" in value.reading_lines
+        self.chinese.set_quietly(chinese)
+        self.cantonese.set_quietly("yue" in value.reading_lines)
+        on = bool(value.reading_lines)  # the rest are both's
+        self.reading_size.set_value(value.reading_size)
+        self.reading_size.setEnabled(on)
+        self.reading_over.set_value(value.reading_past)
+        self.reading_over.setEnabled(on)
+        self.reading_system.set_value(value.reading_system)
+        self.reading_system.setEnabled(chinese)
+        self.reading_colour.set_value(value.reading_colour)
+        self.reading_colour.setEnabled(on)
+        self.reading_custom.show_colour(value.reading_custom)
+        self.custom_row.setVisible(value.reading_colour is ReadingColour.CUSTOM)
+        self.reading_custom.setEnabled(on)
+
+
+class BehaviourPanel(_LookGroup):
+    """How new captions arrive (polyglotic-hq 267, DECISIONS.md #104), when
+    captions fade, and - in Settings - what a hidden window does (335)."""
+
+    def __init__(
+        self,
+        view: LookView,
+        notes: bool = False,
+        parent: QWidget | None = None,
+        hidden_windows: bool = False,
+    ) -> None:
+        """`hidden_windows`: how long a hidden window listens, and whether
+        it's shown when speech starts - Settings > Captions only: they're
+        every window's, not a transcript's (its narrow rail shows the rest)."""
         super().__init__(_tr("Behaviour"), view, notes, parent=parent)
         value = view.value
         self.arrival = Segmented(
@@ -918,9 +1182,15 @@ class BehaviourPanel(_LookGroup):
         self.arrival.changed.connect(view.set_arrival)
         self._row(
             _tr("New captions"),
-            _tr(
-                "Slide in: a new caption rises into place from below - not while "
-                "the PC's animation effects are off. Appear: nothing moves."
+            pc_or_mac(
+                _tr(
+                    "Slide in: a new caption rises into place from below - not while "
+                    "the PC's animation effects are off. Appear: nothing moves."
+                ),
+                _tr(
+                    "Slide in: a new caption rises into place from below - not while "
+                    "the Mac's animation effects are off. Appear: nothing moves."
+                ),
             ),
             self.arrival,
         )
@@ -938,6 +1208,36 @@ class BehaviourPanel(_LookGroup):
             ),
             self.fade,
         )
+        self.pause_hidden: Segmented | None = None
+        self.show_on_speech: SwitchButton | None = None
+        if hidden_windows:
+            self.pause_hidden = Segmented(
+                [(v, _minutes(v)) for v in PAUSE_CHOICES], value.pause_hidden_after
+            )
+            self.pause_hidden.setObjectName("look.pause_hidden_after")
+            self.pause_hidden.changed.connect(view.set_pause_hidden_after)
+            self._row(
+                _tr("Stop listening when hidden"),
+                _tr(
+                    "A hidden caption window stops listening after this long, so "
+                    "nothing more of its app is sent. Showing it starts it again."
+                ),
+                self.pause_hidden,
+            )
+            self.show_on_speech = self._switch(
+                "show_on_speech",
+                _tr("Show a hidden caption window when speech starts"),
+                pc_or_mac(
+                    _tr(
+                        "Off: it stays hidden, and the tray says it's still captioning."
+                    ),
+                    _tr(
+                        "Off: it stays hidden, and the menu bar's icon says it's still "
+                        "captioning."
+                    ),
+                ),
+                view.set_show_on_speech,
+            )
         self.bind(view)
         self.refresh()
 
@@ -945,6 +1245,10 @@ class BehaviourPanel(_LookGroup):
         value = self.view.value
         self.arrival.set_value(value.arrival.value)
         self.fade.set_value(value.fade_after)
+        if self.pause_hidden is not None:
+            self.pause_hidden.set_value(value.pause_hidden_after)
+        if self.show_on_speech is not None:
+            self.show_on_speech.set_quietly(value.show_on_speech)
 
 
 class ResetCard(Card):
@@ -953,7 +1257,7 @@ class ResetCard(Card):
 
     def __init__(self, view: LookView, parent: QWidget | None = None) -> None:
         super().__init__(_tr("Reset"), parent=parent)
-        self.reset = QPushButton(_tr("Reset the look to Polyglotic's defaults"))
+        self.reset = WrapButton(_tr("Reset the look to Polyglotic's defaults"))
         self.reset.setObjectName("look.reset")
         self.reset.setToolTip(
             _tr(

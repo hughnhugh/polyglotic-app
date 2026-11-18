@@ -14,8 +14,9 @@ import pytest
 if sys.platform != "win32":
     pytest.skip("Windows only", allow_module_level=True)
 
-from polyglotic_desktop.platform.windows import capture, system
+from polyglotic_desktop.platform.windows import apps, capture, system
 from polyglotic_desktop.platform.windows.apps import (
+    WindowsAppList,
     app_peak,
     in_tree,
     own_name,
@@ -28,7 +29,7 @@ from polyglotic_desktop.platform.windows.capture import (
     wanted_device,
 )
 from polyglotic_desktop.platform.windows.categories import category_of, known_name
-from polyglotic_desktop.platform.windows.devices import outputs_playing
+from polyglotic_desktop.platform.windows.devices import AudioDevice, outputs_playing
 from polyglotic_desktop.ports.capture import (
     AppCaptureSupport,
     PlayingApp,
@@ -180,6 +181,36 @@ def test_top_process_climbs_only_through_the_same_executable() -> None:
 
 def test_top_process_survives_a_loop_of_reused_ids() -> None:
     assert top_process(5, {5: (6, "a.exe"), 6: (5, "a.exe")}) in (5, 6)
+
+
+def test_polyglotic_never_lists_itself_or_another_copy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """368: its own sample or a word's sound made it "Polyglotic - playing"
+    under Add an app, as did a preview install beside it. Neither is an app
+    to caption: this copy (from source, Python and its child) and any
+    packed copy (Polyglotic.exe) are left out; another Python app isn't."""
+    processes = {
+        1: (0, "explorer.exe"),
+        10: (1, "python.exe"),  # this copy, from source
+        11: (10, "python.exe"),  # its child, whose session plays the sample
+        20: (1, "Polyglotic.exe"),  # a preview install
+        30: (1, "vlc.exe"),
+        40: (1, "python.exe"),  # someone else's Python app
+    }
+    sessions = [(11, True), (20, True), (30, True), (40, False)]
+    monkeypatch.setattr(apps, "_processes", lambda: processes)
+    monkeypatch.setattr(
+        apps, "active_devices", lambda flow: [AudioDevice("out", "Speakers")]
+    )
+    monkeypatch.setattr(apps, "_sessions", lambda device_id: sessions)
+    monkeypatch.setattr(apps, "_path", lambda pid: None)
+    monkeypatch.setattr(os, "getpid", lambda: 11)
+    found = WindowsAppList().playing_apps()
+    assert [(a.process_id, a.name) for a in found] == [
+        (30, "vlc.exe"),
+        (40, "python.exe"),
+    ]
 
 
 class _FakeStream:

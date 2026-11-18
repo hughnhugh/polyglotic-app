@@ -94,6 +94,20 @@ def _read_in(tag: str) -> str:
     return _SAME.get(base, base)
 
 
+def reads_traditional(interface: str, windows_languages: Sequence[str]) -> bool:
+    """Whether this PC reads Chinese in Traditional characters: its
+    interface is in Traditional Chinese, or else the first Chinese of
+    Windows' display languages is Taiwan's, Hong Kong's or Macau's - what
+    "Show Mandarin in" starts at (polyglotic-hq 375)."""
+    if interface in ("zh_TW", "zh_CN"):
+        return interface == "zh_TW"
+    for tag in windows_languages:
+        tag = tag.replace("_", "-").lower()
+        if tag == "zh" or tag.startswith("zh-"):
+            return tag.startswith(_TRADITIONAL)
+    return False
+
+
 def picker(offered: Mapping[str, str] = OFFERED) -> list[tuple[str, str]]:
     """Each language offered, (code, own name), as the picker lists them:
     by own name with accents set aside ("Español" among the E's), so Latin

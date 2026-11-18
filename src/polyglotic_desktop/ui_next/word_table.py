@@ -9,6 +9,14 @@ window's theme (`style.current()`), the text elided to its cell.
 Click a word (or its meaning) to look it up, an action to do it; with the
 keyboard, the arrows move between cells and Enter or Space does what a
 click would. What's clicked is said (`acted`); the page does it.
+
+**Several words at once** (polyglotic-hq 342; the user, 2026-11-15:
+"should be a faster way to multiselect known words"): Shift-click a second
+row to pick every row between it and the last one clicked, Ctrl-click to
+add or take away one - neither does the cell's action; with the keyboard,
+Shift and the arrows, Ctrl+Space and Ctrl+A; Esc lets them go. The rows
+picked are shaded, and with two or more the page shows a `SelectionBar`
+with what can be done to them all.
 """
 
 from collections.abc import Sequence
@@ -18,6 +26,7 @@ from enum import StrEnum
 from PySide6.QtCore import (
     QAbstractTableModel,
     QEvent,
+    QItemSelection,
     QModelIndex,
     QPersistentModelIndex,
     QRect,
@@ -38,16 +47,21 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
+    QHBoxLayout,
     QHeaderView,
+    QLabel,
+    QPushButton,
     QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
     QTableView,
+    QWidget,
 )
 
 from polyglotic_desktop.core.learning.saved_words import Category
 from polyglotic_desktop.core.shared import EntryId, WordStatus
 from polyglotic_desktop.ui_next import fonts, style
+from polyglotic_desktop.ui_next.controls import wrapped
 from polyglotic_desktop.ui_next.views.words import WordRows, WordText
 
 ROW = 46
@@ -57,6 +71,15 @@ WORD_WIDTH = 150
 NARROW_WORD_WIDTH = 116
 WIDE_TABLE = 600
 """A table narrower than this has the narrower word column."""
+LEAST_MEANING = 56
+LEAST_WORD = 72
+LEAST_CATEGORY = 72
+"""Where a table is too narrow for its columns - a large text size at the
+main window's narrowest - the word column, then the category's, narrow to
+these (their words elided), then Add to deck's and Known's to their
+longest word (the button's words on two lines), so the meaning keeps at
+least LEAST_MEANING and nothing goes past the table's edge (polyglotic-hq
+354)."""
 HEADWORD_PX = 17
 CJK_FAMILIES = [
     "Microsoft YaHei UI",
@@ -73,6 +96,11 @@ ARROW = "▾"
 
 def _tr(text: str) -> str:
     return QApplication.translate("Words", text)
+
+
+def _trn(text: str, n: int) -> str:
+    """A count's text in the language's form for `n` (decision 0034)."""
+    return QApplication.translate("Words", text, None, n)
 
 
 def _known_button() -> str:
@@ -240,6 +268,10 @@ class WordDelegate(QStyledItemDelegate):
         focused = self.table.hasFocus() and self.table.currentIndex() == index
         base = QFont(self.table.font())
         painter.save()
+        if self.table.picked(index.row()):  # one of several picked (342)
+            shade = QColor(style.current()["ACCENT"])
+            shade.setAlphaF(0.18)
+            painter.fillRect(rect, shade)
         if column in ACTIONS:
             self._button(painter, rect, model.shown(index), column, hovered, focused)
         elif column is Column.WORD:
@@ -349,6 +381,11 @@ class WordDelegate(QStyledItemDelegate):
         else:
             width = min(rect.width() - 8, metrics.horizontalAdvance(shown) + BUTTON_PAD)
         high = style.px(28)
+        two = not menu and metrics.horizontalAdvance(shown) > width - BUTTON_PAD
+        if two:  # a narrow column (`fitted`): its words on two lines, not cut
+            shown = wrapped(shown, font, width - BUTTON_PAD)
+            lines = shown.count("\n") + 1
+            high = min(rect.height() - 2, max(high, lines * metrics.height() + 8))
         button = QRect(
             rect.right() - width - 4, rect.center().y() - high // 2, width, high
         )
@@ -370,7 +407,9 @@ class WordDelegate(QStyledItemDelegate):
             inside,
             Qt.AlignmentFlag.AlignVCenter
             | (Qt.AlignmentFlag.AlignLeft if menu else Qt.AlignmentFlag.AlignHCenter),
-            metrics.elidedText(shown, Qt.TextElideMode.ElideRight, inside.width()),
+            shown
+            if two
+            else metrics.elidedText(shown, Qt.TextElideMode.ElideRight, inside.width()),
         )
 
 
@@ -378,6 +417,28 @@ def _action_width(texts: Sequence[str], font: QFont, more: str = "") -> int:
     """An action column: its widest words, the button's padding, a gap."""
     metrics = QFontMetrics(_font(font, 13))
     return max(metrics.horizontalAdvance(t + more) for t in texts) + BUTTON_PAD + 12
+
+
+TWO_LINES = {Column.ADD: lambda: _tr("Add to deck"), Column.KNOWN: _known_button}
+"""The actions whose button's words go onto two lines in a narrow column."""
+
+
+def fitted(
+    widths: dict[Column, int], least: dict[Column, int], room: int
+) -> dict[Column, int]:
+    """`widths` (every column but the meaning's) narrowed to leave the
+    meaning at least LEAST_MEANING of `room`: the word column first, then
+    the category's, then the two-line actions' - each down to its `least`.
+    Where there's room, as given."""
+    fitted = dict(widths)
+    over = sum(fitted.values()) + style.px(LEAST_MEANING) - room
+    for column in (Column.WORD, Column.CATEGORY, *TWO_LINES):
+        if over <= 0 or column not in fitted:
+            continue
+        cut = min(over, max(0, fitted[column] - least.get(column, fitted[column])))
+        fitted[column] -= cut
+        over -= cut
+    return fitted
 
 
 class WordTable(QTableView):
@@ -388,6 +449,8 @@ class WordTable(QTableView):
 
     acted = Signal(str, str, QRect)
     """(the column, the entry ID, the cell on the screen)."""
+    picked_changed = Signal(int)
+    """How many rows are picked now (342): a bar shows from two."""
 
     def __init__(
         self, name: str, columns: Sequence[Column], rows: WordRows, chinese: bool
@@ -405,7 +468,9 @@ class WordTable(QTableView):
         self.setShowGrid(False)
         self.setWordWrap(False)
         self.setFrameShape(QTableView.Shape.NoFrame)
-        self.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+        # rows picked together (342): Shift and Ctrl, by mouse or keyboard
+        self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.setTabKeyNavigation(False)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -413,7 +478,11 @@ class WordTable(QTableView):
         self.setVerticalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
         self.setMouseTracking(True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setStyleSheet("QTableView { background: transparent; border: none; }")
+        # rows picked are shaded by the delegate, not Qt's own highlight
+        self.setStyleSheet(
+            "QTableView { background: transparent; border: none;"
+            " selection-background-color: transparent; }"
+        )
         header = self.horizontalHeader()
         header.setMinimumSectionSize(36)
         for i, column in enumerate(self.words.columns):
@@ -425,15 +494,25 @@ class WordTable(QTableView):
             )
         self._size_columns()
         self.clicked.connect(self._clicked)
+        self.selectionModel().selectionChanged.connect(self._picking)
         self.fit()
 
     def _size_columns(self) -> None:
         """Each action column as wide as its words in the font the window's
-        stylesheet gives the table (known once it's polished)."""
+        stylesheet gives the table (known once it's polished) - the word
+        and category columns narrower where the table has no room for
+        them all (`fitted`)."""
         header = self.horizontalHeader()
+        widths: dict[Column, int] = {
+            column: self._width(column)
+            for column in self.words.columns
+            if column is not Column.MEANING
+        }
+        if Column.MEANING in self.words.columns:
+            widths = fitted(widths, self._least(), self.width())
         for i, column in enumerate(self.words.columns):
-            if column is not Column.MEANING:
-                header.resizeSection(i, self._width(column))
+            if column in widths:
+                header.resizeSection(i, widths[column])
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
@@ -448,9 +527,8 @@ class WordTable(QTableView):
         super().showEvent(event)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
-        wide = event.size().width() >= style.px(WIDE_TABLE)
-        if wide != (event.oldSize().width() >= style.px(WIDE_TABLE)):
-            self._size_columns()
+        if event.size().width() != event.oldSize().width():
+            self._size_columns()  # the word column's width follows the table's
         super().resizeEvent(event)
 
     def _width(self, column: Column) -> int:
@@ -469,8 +547,18 @@ class WordTable(QTableView):
         return style.px(48)  # Remove: ✕
 
     def set_items(self, items: list[Item]) -> None:
+        """The rows. Words picked stay picked where they're still listed:
+        the list is shown again as captions come in, and a learner picking
+        words shouldn't lose them to it (342)."""
+        picked = set(self.picked_entries())
         self.words.set_items(items)
         self.fit()
+        if picked:
+            model, flags = self.selectionModel(), self.selectionModel().SelectionFlag
+            for row, item in enumerate(items):
+                if item.entry_id in picked:
+                    model.select(self.words.index(row, 0), flags.Select | flags.Rows)
+        self.picked_changed.emit(len(self.selectionModel().selectedRows()))
 
     def fit(self) -> None:
         """As tall as its rows: the page scrolls, never the table."""
@@ -480,11 +568,55 @@ class WordTable(QTableView):
     def sizeHint(self) -> QSize:
         return QSize(style.px(320), self.height())
 
+    def _least(self) -> dict[Column, int]:
+        """Each column but the meaning's at its narrowest (`fitted`)."""
+        least: dict[Column, int] = {}
+        for column in self.words.columns:
+            width = self._width(column)
+            if column is Column.WORD:
+                width = min(width, style.px(LEAST_WORD))
+            elif column is Column.CATEGORY:
+                width = min(width, style.px(LEAST_CATEGORY))
+            elif column in TWO_LINES:
+                words = TWO_LINES[column]().split()
+                width = min(width, _action_width(words, self.font()))
+            if column is not Column.MEANING:
+                least[column] = width
+        return least
+
     def minimumSizeHint(self) -> QSize:
-        return QSize(style.px(240), self.height())
+        """Its columns at their narrowest (`fitted`), and never under 240."""
+        width = sum(self._least().values()) + style.px(LEAST_MEANING)
+        return QSize(max(style.px(240), width), self.height())
 
     def _clicked(self, index: QModelIndex) -> None:
+        held = QApplication.keyboardModifiers()
+        if held & (
+            Qt.KeyboardModifier.ShiftModifier | Qt.KeyboardModifier.ControlModifier
+        ):
+            return  # picking rows, not doing the cell's action (342)
         self.act(index)
+
+    # -- rows picked together (342) ---------------------------------------------------
+
+    def picked(self, row: int) -> bool:
+        """Whether row `row` is one of two or more picked: one alone is
+        only the row last clicked, and isn't shaded."""
+        model = self.selectionModel()
+        return model.isRowSelected(row) and len(model.selectedRows()) > 1
+
+    def picked_entries(self) -> list[EntryId]:
+        """The entries of the rows picked, top to bottom."""
+        rows = sorted(i.row() for i in self.selectionModel().selectedRows())
+        return [self.words.items[r].entry_id for r in rows if r < len(self.words.items)]
+
+    def let_go(self) -> None:
+        """No row picked any more."""
+        self.clearSelection()
+
+    def _picking(self, _new: QItemSelection, _old: QItemSelection) -> None:
+        self.viewport().update()
+        self.picked_changed.emit(len(self.selectionModel().selectedRows()))
 
     def act(self, index: QModelIndex) -> None:
         """What a click on cell `index` does: said by `acted`."""
@@ -500,8 +632,22 @@ class WordTable(QTableView):
         self.acted.emit(column.value, str(entry), on_screen)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
+        held = event.modifiers()
+        ctrl = bool(held & Qt.KeyboardModifier.ControlModifier)
+        if event.key() == Qt.Key.Key_Space and ctrl:  # pick or let go of a row
+            current = self.currentIndex()
+            if current.isValid():
+                flags = (
+                    self.selectionModel().SelectionFlag.Toggle
+                    | self.selectionModel().SelectionFlag.Rows
+                )
+                self.selectionModel().select(current, flags)
+            return
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Space):
             self.act(self.currentIndex())
+            return
+        if event.key() == Qt.Key.Key_Escape and self.selectionModel().hasSelection():
+            self.let_go()
             return
         super().keyPressEvent(event)
 
@@ -515,3 +661,49 @@ class WordTable(QTableView):
             if item.entry_id == entry_id:
                 return item
         return None
+
+
+class SelectionBar(QWidget):
+    """What can be done to several words picked in a list at once (342):
+    how many, a button for each action, and "Clear". Hidden until two or
+    more are picked; the page gives it the actions that make sense for its
+    list and does them (`chosen`)."""
+
+    chosen = Signal(str)
+    """An action's key, as given to `add`."""
+
+    def __init__(self, name: str, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setObjectName(name)
+        self.row = QHBoxLayout(self)
+        self.row.setContentsMargins(0, 0, 0, 0)
+        self.row.setSpacing(8)
+        self.count = QLabel(self)
+        self.count.setObjectName("Dim")
+        self.row.addWidget(self.count)
+        self.row.addStretch(1)
+        self.buttons: dict[str, QPushButton] = {}
+        self.clear = self._button("", _tr("Clear"), "ghost")
+        self.row.addWidget(self.clear)
+        self.hide()
+
+    def add(self, key: str, text: str, kind: str = "") -> QPushButton:
+        """An action, before "Clear"."""
+        button = self._button(key, text, kind)
+        self.row.insertWidget(self.row.count() - 1, button)
+        return button
+
+    def _button(self, key: str, text: str, kind: str) -> QPushButton:
+        button = QPushButton(text, self)
+        button.setObjectName(f"{self.objectName()}.{key or 'clear'}")
+        button.setCursor(Qt.CursorShape.PointingHandCursor)
+        if kind:
+            button.setProperty("kind", kind)
+        button.clicked.connect(lambda _=False, k=key: self.chosen.emit(k))
+        self.buttons[key] = button
+        return button
+
+    def show_count(self, count: int) -> None:
+        """`count` words picked: said, and the bar shown from two."""
+        self.count.setText(_trn("%Ln word(s) picked", count))
+        self.setVisible(count > 1)

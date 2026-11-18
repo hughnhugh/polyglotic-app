@@ -1,6 +1,6 @@
 """W2, the transcript window, offscreen (`ui_next.transcript_window`) and
 the transcripts kept per app (`ui_next.transcripts`): the strip, the
-list, search, Back to live, "Looks wrong?", copy and save, the rail and
+list, search, Back to live (no "Looks wrong?": 339), copy and save, the rail and
 its popover, and following the caption windows."""
 
 import csv
@@ -13,14 +13,20 @@ import pytest
 from PySide6.QtCore import QEvent, QPointF, QRect, Qt
 from PySide6.QtGui import QGuiApplication, QKeyEvent, QMouseEvent, QPalette
 from PySide6.QtWidgets import QApplication, QLabel, QToolButton, QWidget
-from tests.ui_next.made_up import EN, OTHER_APP, finished_updates
+from tests.ui_next.made_up import EN, OTHER_APP, ZH, finished_updates
 
+from polyglotic_desktop.core.listening.captions import (
+    CaptionKind,
+    CaptionUpdate,
+    Clause,
+)
 from polyglotic_desktop.core.listening.recheck import RecheckOutcome, RecheckResult
 from polyglotic_desktop.core.listening.sources import SourceLabel
-from polyglotic_desktop.core.listening.timing import CaptionMode
+from polyglotic_desktop.core.listening.timing import CaptionId, CaptionMode
 from polyglotic_desktop.ui.recorded_captions import APP, MIC
 from polyglotic_desktop.ui_next import style
 from polyglotic_desktop.ui_next.caption_windows import CaptionWindows
+from polyglotic_desktop.ui_next.languages import show_mandarin_in_traditional
 from polyglotic_desktop.ui_next.panels import LanguagesPanel, TimingPanel
 from polyglotic_desktop.ui_next.transcript_window import (
     FOLD_BELOW,
@@ -303,18 +309,20 @@ def test_below_700_px_the_rail_is_a_popover(
     assert window.rail.isVisible()
 
 
-def test_looks_wrong_on_a_hovered_line(
+def test_no_looks_wrong_on_a_hovered_line(
     window: TranscriptWindow, qapp: QApplication
 ) -> None:
-    flagged: list[str] = []
-    window.looks_wrong.connect(flagged.append)
-    line, rect = window.list.placed[-1]
-    window.list.flagged = line
+    """ "Looks wrong?" left the interface (polyglotic-hq 339)."""
+    _, rect = window.list.placed[-1]
+    hover = QMouseEvent(
+        QMouseEvent.Type.MouseMove, rect.center(), rect.center(),
+        Qt.MouseButton.NoButton, Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier,
+    )  # fmt: skip
+    window.list.mouseMoveEvent(hover)
     window.list.repaint()
-    assert window.list.flag_rect is not None
-    click(window.list, window.list.flag_rect.center())
-    assert flagged == [str(line.caption_id)]
-    assert rect.top() >= 0
+    assert not hasattr(window, "looks_wrong") and not hasattr(window.list, "flagged")
+    assert window.list.toolTip() == ""
 
 
 def test_a_checked_line_says_so(window: TranscriptWindow) -> None:
@@ -385,6 +393,50 @@ def test_saved_as_text_srt_or_csv(window: TranscriptWindow, tmp_path: Path) -> N
     assert (tmp_path / "t.txt").read_text(encoding="utf-8").count("English:") == 10
     assert (tmp_path / "t.srt").read_text(encoding="utf-8").startswith("1\n")
     assert (tmp_path / "t.csv").read_bytes().startswith(b"\xef\xbb\xbf")
+
+
+def test_a_second_language_line_is_saved_and_copied_under_its_language(
+    qapp: QApplication, tmp_path: Path
+) -> None:
+    """English heard in a window into English, Chinese its second language:
+    the server keeps the Chinese line under English, and Save and Copy put
+    it in the English column, the Chinese one empty (polyglotic-hq 432)."""
+    transcript = Transcript(APP, EN, second=ZH, mic=MIC)
+    said = CaptionUpdate(
+        CaptionId("c1"),
+        APP,
+        CaptionKind.FINISHED,
+        clauses=(Clause("See you tomorrow.", translations={EN: "明天见。"}),),
+        language=EN,
+        languages_heard=(EN,),
+    )
+    transcript.apply(said)
+    shown = TranscriptWindow("Discord.exe", transcript, DISCORD, TranscriptChoices())
+    shown.show()
+    qapp.processEvents()
+    try:
+        shown.save_to(tmp_path / "t.csv")
+        text = (tmp_path / "t.csv").read_text(encoding="utf-8-sig")
+        [row] = list(csv.DictReader(io.StringIO(text)))
+        assert (row["en"], row["zh"]) == ("", "明天见。")
+        assert "Chinese (Simplified): 明天见。" in shown.text()
+        assert "English:" not in shown.text()
+        # "Show Mandarin in: Traditional": its lines named by it (433)
+        show_mandarin_in_traditional(True)
+        try:
+            assert "Chinese (Traditional): 明天见。" in shown.text()
+            shown.save_to(tmp_path / "t.txt")
+            saved = (tmp_path / "t.txt").read_text(encoding="utf-8-sig")
+            assert "Chinese (Traditional):" in saved and "Simplified" not in saved
+        finally:
+            show_mandarin_in_traditional(False)
+        shown.save_to(tmp_path / "t.srt")
+        srt = (tmp_path / "t.srt").read_text(encoding="utf-8")
+        assert "See you tomorrow.\n明天见。" in srt
+        shown._copy_line(shown.transcript.lines[0].key, "translation")
+        assert QGuiApplication.clipboard().text() == "明天见。"
+    finally:
+        shown.close()
 
 
 def test_a_saved_csv_names_the_app_on_every_row(

@@ -29,6 +29,7 @@ from polyglotic_desktop.ports.consent import Agreement, ConsentChoice
 from polyglotic_desktop.ui.consent import ConsentDialog, agreement_needed
 from polyglotic_desktop.ui.delete_learning import DeleteLearningDialog
 from polyglotic_desktop.ui_next import style
+from polyglotic_desktop.ui_next.os_words import pc_or_mac
 
 SCREENSHOTS = Path(__file__).resolve().parents[2] / "build" / "screenshots"
 
@@ -247,7 +248,10 @@ def test_what_the_service_needs_is_explained_not_asked(qapp: QApplication) -> No
     # why learning data is kept, as the privacy notice says (project 041):
     # saved words and statuses sync; lookups aren't synced, they're kept to
     # learn how people learn
-    assert "saved words and word statuses follow you to another PC" in texts
+    assert (
+        "saved words and word statuses follow you to another "
+        + pc_or_mac("PC", "computer")
+    ) in texts
     assert "your lookups show us how people learn" in texts
     # the server keeps a Windows version only with feedback the user sends
     assert "Windows version" not in texts
@@ -271,16 +275,20 @@ def test_deleting_on_this_pc_is_a_separate_choice_off_until_ticked(
     assert dialog.delete_on_this_pc()
 
 
-def test_deleting_says_the_server_loses_every_language_this_pc_only_one(
+def test_deleting_says_every_language_goes_from_the_server_and_this_pc(
     qapp: QApplication,
 ) -> None:
     # `learning_delete` names no language: the server deletes every
     # language's learning data; this PC's copy is per language (project 043)
-    # and only the open language's file is emptied (project 041).
+    # and every open language's file is emptied (DECISIONS #135, 306) - not
+    # "for the language you're learning now", which with two open was
+    # ambiguous.
     dialog = DeleteLearningDialog()
     texts = " ".join(label.text() for label in dialog.findChildren(QLabel))
     assert "in every language you learn" in texts
-    assert "for the language you're learning now" in dialog.on_this_pc.text()
+    box = dialog.on_this_pc.text()
+    assert "in every language you're learning" in box
+    assert "learning now" not in box
 
 
 def test_usage_statistics_say_which_app_names_are_shared(qapp: QApplication) -> None:
@@ -321,7 +329,8 @@ def test_deleting_says_how_many_copies_set_aside_go_with_it(
     assert dialog.set_aside is not None
     assert dialog.set_aside.text() == (
         "This also deletes the 2 copies of your learning data set aside on this "
-        "PC when it was found damaged."
+        + pc_or_mac("PC", "Mac")
+        + " when it was found damaged."
     )
     one = DeleteLearningDialog(set_aside=1)
     assert one.set_aside is not None and "the 1 copy of" in one.set_aside.text()

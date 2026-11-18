@@ -12,8 +12,13 @@ Runs every state of the new interface (as the gate does), then writes:
 - `sheets/<surface>.png` - a contact sheet: every state of a surface on one
   image, labelled, scaled down (each state's own PNG, full size, is beside
   `judge.md`);
-- `findings.md` - the code checks' findings; `timings.md` - the timings
-  against the budgets; `goldens.md` - the pictures against their goldens.
+- `annotated/<state>.png` - a state's picture with each finding that has a
+  place drawn on it as a numbered box, and the findings listed under it
+  (polyglotic-hq 376: Impeccable's overlay, for a window);
+- `findings.md` - the code checks' findings; `design.md` - the design
+  detector's (Impeccable's rules for Qt, `design.py`); `timings.md` - the
+  timings against the budgets; `goldens.md` - the pictures against their
+  goldens.
 
 Nothing here judges: it lays out what an agent (Claude or Fable) needs to.
 """
@@ -25,9 +30,10 @@ from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import QRect, Qt
-from PySide6.QtGui import QColor, QFont, QImage, QPainter
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QImage, QPainter, QPen
 
-from tools.ui_lab import goldens, lab
+from tools.ui_lab import design, goldens, lab
+from tools.ui_lab.checks import Finding
 from tools.ui_lab.lab import Result, State
 
 CHECKLIST = Path(__file__).resolve().parent / "checklist.md"
@@ -170,12 +176,117 @@ def write(results: list[Result], out: Path) -> None:
         contact_sheet(
             surface_of(members[0].state).title, members, sheets / f"{key}.png"
         )
+    pictures = out / "annotated"
+    pictures.mkdir(parents=True, exist_ok=True)
+    for stale in pictures.glob("*.png"):
+        stale.unlink()
+    for result in results:
+        picture = annotated(result)
+        if picture is not None:
+            picture.save(str(pictures / f"{result.state}.png"))
     (out / "findings.md").write_text(lab.findings_markdown(results), encoding="utf-8")
+    (out / "design.md").write_text(design_markdown(results), encoding="utf-8")
     (out / "timings.md").write_text(lab.timings_markdown(results), encoding="utf-8")
     (out / "goldens.md").write_text(
         lab.goldens_markdown(results) or "No goldens compared.\n", encoding="utf-8"
     )
     (out / "judge.md").write_text(index(groups), encoding="utf-8")
+
+
+def design_markdown(results: list[Result]) -> str:
+    """The design detector's findings on the gated states, new ones marked."""
+    found = [(r.state, f) for r in results if r.gated for f in r.design]
+    return design.markdown(found, design.baseline())
+
+
+# -- a state's picture with its findings drawn on it ----------------------------------
+
+MARK, MARK_INK = "#ff2d95", "#ffffff"
+"""A box's colour and its number's: a pink no window of ours is, so a box
+is never taken for the interface (dark or light)."""
+LEGEND_WIDTH = 640
+"""The narrowest an annotated picture is: its legend's lines stay readable
+under a small window's picture."""
+LEGEND_PX, LEGEND_LINE, LEGEND_PAD = 13, 18, 10
+
+
+def placed(result: Result) -> list[Finding]:
+    """A state's findings, the design detector's then the code checks' (not
+    waived): the order they're numbered in."""
+    return [*result.design, *result.failed_checks()]
+
+
+def annotated(result: Result) -> QImage | None:
+    """The state's picture with each finding that has a place (`Finding.box`)
+    drawn on it as a numbered box, and every finding listed under it by its
+    number - one with no place (a count over a whole window; a window the
+    picture doesn't show) too, without a box. None when the state has no
+    picture or no finding. A finding's words are the checks': never a
+    caption's (`checks._excerpt`)."""
+    found = placed(result)
+    if result.photo is None or not found:
+        return None
+    photo = result.photo
+    font = QFont()
+    font.setPixelSize(LEGEND_PX)
+    width = max(photo.width(), LEGEND_WIDTH)
+    lines: list[tuple[int, str]] = []
+    for number, finding in enumerate(found, start=1):
+        said = f"{number}  {finding.check} - {finding.where}: {finding.detail}"
+        if finding.box is None:
+            said += "  (no place on this picture)"
+        for line in _wrapped(said, QFontMetrics(font), width - 2 * LEGEND_PAD):
+            lines.append((number, line))
+    legend = 2 * LEGEND_PAD + LEGEND_LINE * len(lines)
+    picture = QImage(width, photo.height() + legend, QImage.Format.Format_RGB32)
+    picture.fill(QColor(SHEET))
+    painter = QPainter(picture)
+    painter.drawImage(0, 0, photo)
+    painter.setFont(font)
+    for number, finding in enumerate(found, start=1):
+        if finding.box is not None:
+            _mark(painter, number, QRect(*finding.box), photo.rect())
+    painter.setPen(QColor(INK))
+    y = photo.height() + LEGEND_PAD
+    for _number, line in lines:
+        painter.drawText(
+            QRect(LEGEND_PAD, y, width - 2 * LEGEND_PAD, LEGEND_LINE), 0, line
+        )
+        y += LEGEND_LINE
+    painter.end()
+    return picture
+
+
+def _mark(painter: QPainter, number: int, box: QRect, within: QRect) -> None:
+    """A finding's box, a pixel outside what it found, with its number on a
+    tag at its top left (inside the picture's edges)."""
+    around = box.adjusted(-2, -2, 1, 1).intersected(within.adjusted(0, 0, -1, -1))
+    painter.setPen(QPen(QColor(MARK), 2))
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    painter.drawRect(around)
+    said = str(number)
+    tag = QRect(0, 0, painter.fontMetrics().horizontalAdvance(said) + 8, LEGEND_LINE)
+    tag.moveBottomLeft(around.topLeft())
+    if tag.top() < within.top():  # no room above: inside its top left corner
+        tag.moveTopLeft(around.topLeft())
+    if tag.right() > within.right():
+        tag.moveRight(within.right())
+    painter.fillRect(tag, QColor(MARK))
+    painter.setPen(QColor(MARK_INK))
+    painter.drawText(tag, int(Qt.AlignmentFlag.AlignCenter), said)
+
+
+def _wrapped(text: str, metrics: QFontMetrics, width: int) -> list[str]:
+    """`text` in lines no wider than `width`, broken between words."""
+    lines, line = [], ""
+    for word in text.split(" "):
+        longer = f"{line} {word}" if line else word
+        if line and metrics.horizontalAdvance(longer) > width:
+            lines.append(line)
+            line = f"    {word}"
+        else:
+            line = longer
+    return [*lines, line]
 
 
 # -- the contact sheet ----------------------------------------------------------------
@@ -295,6 +406,8 @@ def index(groups: dict[str, list[Result]]) -> str:
         "",
         (
             "Also here: [findings.md](findings.md) (the code checks),"
+            " [design.md](design.md) (the design detector; each state's findings"
+            " drawn on its picture: `annotated/<state>.png`),"
             " [timings.md](timings.md) (against the budgets), [goldens.md](goldens.md),"
             " and each state's PNG and JSON, full size."
         ),

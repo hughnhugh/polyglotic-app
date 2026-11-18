@@ -103,6 +103,7 @@ from polyglotic_desktop.core.listening.captions import (
     CaptionUpdate,
     Language,
 )
+from polyglotic_desktop.core.listening.maintenance import Maintenance
 from polyglotic_desktop.core.listening.recheck import RecheckResult
 from polyglotic_desktop.core.listening.settings import ListeningSettings
 from polyglotic_desktop.core.listening.sources import Source, SourceId
@@ -127,7 +128,11 @@ from polyglotic_desktop.platform.mic_bleed import (
     survey,
 )
 from polyglotic_desktop.platform.replay import ReplayCapture
-from polyglotic_desktop.platform.speech_detection import SpeechDetector, load_model
+from polyglotic_desktop.platform.speech_detection import (
+    MIC_GAIN_MAX,
+    SpeechDetector,
+    load_model,
+)
 from polyglotic_desktop.platform.speech_pipeline import SpeechPipeline
 from polyglotic_desktop.platform.windows.apps import WindowsAppList
 from polyglotic_desktop.platform.windows.capture import (
@@ -301,7 +306,12 @@ def _pipeline(args: argparse.Namespace, on_ready: Callable[[], None]) -> SpeechP
         live_update_interval=None if args.interval <= 0 else args.interval
     )
     model = load_model()
-    return SpeechPipeline(lambda: SpeechDetector(model), timing, on_ready=on_ready)
+    return SpeechPipeline(
+        lambda: SpeechDetector(model),
+        timing,
+        on_ready=on_ready,
+        new_mic_detector=lambda: SpeechDetector(model, MIC_GAIN_MAX),
+    )
 
 
 def capture(args: argparse.Namespace) -> None:
@@ -438,6 +448,10 @@ class _CaptionView:
 
     def plan_changed(self, plan: protocol.PlanState) -> None:
         self._say(f"[plan: {plan.tier}, {plan.status}]")
+
+    def maintenance_changed(self, window: Maintenance | None) -> None:
+        when = "none" if window is None else f"{window.starts_at:%H:%M}Z"
+        self._say(f"[planned maintenance: {when}]")
 
 
 class _Arrivals:
@@ -750,7 +764,10 @@ def bleed_lines(found: BleedSurvey, outputs: int | None) -> list[str]:
     played = (
         f"{found.played_db:.0f} dBFS; nearly silent in {found.played_silent} of {n}"
     )
-    checked = f"bleed in {found.caught} of {n}; correlation {number(found.correlation)}"
+    checked = (
+        f"bleed in {found.caught} of {n}; correlation {number(found.correlation)};"
+        f" cancelled {number(found.cancelled)}"
+    )
     best = f"{number(found.lag, 1000, 0)} ms late, correlation {number(found.best)}"
     lines = [
         f"stretches of {SURVEY_STRETCH_SEC:.0f}s: {n}",

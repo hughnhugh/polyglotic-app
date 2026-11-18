@@ -17,12 +17,21 @@ hands over), dressed by a stylesheet of its own. Its parts:
   its time, "You" for my speech, the language spoken, "checked by the
   best model" - then what was said and its translation, saved words in
   their category's colour, search matches marked. Follows the newest
-  line until scrolled back ("Back to live · N new"); "Looks wrong?" on a
-  hovered line (today's flow); right-click copies a line. **The lookup:**
+  line until scrolled back ("Back to live · N new"); right-click copies a
+  line - as Copy all
+  writes it, what was said alone, or its translation alone (333).
+  **Selecting** (polyglotic-hq 343): a drag across lines and within them
+  selects what was said and translations as they show (`anchor`, `head`:
+  places in the text, so lines scrolled away stay selected; above or below
+  the list, a drag scrolls); Shift-click extends it; Ctrl+C, Ctrl+A and
+  the right-click menu - Copy, Select all, in place of the line's while
+  something is selected - copy it (`views.transcript.selected_text`).
+  **The lookup:**
   the word under the mouse - by the word split - is drawn softly behind
   and looked up in the card every caption window shares (`lookup_card`,
-  owned by `CaptionWindows`) once the mouse rests; a click pins it
-  (today's transcript: hover to look up, click to keep it open).
+  owned by `CaptionWindows`) once the mouse rests; a click pins it, on
+  release, unless the mouse dragged (today's transcript: hover to look
+  up, click to keep it open).
 - **the settings rail** (`SettingsRail`): slides in from the right and
   narrows the list; below 700 px wide it opens as a popover instead. It
   holds the session's three panels (`ui_next.panels`: Languages - with
@@ -73,6 +82,7 @@ from PySide6.QtGui import (
     QActionGroup,
     QColor,
     QContextMenuEvent,
+    QCursor,
     QFont,
     QFontMetrics,
     QGuiApplication,
@@ -103,20 +113,26 @@ from PySide6.QtWidgets import (
     QScrollBar,
     QSizePolicy,
     QToolButton,
+    QToolTip,
     QVBoxLayout,
     QWidget,
 )
 
 from polyglotic_desktop.core.learning.lookups import LookupContext, lookup_context
-from polyglotic_desktop.core.learning.saved_words import SavedSpan
+from polyglotic_desktop.core.learning.saved_words import Category, SavedSpan
 from polyglotic_desktop.core.learning.vocabulary import Changed
-from polyglotic_desktop.core.listening.display import clause_versions
+from polyglotic_desktop.core.listening.display import RowKind, clause_versions
 from polyglotic_desktop.core.listening.history import Caption
 from polyglotic_desktop.core.listening.sources import SourceLabel
 from polyglotic_desktop.core.listening.timing import CaptionMode
-from polyglotic_desktop.core.listening.transcript import as_csv, as_srt, as_text
+from polyglotic_desktop.core.listening.transcript import (
+    as_csv,
+    as_srt,
+    as_text,
+    translation_text,
+)
 from polyglotic_desktop.perf import spans
-from polyglotic_desktop.ui_next import style
+from polyglotic_desktop.ui_next import reading_lines, style, wheel
 from polyglotic_desktop.ui_next.caption_layout import (
     CaptionLayout,
     CaptionStyle,
@@ -133,29 +149,48 @@ from polyglotic_desktop.ui_next.caption_window import (
     timing_name,
     timing_tip,
 )
+from polyglotic_desktop.ui_next.copying import (
+    COPIED_MS,
+    copied,
+    say_copied,
+    selection_menu,
+)
 from polyglotic_desktop.ui_next.languages import (
     language_name,
+    shown_name,
     spoken_names,
     target_languages,
 )
 from polyglotic_desktop.ui_next.lookup_card import LookupCard
+from polyglotic_desktop.ui_next.os_words import hotkeys_here
 from polyglotic_desktop.ui_next.save_folder import SaveFolder
+from polyglotic_desktop.ui_next.sentence_card import save_to_text, saved_to_text
 from polyglotic_desktop.ui_next.views.caption_window import (
     ORIGINAL_ONLY,
+    CaptionLook,
     Notice,
     stepped,
 )
 from polyglotic_desktop.ui_next.views.captions import Line
-from polyglotic_desktop.ui_next.views.lookup import WordAt
+from polyglotic_desktop.ui_next.views.lookup import WordAt, with_counterpart
 from polyglotic_desktop.ui_next.views.placement import Rect
 from polyglotic_desktop.ui_next.views.scroll import Anchor, Placed
+from polyglotic_desktop.ui_next.views.sentences import (
+    Selected,
+    selected_sentence,
+    worth_saving,
+)
 from polyglotic_desktop.ui_next.views.transcript import (
     MIN_SIZE,
     RAIL_WIDTH,
+    Spot,
     Transcript,
     TranscriptChoices,
     match_spans,
     rail_inline,
+    selected_pieces,
+    selected_spans,
+    selected_text,
 )
 
 PAD = 16
@@ -165,6 +200,8 @@ GAP = 14
 HEADING_GAP = 3
 """Pixels between a line's heading and what was said, at text size 1.0."""
 HEADING_PX = 12
+SELECTED = 0.35
+"""Selected text's background: the focus colour, this opaque (343)."""
 WHEEL_STEP = 60
 """Pixels scrolled per notch of the mouse wheel."""
 FOLD_BELOW = 820
@@ -310,10 +347,9 @@ class _Heading:
 class TranscriptList(QWidget):
     """A transcript's lines, painted: only those that show are laid out."""
 
-    looks_wrong = Signal(str)
-    """A line's caption id: check it with the best model (101)."""
-    copy_wanted = Signal(int)
-    """A line's key: copy that line."""
+    copy_wanted = Signal(int, str)
+    """A line's key and what of it to copy: "both" (as Copy all writes
+    it), "said" (what was said) or "translation" (polyglotic-hq 333)."""
     text_step = Signal(int)
     """Ctrl+wheel: the text a step bigger (1) or smaller (-1)."""
     scrolled = Signal()
@@ -337,6 +373,10 @@ class TranscriptList(QWidget):
         self.you = you or SourceLabel("You", YOU)
         self.zone: tzinfo | None = None  # None: this PC's time zone
         self.engine = CaptionLayout(STYLE, lines_kept=LINES_LAID_OUT)
+        self._readings = reading_lines.source_of(learner) if learner else None
+        """Where its rows' reading lines come from (369): every word's."""
+        self._past = reading_lines.source_of(learner, past=True) if learner else None
+        """Only those past what the learner knows."""
         self.placed: list[tuple[Line, QRectF]] = []
         """The lines the last paint drew, and where (heading and rows)."""
         self.drawn: list[tuple[Line, LaidLine, QPointF]] = []
@@ -345,9 +385,15 @@ class TranscriptList(QWidget):
         """The lookup card every caption window and transcript shares."""
         self.hovered: Marked | None = None
         """The word under the mouse: drawn softly behind, looked up."""
-        self.flagged: Line | None = None
-        """The line under the mouse: "Looks wrong?" on it."""
-        self.flag_rect: QRectF | None = None
+        self.anchor: Spot | None = None
+        """Where the selection starts (343): a press, or Shift-click's other
+        end."""
+        self.head: Spot | None = None
+        """Where it ends: where the mouse is dragged to."""
+        self._press: QPointF | None = (
+            None  # the left button down here: a click or a drag
+        )
+        self._dragging = False
         self.shown = 0
         self._drawn_revision = -1
         self._headings: OrderedDict[int, _Heading] = OrderedDict()
@@ -455,12 +501,16 @@ class TranscriptList(QWidget):
         """Saved words in their category's colour (today's transcript)."""
         marks: list[list[Mark]] = [[] for _ in line.rows]
         learner = self.learner
-        if learner is None or not learner.ready or not learner.vocabulary.saved_words:
+        if learner is None or not learner.ready:
             return marks
-        vocabulary = learner.vocabulary
         for index, row in enumerate(line.rows):
+            # each row by its own language's learning data (DECISIONS #110)
+            ours = learner.of(row.language)
+            vocabulary = ours.vocabulary
+            if not vocabulary.saved_words:
+                continue
             spans_found: list[SavedSpan] = vocabulary.saved_spans(
-                row.text, learner.words_in(row.text)
+                row.text, ours.words_in(row.text)
             )
             for span in spans_found:
                 saved = vocabulary.saved_word(span.entry_id)
@@ -484,10 +534,42 @@ class TranscriptList(QWidget):
 
     def learning_changed(self, what: str) -> None:
         """Saved words or their colours changed: drawn again (not for
-        exposures, which change with every finished caption)."""
+        exposures, which change with every finished caption). A word known
+        now or new again: its pinyin goes or comes, with Past what you
+        know (369)."""
         if what == Changed.SAVED_WORDS.value:
             self._saved.clear()
             self.update()
+        style = self.engine.style
+        if what in (Changed.STATUSES.value, Changed.LEVEL.value) and (
+            style.reading_lines and style.reading_past
+        ):
+            self._lay_out_again(style)
+
+    def set_reading(self, look: CaptionLook) -> None:
+        """The caption windows' reading lines, here too: pinyin above
+        Chinese, its size, and every word or only the words past what the
+        learner knows (369, decision 0155)."""
+        style = replace(
+            STYLE,
+            reading_lines=frozenset(look.reading_lines),
+            reading_share=reading_lines.SHARES[look.reading_size],
+            reading_past=look.reading_past,
+            reading_system=look.reading_system,
+        )
+        if style != self.engine.style:
+            self._lay_out_again(style)
+
+    def dictionary_ready(self) -> None:
+        """The dictionary's word split is read: lines laid out before it
+        without their pinyin are laid out again with it."""
+        if self.engine.style.reading_lines:
+            self._lay_out_again(self.engine.style)
+
+    def _lay_out_again(self, style: CaptionStyle) -> None:
+        readings = self._past if style.reading_past else self._readings
+        self.engine = CaptionLayout(style, lines_kept=LINES_LAID_OUT, readings=readings)
+        self.update()
 
     def set_colors(self, colors: TranscriptColors) -> None:
         self.colors = colors
@@ -537,13 +619,13 @@ class TranscriptList(QWidget):
             at = QPointF(PAD, rows_top)
             if self.hovered is not None and self.hovered.key == line.key:
                 self._paint_hovered(painter, laid, at, self.hovered)
+            self._paint_selected(painter, line, laid, at)
             self.engine.paint(painter, line, laid, at, ink, self.marks)
             self.drawn.append((line, laid, at))
             self.placed.append(
                 (line, QRectF(PAD, top, width, rows_top - top + laid.height))
             )
         painter.restore()
-        self.flag_rect = self._paint_flag(painter)
         if not lines:
             self._paint_empty(painter)
         painter.end()
@@ -569,6 +651,27 @@ class TranscriptList(QWidget):
             found.append(selection)
         return found
 
+    def _paint_selected(
+        self, painter: QPainter, line: Line, laid: LaidLine, at: QPointF
+    ) -> None:
+        """Behind the selected text of `line`, if any."""
+        if self.anchor is None or self.head is None:
+            return
+        spans = selected_spans(line, self.anchor, self.head)
+        if not spans:
+            return
+        painter.setPen(Qt.PenStyle.NoPen)
+        selected = QColor(self.colors.focus)
+        selected.setAlphaF(SELECTED)
+        painter.setBrush(selected)
+        rows = {row.index: row for row in laid.rows}
+        for index, begin, end in spans:
+            row = rows.get(index)
+            if row is None:
+                continue
+            for rect in span_rects(row.layout, begin, end):
+                painter.drawRect(rect.translated(at.x(), at.y() + row.top))
+
     def _paint_hovered(
         self, painter: QPainter, laid: LaidLine, at: QPointF, marked: Marked
     ) -> None:
@@ -580,28 +683,7 @@ class TranscriptList(QWidget):
         painter.setBrush(QColor(self.colors.surface_3))
         for rect in span_rects(row.layout, marked.start, marked.end):
             box = rect.translated(at.x(), at.y() + row.top).adjusted(-2, 0, 2, 0)
-            painter.drawRoundedRect(box, 4, 4)
-
-    def _paint_flag(self, painter: QPainter) -> QRectF | None:
-        """ "Looks wrong?" at the right of the hovered line's heading."""
-        line = self.flagged
-        found = next((r for ln, r in self.placed if ln is line), None)
-        if line is None or found is None:
-            return None
-        font = QFont()
-        font.setFamilies(style.UI_FAMILIES)
-        font.setPixelSize(style.px(12))
-        text = _tr("Looks wrong?")
-        width = QFontMetrics(font).horizontalAdvance(text) + 18
-        high = style.px(20)
-        rect = QRectF(found.right() - width, max(found.top() - 2, PAD), width, high)
-        painter.setPen(QColor(self.colors.border))
-        painter.setBrush(QColor(self.colors.surface_2))
-        painter.drawRoundedRect(rect, 10, 10)
-        painter.setPen(QColor(self.colors.text))
-        painter.setFont(font)
-        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
-        return rect
+            painter.drawRoundedRect(box, 6, 6)  # the scale's small corner
 
     def _paint_empty(self, painter: QPainter) -> None:
         painter.setPen(QColor(self.colors.dim))
@@ -690,7 +772,11 @@ class TranscriptList(QWidget):
     def keyPressEvent(self, event: QKeyEvent) -> None:
         page = self._view_height() - 40
         key = event.key()
-        if key == Qt.Key.Key_PageUp:
+        if event.matches(QKeySequence.StandardKey.Copy) and self.hasSelectedText():
+            self.copy_selection()
+        elif event.matches(QKeySequence.StandardKey.SelectAll):
+            self.select_all()
+        elif key == Qt.Key.Key_PageUp:
             self.scroll_by(page)
         elif key == Qt.Key.Key_PageDown:
             self.scroll_by(-page)
@@ -715,24 +801,21 @@ class TranscriptList(QWidget):
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         pos = event.position()
-        flagged = self.line_at(pos.y()) if pos.x() < self.width() - PAD else None
-        if flagged is not self.flagged:
-            self.flagged = flagged
-            self.update()
-        on_flag = self.flag_rect is not None and self.flag_rect.contains(pos)
-        word = None if on_flag else self._marked_at(pos)
+        if self._press is not None:  # the left button is down: a drag selects
+            far = (pos - self._press).manhattanLength()
+            self._dragging = self._dragging or far >= QApplication.startDragDistance()
+            if self._dragging:
+                self._drag_to(pos)
+            return
+        word = self._marked_at(pos)
         self.setCursor(
             Qt.CursorShape.PointingHandCursor
-            if on_flag or word is not None
+            if word is not None
             else Qt.CursorShape.ArrowCursor
         )
-        self.setToolTip(_tr("Check this line with our best model") if on_flag else "")
         self._hover(word)
 
     def leaveEvent(self, event: QEvent) -> None:
-        if self.flagged is not None:
-            self.flagged = None
-            self.update()
         self._hover(None)
 
     def hideEvent(self, event: QHideEvent) -> None:
@@ -742,20 +825,155 @@ class TranscriptList(QWidget):
             self.card.closed_with(self)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
+        """The left button starts a selection - Shift extends the one there
+        is; a click without a drag looks the word up, on release."""
         if event.button() != Qt.MouseButton.LeftButton:
             super().mousePressEvent(event)
             return
+        self.setFocus(Qt.FocusReason.MouseFocusReason)
         pos = event.position()
-        flag = self.flag_rect
-        if flag is not None and flag.contains(pos) and self.flagged is not None:
-            self.looks_wrong.emit(str(self.flagged.caption_id))
+        spot = self.spot_at(pos)
+        shift = event.modifiers() & Qt.KeyboardModifier.ShiftModifier
+        if shift and self.anchor is not None and spot is not None:
+            self.head = spot
+            self.update()
             return
-        word = self._marked_at(pos)
+        self._press, self._dragging = pos, False
+        self.anchor = self.head = spot
+        self.update()
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if event.button() != Qt.MouseButton.LeftButton or self._press is None:
+            super().mouseReleaseEvent(event)
+            return
+        dragged, self._press, self._dragging = self._dragging, None, False
+        if dragged:
+            return
+        word = self._marked_at(event.position())
         found = self.word_at(word) if word is not None else None
         if found is not None and self.card is not None:
             self.card.pin(found, self)  # a click keeps the lookup up, as today
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        """A double-click on a word selects it whole, as in a caption window
+        (395); its first click already looked it up. Qt's own handler sends
+        the press again, and its release pinned the word a second time - two
+        lookups, and the second one turns a word assumed known new
+        (polyglotic-hq 397, 400). Anywhere else: a press, as before."""
+        word = None
+        if event.button() == Qt.MouseButton.LeftButton:
+            word = self._marked_at(event.position())
+        if word is None:
+            self.mousePressEvent(event)
             return
-        super().mousePressEvent(event)
+        self._press, self._dragging = None, False
+        self.anchor = (word.key, word.row, word.start)
+        self.head = (word.key, word.row, word.end)
+        self.update()
+
+    def _drag_to(self, pos: QPointF) -> None:
+        """The selection's end follows the mouse; above or below the list,
+        it scrolls a step."""
+        if pos.y() < PAD:
+            self.scroll_by(WHEEL_STEP * self._scale())
+        elif pos.y() > self.height() - PAD:
+            self.scroll_by(-WHEEL_STEP * self._scale())
+        spot = self.spot_at(pos)
+        if spot is not None and self.anchor is not None:
+            self.head = spot
+            self.update()
+
+    # -- selecting and copying (343) ------------------------------------------------------
+
+    def spot_at(self, pos: QPointF) -> Spot | None:
+        """The place in the text drawn nearest `pos`: on the nearest line
+        of text (by height, then by width), between the characters the
+        mouse is between."""
+        best: tuple[tuple[float, float], Spot] | None = None
+        for line, laid, at in self.drawn:
+            for row in laid.rows:
+                origin = QPointF(at.x(), at.y() + row.top)
+                for i in range(row.layout.lineCount()):
+                    text_line = row.layout.lineAt(i)
+                    rect = text_line.naturalTextRect().translated(origin)
+                    down = max(rect.top() - pos.y(), 0.0, pos.y() - rect.bottom())
+                    across = max(rect.left() - pos.x(), 0.0, pos.x() - rect.right())
+                    if best is None or (down, across) < best[0]:
+                        index = text_line.xToCursor(pos.x() - origin.x())
+                        best = ((down, across), (line.key, row.index, index))
+        return best[1] if best is not None else None
+
+    def hasSelectedText(self) -> bool:
+        return bool(self.selectedText())
+
+    def selectedText(self) -> str:
+        """What's selected: what was said and translations as they show,
+        each row on a line of its own, in order."""
+        if self.anchor is None or self.head is None:
+            return ""
+        return selected_text(self.transcript.lines, self.anchor, self.head)
+
+    def copy_selection(self) -> None:
+        """What's selected to the clipboard - nowhere else."""
+        text = self.selectedText()
+        if text:
+            QGuiApplication.clipboard().setText(text)
+
+    def _copy_chosen(self) -> None:
+        """The selection menu's Copy: copied, and "Copied" by the mouse
+        (Ctrl+C says nothing, as anywhere)."""
+        if self.hasSelectedText():
+            self.copy_selection()
+            say_copied(QCursor.pos(), self)
+
+    def sentence_selected(self) -> Selected | None:
+        """What's selected, as a sentence to save (polyglotic-hq 459)."""
+        if self.anchor is None or self.head is None:
+            return None
+        pieces = selected_pieces(self.transcript.lines, self.anchor, self.head)
+        return selected_sentence(pieces, self._speaker)
+
+    def _speaker(self, line: Line) -> str:
+        if line.by_you:
+            return self.you.name
+        window = self.window()
+        label = getattr(window, "label", None)
+        return label.name if isinstance(label, SourceLabel) else ""
+
+    def _add_save_sentence(self, menu: QMenu) -> None:
+        """The selection menu's "Save sentence to", a category each, when
+        what's selected is more than a word (459): into the learning data
+        of the language it was spoken in."""
+        found = self.sentence_selected()
+        if self.learner is None or found is None or not worth_saving(found):
+            return
+        vocabulary = self.learner.of(found.language).vocabulary
+        into = menu.addMenu(save_to_text())
+        for category in vocabulary.categories:
+
+            def save(_: bool = False, chosen: Category = category) -> None:
+                vocabulary.save_sentence(
+                    found.parts,
+                    found.original,
+                    found.translation,
+                    chosen.id,
+                    found.translation_language,
+                )
+                said = saved_to_text(chosen.name)
+                QToolTip.showText(QCursor.pos(), said, self, QRect(), COPIED_MS)
+
+            into.addAction(category.name, save)
+
+    def select_all(self) -> None:
+        """Every line listed (a search's matches while searching)."""
+        lines = self.transcript.lines
+        if not lines:
+            return
+        last = lines[-1]
+        end = len(last.rows[-1].text) if last.rows else 0
+        self.anchor = (lines[0].key, 0, 0)
+        self.head = (last.key, max(0, len(last.rows) - 1), end)
+        self.update()
 
     # -- the lookup ---------------------------------------------------------------------
 
@@ -772,7 +990,11 @@ class TranscriptList(QWidget):
                 continue
             row, _, index = found
             text = row.row.text
-            span = learner.word_at(text, index) if 0 <= index < len(text) else None
+            span = (
+                learner.word_at(text, index, row.row.language)
+                if 0 <= index < len(text)
+                else None
+            )
             if span is None or span[0] >= span[1]:
                 return None
             return Marked(line.key, row.index, *span)
@@ -816,6 +1038,9 @@ class TranscriptList(QWidget):
                 if caption is not None and row.row.clause < len(caption.clauses)
                 else LookupContext(text)
             )
+            context = with_counterpart(
+                context, caption, line.rows, row.index, (marked.start, marked.end)
+            )
             rects = [
                 r.translated(origin)
                 for r in span_rects(row.layout, marked.start, marked.end)
@@ -840,6 +1065,8 @@ class TranscriptList(QWidget):
                 self._on_screen(reading),
                 area,
                 (marked.key, marked.row, marked.start, marked.end),
+                row.row.language,
+                self.transcript.captions.fallbacks,
             )
         return None
 
@@ -850,15 +1077,35 @@ class TranscriptList(QWidget):
         )
 
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:
-        line = self.line_at(event.pos().y())
-        if line is None:
-            return
+        menu = self.menu_at(event.pos().y())
+        if menu is not None:
+            menu.exec(event.globalPos())
+
+    def menu_at(self, y: float) -> QMenu | None:
+        """The right-click menu: with text selected, Copy (it) and Select
+        all (343); else the line's at `y` (`line_menu`), if there's one."""
+        if self.hasSelectedText():
+            menu = selection_menu(self, self._copy_chosen, self.select_all)
+            self._add_save_sentence(menu)
+            return menu
+        line = self.line_at(y)
+        return self.line_menu(line) if line is not None else None
+
+    def line_menu(self, line: Line) -> QMenu:
+        """A line's right-click menu: Copy, Copy what was said and Copy the
+        translation (with one shown)."""
         menu = QMenu(self)
-        menu.addAction(_tr("Copy"), lambda: self.copy_wanted.emit(line.key))
+        menu.addAction(_tr("Copy"), lambda: self.copy_wanted.emit(line.key, "both"))
         menu.addAction(
-            _tr("Looks wrong?"), lambda: self.looks_wrong.emit(str(line.caption_id))
+            _tr("Copy what was said"),
+            lambda: self.copy_wanted.emit(line.key, "said"),
         )
-        menu.exec(event.globalPos())
+        if any(row.kind is RowKind.TRANSLATION for row in line.rows):
+            menu.addAction(
+                _tr("Copy the translation"),
+                lambda: self.copy_wanted.emit(line.key, "translation"),
+            )
+        return menu
 
 
 # -- the settings rail -------------------------------------------------------------------
@@ -881,6 +1128,7 @@ class SettingsRail(QScrollArea):
         self.column.addStretch(1)
         self.setWidget(column_widget)
         self.panels: list[QWidget] = []
+        wheel.guard(self)  # the wheel scrolls the rail, never a setting (304)
 
     def add_panel(self, panel: QWidget) -> None:
         """A panel under the others (each its own card)."""
@@ -960,7 +1208,6 @@ class TranscriptWindow(QWidget):
     language_wanted = Signal(str)
     """Its caption window's language (ORIGINAL_ONLY: none), from the strip."""
     timing_wanted = Signal(str)
-    looks_wrong = Signal(str)
 
     def __init__(
         self,
@@ -1017,7 +1264,6 @@ class TranscriptWindow(QWidget):
         body.setSpacing(0)
         self.list = TranscriptList(transcript, self.colors, learner, you, self)
         self.list.card = card
-        self.list.looks_wrong.connect(self.looks_wrong)
         self.list.copy_wanted.connect(self._copy_line)
         self.list.text_step.connect(self.step_text)
         self.list.scrolled.connect(self.refresh)
@@ -1078,6 +1324,9 @@ class TranscriptWindow(QWidget):
         row.setContentsMargins(12, 8, 12, 8)
         row.setSpacing(6)
         self.buttons: dict[str, QToolButton] = {}
+        self._copied_shown = QTimer(self)  # Copy all's "✓ Copied", a moment
+        self._copied_shown.setSingleShot(True)
+        self._copied_shown.timeout.connect(self._copied_done)
         self.tag = _AppTag(strip)
         row.addWidget(self.tag)
         language = self._tool("language", "", chip=True)
@@ -1117,10 +1366,14 @@ class TranscriptWindow(QWidget):
         timing_menu.setToolTipsVisible(True)
         timing.setMenu(timing_menu)
         row.addWidget(timing)
-        smaller = self._tool("smaller", "A-", _tr("Smaller text (Ctrl+wheel)"))
+        smaller = self._tool(
+            "smaller", "A-", hotkeys_here(_tr("Smaller text (Ctrl+wheel)"))
+        )
         smaller.clicked.connect(lambda: self.step_text(-1))
         row.addWidget(smaller)
-        bigger = self._tool("bigger", "A+", _tr("Bigger text (Ctrl+wheel)"))
+        bigger = self._tool(
+            "bigger", "A+", hotkeys_here(_tr("Bigger text (Ctrl+wheel)"))
+        )
         bigger.clicked.connect(lambda: self.step_text(1))
         row.addWidget(bigger)
         self.search = QLineEdit(strip)
@@ -1136,7 +1389,7 @@ class TranscriptWindow(QWidget):
         self.search.textChanged.connect(self.set_search)
         row.addWidget(self.search, 1)
         copy = self._tool("copy", _tr("Copy all"))
-        copy.clicked.connect(self.copy_all)
+        copy.clicked.connect(self._copy_all_clicked)
         row.addWidget(copy)
         save = self._tool(
             "save",
@@ -1149,7 +1402,7 @@ class TranscriptWindow(QWidget):
         more.setAccessibleName(_tr("More: Copy all, Save transcript as…"))
         more.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         more_menu = QMenu(more)
-        more_menu.addAction(_tr("Copy all"), self.copy_all)
+        more_menu.addAction(_tr("Copy all"), self._copy_all_chosen)
         more_menu.addAction(_tr("Save transcript as…"), self.save_as)
         more.setMenu(more_menu)
         more.hide()
@@ -1501,14 +1754,11 @@ class TranscriptWindow(QWidget):
 
     def _export(self, captions: list[Caption], kind: str) -> str:
         languages = self.transcript.languages()
-        names = {str(code): language_name(str(code)) for code in languages}
+        seconds = self.transcript.seconds()
+        names = {str(code): shown_name(str(code)) for code in languages}
         you = self.list.you.name
         if kind == "srt":
-            return as_srt(
-                captions,
-                languages[0] if languages else None,
-                self.transcript.started_at,
-            )
+            return as_srt(captions, languages, self.transcript.started_at, seconds)
         # the times the list shows: this PC's (the exports' own default is
         # UTC, as stored)
         zone = self.list.zone or datetime.now().astimezone().tzinfo
@@ -1520,8 +1770,8 @@ class TranscriptWindow(QWidget):
                 caption.source_id: you if caption.by_you else self.label.name
                 for caption in captions
             }
-            return as_csv(captions, languages, zone, sources)
-        return as_text(captions, languages, names, you, zone)
+            return as_csv(captions, languages, zone, sources, seconds)
+        return as_text(captions, languages, names, you, zone, seconds=seconds)
 
     def text(self) -> str:
         """What Copy all copies: the whole session's lines (or, searching,
@@ -1531,17 +1781,52 @@ class TranscriptWindow(QWidget):
     def copy_all(self) -> None:
         QGuiApplication.clipboard().setText(self.text())
 
-    def _copy_line(self, key: int) -> None:
-        line = next((ln for ln in self.transcript.lines if ln.key == key), None)
-        if line is not None:
-            captions = self.transcript.captions.captions_of([line])
-            QGuiApplication.clipboard().setText(self._export(captions, "text"))
+    def _copy_all_clicked(self) -> None:
+        """Copy all on the strip: copied, and the button says "✓ Copied" for
+        a moment, as the lookup card's Copy does (polyglotic-hq 333, 360) -
+        never narrower meanwhile, so the strip doesn't shift under the mouse."""
+        self.copy_all()
+        button = self.buttons["copy"]
+        button.setMinimumWidth(button.sizeHint().width())
+        button.setText(f"✓ {copied()}")
+        self._copied_shown.start(COPIED_MS)
 
-    def save_as(self) -> None:
+    def _copy_all_chosen(self) -> None:
+        """Copy all in "…": copied, and "Copied" by the mouse (the menu has
+        closed)."""
+        self.copy_all()
+        say_copied(QCursor.pos(), self)
+
+    def _copied_done(self) -> None:
+        button = self.buttons["copy"]
+        button.setText(_tr("Copy all"))
+        button.setMinimumWidth(0)
+
+    def _copy_line(self, key: int, part: str = "both") -> None:
+        """A line's right-click Copy: as Copy all writes it ("both"), what
+        was said alone ("said") or its translation alone ("translation")."""
+        line = next((ln for ln in self.transcript.lines if ln.key == key), None)
+        if line is None:
+            return
+        captions = self.transcript.captions.captions_of([line])
+        if part == "said":
+            text = "\n".join(caption.original for caption in captions)
+        elif part == "translation":
+            languages = self.transcript.languages()
+            seconds = self.transcript.seconds()
+            text = "\n".join(translation_text(c, languages, seconds) for c in captions)
+        else:
+            text = self._export(captions, "text")
+        if text:
+            QGuiApplication.clipboard().setText(text)
+            say_copied(QCursor.pos(), self)
+
+    def save_as(self) -> bool:
         """Save transcript as...: Windows' save dialog, opening in the folder
         saved to last or Documents - never the install folder an update
         replaces (polyglotic-hq 244) - and the transcript written where it
-        says, or a message saying why it couldn't be."""
+        says, or a message saying why it couldn't be. True if it was saved
+        (Quit's question goes on then: polyglotic-hq 334)."""
         path, _ = QFileDialog.getSaveFileName(
             self,
             _tr("Save transcript"),
@@ -1549,7 +1834,7 @@ class TranscriptWindow(QWidget):
             _tr("Text (*.txt);;Subtitles (*.srt);;Spreadsheet (*.csv)"),
         )
         if not path:
-            return
+            return False
         try:
             self.save_to(Path(path))
         except OSError as problem:
@@ -1557,8 +1842,9 @@ class TranscriptWindow(QWidget):
             QMessageBox.warning(
                 self, _tr("Save transcript"), not_saved(Path(path).name)
             )
-            return
+            return False
         self.save_folder.saved(Path(path))
+        return True
 
     def save_to(self, path: Path) -> None:
         """The transcript - the whole session's, or as searched - saved to
@@ -1569,6 +1855,7 @@ class TranscriptWindow(QWidget):
         # CSV with a byte-order mark, so Excel reads it as UTF-8
         encoding = "utf-8-sig" if kind == "csv" else "utf-8"
         path.write_text(content, encoding=encoding, newline="")
+        self.transcript.mark_saved()  # Quit needn't ask (334)
 
     # -- events ---------------------------------------------------------------------------
 

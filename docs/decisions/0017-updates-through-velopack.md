@@ -78,3 +78,30 @@ download, apply). The server's `welcome` names the channel to follow, and
 The rules are one module; the installer one adapter; `main` wires them in a
 dozen lines. Replacing Velopack is a new adapter plus the release
 workflow's packing step - a few days with testing.
+
+## Added: on a metered connection, an update waits for the learner (2026-11-15, polyglotic-hq 345)
+
+- A look on a connection Windows calls metered (the dictionary packs'
+  check, `platform.windows.network_cost`, decision 0122) finds the update
+  and doesn't download it: `Updates.held`, `Found.METERED`. Home's update
+  card says "Version X is available: N MB to download", why it waits, and
+  offers **Download anyway** (`Updates.download_anyway`) and Later; Settings
+  says it waits. The next look on a connection that isn't metered
+  downloads it as before; nothing changes off a metered connection.
+- The size is what Velopack would download (`velopack_updates.download_size`):
+  its deltas' when deltas are allowed, this copy has the release they start
+  from and there are at most `MAX_DELTAS`; else the full package. **The
+  signed feed never uses deltas** (decision 0019: the app checks one full
+  package it can hash), so every real update says the full package's size
+  (about 90 MB at 0.1.5).
+- **On the signed feed, a look checks the feed only** (`VerifiedFeed.refresh`
+  with `package=False`); the package is fetched and checked into Velopack's
+  folder by the download step (`fetch_package`). Before, the look fetched
+  the ~90 MB package itself, so holding back Velopack's download alone
+  saved nothing: 345's rehearsal on a local signed feed caught it.
+- "Update required" downloads on any connection: without it there are no
+  captions at all.
+- Not taken: asking again during the download as the packs do (Velopack's
+  download can't be paused); checking more often than every six hours for
+  the connection to change (the learner can Download anyway, and the next
+  start looks at once).

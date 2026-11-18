@@ -1,17 +1,45 @@
 """Settings, in the new main window, at the sidebar's foot with Help: one
-page with three sections side by side at its top - **Captions ·
-Learning · App** - and nothing nested (polyglotic-hq 248's section 2.1,
-the user's F11; built by 261). A caption window's "All caption
-settings..." opens it on Captions.
+page with eight sections side by side at its top - **Look · Word links ·
+Readings · Timing · Speech · Dictation · App · Lab** - each named for what
+a learner comes to change, the most reached first and the experimental Lab
+last; nothing nested, so every setting is one click from the top (the
+user, 2026-11-13: "Categorise the settings better"; polyglotic-hq 304,
+which replaced 248's Captions · Learning · App - Captions had grown to five
+windows' height). A caption window's "All caption settings..." opens it
+on Look; the tray's "More languages…" on Dictation.
 
-**Captions** - every caption window's settings, each with a line under its
-name where the name isn't enough (248's section 2.4, F18), in 248's
-order: Look, Word links, Timing, Behaviour, Speech, Reset (the panels of
-`ui_next.panels`, bound to the same views as a transcript's rail).
+**Settings you can scan** (polyglotic-hq 470, 449's design 4A; the user,
+2026-11-17: "make each setting category very obvious as you scroll the
+page"): each section's tab has its mark beside its name; the title and
+the tabs stay pinned at the top while the page scrolls, and under them the
+name of the card the learner is in, once its own title has scrolled away;
+each card's title is a size up, its mark in a soft square at its left
+(`settings_marks`). Where the tabs don't fit on one line - a narrow window,
+a large text size - they're a dropdown (449's finding 8: eight tabs
+wrapped to four rows). Look was 2,557 px with no landmark: Word links and
+Readings are sections of their own now.
 
-**Learning** - points to the Learning page, where the languages, the
-level and word introductions live (248's section 3.6); it holds none of
-them.
+The caption windows' settings are the panels of `ui_next.panels`, bound
+to the same views as a transcript's rail, each with a line under its name
+where the name isn't enough (248's section 2.4, F18):
+
+- **Look** - how the captions look: the preview, the preset, the colours,
+  the panel, the font, what each caption shows; Reset;
+- **Word links** - their style, and the way to the Learning page, where
+  which words are new is chosen;
+- **Readings** - pinyin above Chinese, Jyutping above Cantonese (369,
+  450): their size, words and colour;
+- **Timing** - when captions come and go: Timing (Steady, Quick preview,
+  Live updates and their waits) and Behaviour (how a new caption
+  arrives, fading after quiet);
+- **Speech** - what's heard: the speakers and the mic (Home's Sound, the
+  same view: polyglotic-hq 372), the spoken language, second languages,
+  names and slang;
+- **Lab** - experimental caption settings, tried by feel (284), last.
+
+**Dictation** - dictation's card (below): a feature of its own, not a
+setting of the app (the user's #129, point 11, would give it a page of
+its own beside Home; here it's one click away until then).
 
 **App** - things about the app on this PC (project 109's structure,
 sections 1.1 and 7; today's page, project 096):
@@ -23,16 +51,16 @@ sections 1.1 and 7; today's page, project 096):
 - **Appearance:** the window's theme (Margin, Glaze or Signal) and light
   or dark - this window and the transcripts; the caption windows stay as
   they are (decision 0029);
-- **Language:** the app's own words - like Windows, or one offered - from
-  the next start (decision 0034); also under the page's title, in every
-  section (284), the same setting;
+  The app's language - like Windows, or one offered, from the next start
+  (decision 0034) - is the line under the page's title, in every section
+  (284); App's own Language card, the same setting a second time, went
+  (polyglotic-hq 449's finding 9, 470);
+- **Transcripts:** how far back a transcript window scrolls and searches -
+  the newest 1,000 lines (as before), the last 3 hours or the whole
+  session; Copy all and Save have the whole session whichever - and
+  whether Quit asks to save a long one (334);
 - **Hotkeys:** the four, read-only - "another program has it" when one
   couldn't be had;
-- **Dictation (preview):** on or off (off until turned on), the key held
-  to speak - pressed in a box that listens for it, with Reset, refused
-  with why when it can't be (polyglotic-hq 289, decision 0081) - the
-  language it hears (Detect or one), Australian spelling (polyglotic-hq
-  283, decision 0073);
 - **Updates:** Check now; the version and channel; what the last look
   found - up to date, a version ready (with Restart now), the update
   server out of reach, a download that failed (`show_update`;
@@ -40,15 +68,23 @@ sections 1.1 and 7; today's page, project 096):
 - **About:** the machine-translation line, "Want to help build
   Polyglotic? Tell us", the third-party notices.
 
-Things about the account live on Account. The page only shows: `main`
+**Dictation (preview)**: on or off (off until turned on), the key held to
+speak - pressed in a box that listens for it, with Reset, refused with
+why when it can't be (polyglotic-hq 289, decision 0081) - the language it
+hears (Detect or one), Australian spelling (polyglotic-hq 283, decision
+0073).
+
+Things about the account live on Account; what's learned, the level and
+word introductions on Learning (248's section 3.6), which Look's Word
+links points to. The page only shows: `main`
 hands over the themes, the hotkeys' commands, "Tell us" and the caption
 settings' views, and connects what the page asks for.
 """
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QAction, QKeySequence, QShowEvent
+from PySide6.QtCore import QEvent, QLocale, QObject, QPoint, QSize, Qt, QTimer, Signal
+from PySide6.QtGui import QAction, QKeySequence, QResizeEvent, QShowEvent
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -70,23 +106,70 @@ from polyglotic_desktop.core.listening.dictation_keys import (
     DictationKey,
     refusal,
 )
-from polyglotic_desktop.ui_next.controls import Card, Segmented, SwitchRow, label
+from polyglotic_desktop.ui_next import glyphs, os_words, style
+from polyglotic_desktop.ui_next.controls import (
+    Card,
+    Combo,
+    FittingCombo,
+    Flow,
+    Row,
+    Segmented,
+    SwitchRow,
+    label,
+    right_row,
+)
 from polyglotic_desktop.ui_next.dictation_key import KeyBox, key_words, refusal_words
-from polyglotic_desktop.ui_next.home import Page
+from polyglotic_desktop.ui_next.glyphs import Glyph
+from polyglotic_desktop.ui_next.home import MARGIN, Page
 from polyglotic_desktop.ui_next.lab_panel import LabPanel
-from polyglotic_desktop.ui_next.languages import dictation_choices
+from polyglotic_desktop.ui_next.languages import detect_name, dictation_choices
+from polyglotic_desktop.ui_next.os_words import pc_or_mac
 from polyglotic_desktop.ui_next.panels import (
     BehaviourPanel,
     LanguagesPanel,
     LookPanel,
+    ReadingLinesPanel,
     ResetCard,
     TimingPanel,
     WordLinksPanel,
 )
+from polyglotic_desktop.ui_next.settings_marks import PinnedCard, mark_card
+from polyglotic_desktop.ui_next.sound_card import SoundCard
 from polyglotic_desktop.ui_next.views.panels import LanguagesView, LookView, TimingView
+from polyglotic_desktop.ui_next.views.sound import SoundView
 
-SECTIONS = ("captions", "learning", "app")
-"""The page's three sections, left to right at its top."""
+SECTIONS = (
+    "look",
+    "links",
+    "readings",
+    "timing",
+    "speech",
+    "dictation",
+    "app",
+    "lab",
+)
+"""The page's eight sections, left to right at its top (304; Word links
+and Readings out of Look, 470)."""
+MARKS = {
+    "look": Glyph.LOOK,
+    "links": Glyph.LINKS,
+    "readings": Glyph.READINGS,
+    "timing": Glyph.TIMING,
+    "speech": Glyph.SPEECH,
+    "dictation": Glyph.MIC,
+    "app": Glyph.APP,
+    "lab": Glyph.LAB,
+}
+"""Each section's mark, beside its name on its tab (470)."""
+FORMER = {"captions": "look", "learning": "links"}
+"""The sections' names before 304, still taken by `show_section`, so a way
+in written for them lands: Captions' first part was Look; Learning only
+pointed to the Learning page, as Word links does."""
+TAB = 16
+"""A section's mark on its tab, at 100 % text size."""
+PINNED_GAP = 16
+"""Between the pinned title and sections and what scrolls under them: the
+column's spacing."""
 
 
 def _tr(text: str) -> str:
@@ -105,31 +188,18 @@ def hotkey_name(key: str, action: QAction) -> str:
     return names.get(key) or action.text().replace("&", "")
 
 
+def _own_hotkey_modifiers() -> str:
+    """The app's own hotkeys' modifiers, as `DictationKey` keeps them: Ctrl
+    + Alt, and on a Mac Control + Command - Qt's Meta ("win") and Ctrl
+    there (polyglotic-hq 428's ⌃⌘L, P, H; 438)."""
+    return "ctrl+win" if os_words.on_a_mac() else "ctrl+alt"
+
+
 def _button(text: str, name: str) -> QPushButton:
     button = QPushButton(text)
     button.setObjectName(name)
     button.setCursor(Qt.CursorShape.PointingHandCursor)
     return button
-
-
-def _setting(title: str, detail: str, control: QWidget) -> QVBoxLayout:
-    """A setting: its title and what it does, its control under them.
-    (Not `controls.Row`: its note shows before it has a parent - project
-    115 is fixing that.)"""
-    column = QVBoxLayout()
-    column.setSpacing(2)
-    column.addWidget(label(title, "RowTitle", wrap=True))
-    column.addWidget(label(detail, "Faint", wrap=True))
-    column.addSpacing(4)
-    column.addWidget(control)
-    return column
-
-
-def _right(button: QPushButton) -> QHBoxLayout:
-    row = QHBoxLayout()
-    row.addStretch(1)
-    row.addWidget(button)
-    return row
 
 
 class NoticesDialog(QDialog):
@@ -165,6 +235,10 @@ class SettingsPage(Page):
     """"system", "light" or "dark"."""
     text_size_chosen = Signal(str)
     """The app's own text size: a `style.APP_TEXT_SIZES` key ("larger")."""
+    transcript_length_chosen = Signal(str)
+    """How far back the transcripts' lists go (`TranscriptLength`'s value)."""
+    transcript_ask_chosen = Signal(bool)
+    """Whether Quit asks to save a long transcript not saved."""
     interface_language_chosen = Signal(str)
     """An interface language's code ("zh_CN"), or "": like Windows."""
     translation_feedback_wanted = Signal()
@@ -181,6 +255,10 @@ class SettingsPage(Page):
     dictation_key_listening = Signal(bool)
     """The key box listens for a key: dictation's own key must let keys
     through meanwhile."""
+    typing_settings_wanted = Signal()
+    """"Open System Settings" beside "isn't allowed to type": `main` opens
+    the OS's settings where the learner gives it (a Mac's Accessibility,
+    polyglotic-hq 438)."""
 
     def __init__(
         self,
@@ -192,17 +270,51 @@ class SettingsPage(Page):
         look: LookView,
         timing: TimingView,
         speech: LanguagesView,
+        sound: SoundView | None = None,
     ) -> None:
         """`themes`: each window theme's key and name; `hotkeys`: today's
         hotkeys' commands, by their letter (Ctrl+Alt+ L, P, H, W);
         `work_with_us`: "Tell us"; `languages`: each interface language's
         code and its own name ("简体中文"); `look`, `timing` and `speech`:
-        the caption settings' views (`main`'s `Panels`)."""
+        the caption settings' views (`main`'s `Panels`); `sound`: Home's
+        Sound, shown again in Speech (polyglotic-hq 372)."""
         super().__init__(_tr("Settings"))
+        self._sound = sound
         self._hotkeys = hotkeys
+        self.typing_allowed: Callable[[], bool] | None = None
+        """Whether the OS lets the app type, where it asks (a Mac's
+        Accessibility: `main` sets it, polyglotic-hq 438); None: it asks
+        nothing, as Windows."""
         self._notices: str | None = None
+        self._sheet = ""
+        """The main window's stylesheet (`use_sheet`), on the parts shown."""
+        # no stylesheet above the parts to paint them the theme's background
+        # (`use_sheet`): the window's own shows through, as beside a column
+        self.viewport().setAutoFillBackground(False)
+        inner = self.widget()
+        assert inner is not None
+        inner.setAutoFillBackground(False)
+        # the title and its sections' switch pinned above what scrolls (470):
+        # a part of the page's own, over the room the viewport leaves at its
+        # top (`_place_head`), lined up with the column
+        self._placing = False
         self._head()
-        self._language_line(languages)
+        self.pinned = PinnedCard(self)
+        self.pinned.hide()
+        margins = self._row.contentsMargins()
+        margins.setTop(0)  # the head keeps the page's margin above it
+        self._row.setContentsMargins(margins)
+        self.content.parentWidget().installEventFilter(self)  # type: ignore[union-attr]
+        self.verticalScrollBar().valueChanged.connect(self._place_pinned)
+        # the language lines in one part, which takes the window's stylesheet
+        # once (`use_sheet`)
+        top = QWidget()
+        top.setObjectName("settings.top")
+        rows = QVBoxLayout(top)
+        rows.setContentsMargins(0, 0, 0, 0)
+        rows.setSpacing(self.content.spacing())
+        self._language_line(rows, languages)
+        self.content.insertWidget(0, top)
         self.section: dict[str, QWidget] = {}
         for key in SECTIONS:
             box = QWidget()
@@ -212,10 +324,14 @@ class SettingsPage(Page):
             column.setSpacing(16)
             self.section[key] = box
             self.content.addWidget(box)
-        self._captions(self._section_layout("captions"), look, timing, speech)
-        self._learning(self._section_layout("learning"))
+        self._marks: dict[QWidget, Glyph] = {}
+        """Each card's mark, beside its title (`settings_marks`, 470)."""
+        self._captions(look, timing, speech)
+        self._section_layout("dictation").addWidget(
+            self._marked(self._dictation(), Glyph.MIC)
+        )
         app = self._section_layout("app")
-        app.addWidget(self._text_size())
+        app.addWidget(self._marked(self._text_size(), Glyph.TEXT_SIZE))
 
         appearance = Card(
             _tr("Appearance"),
@@ -226,12 +342,10 @@ class SettingsPage(Page):
         self.theme = Segmented(list(themes))
         self.theme.setObjectName("settings.theme")
         self.theme.changed.connect(lambda v: self.theme_chosen.emit(str(v)))
-        appearance.add(
-            _setting(_tr("Theme"), _tr("Its colours and headings."), self.theme)
-        )
+        appearance.add(Row(_tr("Theme"), _tr("Its colours and headings."), self.theme))
         self.window_theme = Segmented(
             [
-                ("system", _tr("Like this PC")),
+                ("system", pc_or_mac(_tr("Like this PC"), _tr("Like this Mac"))),
                 ("light", _tr("Light")),
                 ("dark", _tr("Dark")),
             ]
@@ -241,37 +355,15 @@ class SettingsPage(Page):
             lambda v: self.window_theme_chosen.emit(str(v))
         )
         appearance.add(
-            _setting(
+            Row(
                 _tr("Light or dark"),
                 _tr("A few parts change at the next start."),
                 self.window_theme,
             )
         )
-        app.addWidget(appearance)
+        app.addWidget(self._marked(appearance, Glyph.THEME))
 
-        language = Card(_tr("Language"))
-        # a list, not buttons: every main language (polyglotic-hq 294)
-        self.interface_language = QComboBox()
-        self.interface_language.setObjectName("settings.interface_language")
-        self.interface_language.setAccessibleName(_tr("The app's language"))
-        for code, name in [("", _tr("Like this PC")), *languages]:
-            self.interface_language.addItem(name, code)
-        # as wide as its longest name, not the card
-        self.interface_language.setSizePolicy(
-            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
-        )
-        self.interface_language.currentIndexChanged.connect(self._language_chosen)
-        language.add(
-            _setting(
-                _tr("The app's language"),
-                _tr(
-                    "Menus, buttons and help - not your captions. It changes "
-                    "the next time Polyglotic starts."
-                ),
-                self.interface_language,
-            )
-        )
-        app.addWidget(language)
+        app.addWidget(self._marked(self._transcripts(), Glyph.TRANSCRIPTS))
 
         keys = Card(
             _tr("Hotkeys"), _tr("They work from any program, including a game.")
@@ -280,13 +372,12 @@ class SettingsPage(Page):
         for key, action in hotkeys.items():
             line = QHBoxLayout()
             line.setSpacing(12)
-            line.addWidget(label(hotkey_name(key, action)), 1)
+            line.addWidget(label(hotkey_name(key, action), wrap=True), 1)
             value = label("", "Dim")
             line.addWidget(value)
             self.hotkey_values[key] = value
             keys.add(line)
-        app.addWidget(keys)
-        app.addWidget(self._dictation())
+        app.addWidget(self._marked(keys, Glyph.KEYS))
 
         updates = Card(
             _tr("Updates"),
@@ -304,10 +395,10 @@ class SettingsPage(Page):
         self.restart_now = _button(_tr("Restart now"), "settings.restart_update")
         self.restart_now.clicked.connect(self.restart_wanted)
         self.restart_now.setHidden(True)
-        buttons = _right(self.update_now)
+        buttons = right_row(self.update_now)
         buttons.addWidget(self.restart_now)
         updates.add(buttons)
-        app.addWidget(updates)
+        app.addWidget(self._marked(updates, Glyph.UPDATES))
 
         about = Card(_tr("About Polyglotic"))
         about.add(
@@ -320,20 +411,18 @@ class SettingsPage(Page):
         self.notices = _button(_tr("Third-party notices"), "settings.notices")
         self.notices.setHidden(True)
         self.notices.clicked.connect(self._show_notices)
-        about.add(_right(self.notices))
-        row = QHBoxLayout()
-        row.setSpacing(4)
+        about.add(right_row(self.notices))
+        row = Flow(spacing=4)
         row.addWidget(label(_tr("Want to help build Polyglotic?"), "Faint"))
         tell_us = QToolButton()
         tell_us.setDefaultAction(work_with_us)
         tell_us.setProperty("kind", "ghost")
         tell_us.setCursor(Qt.CursorShape.PointingHandCursor)
         row.addWidget(tell_us)
-        row.addStretch(1)
         about.add(row)
-        app.addWidget(about)
+        app.addWidget(self._marked(about, Glyph.ABOUT))
         self.content.addStretch(1)
-        self.show_section("captions")
+        self.show_section("look")
         self.refresh()
 
     # -- text size (polyglotic-hq 292) -------------------------------------------------
@@ -367,6 +456,54 @@ class SettingsPage(Page):
     def show_text_size(self, size: str) -> None:
         """The app's text size as the settings have it ("normal")."""
         self.text_size.set_value(size)
+
+    # -- transcripts (polyglotic-hq 334) ----------------------------------------------
+
+    def _transcripts(self) -> Card:
+        """How far back each transcript window's list goes: the newest
+        1,000 lines (as before), the last three hours or the whole session.
+        A choice goes out as `transcript_length_chosen`."""
+        card = Card(
+            _tr("Transcripts"),
+            _tr(
+                "How far back a transcript window scrolls and searches. Copy all"
+                " and Save always have the whole session."
+            ),
+        )
+        #: {count} is always 1,000
+        newest = _tr("Newest {count} lines").format(count=QLocale().toString(1000))
+        self.transcript_length = Segmented(
+            [
+                ("newest", newest),
+                ("three_hours", _tr("Last 3 hours")),
+                ("session", _tr("Whole session")),
+            ],
+            "newest",
+        )
+        self.transcript_length.setObjectName("settings.transcript_length")
+        self.transcript_length.setAccessibleName(_tr("How far back transcripts go"))
+        self.transcript_length.changed.connect(
+            lambda v: self.transcript_length_chosen.emit(str(v))
+        )
+        card.add(self.transcript_length)
+        self.transcript_ask = SwitchRow(
+            _tr("Ask to save before quitting"),
+            _tr(
+                "With Last 3 hours or Whole session: Quit asks about a transcript"
+                " of more than 300 lines that isn't saved."
+            ),
+            "settings.transcript_ask",
+        )
+        self.transcript_ask.switch.set_quietly(True)
+        self.transcript_ask.switch.toggled.connect(self.transcript_ask_chosen)
+        card.add(self.transcript_ask)
+        return card
+
+    def show_transcript_length(self, length: str, ask: bool = True) -> None:
+        """How far back the transcripts go, and whether Quit asks to save
+        one, as the settings have them."""
+        self.transcript_length.set_value(length)
+        self.transcript_ask.switch.set_quietly(ask)
 
     # -- dictation (polyglotic-hq 283) -------------------------------------------------
 
@@ -409,13 +546,24 @@ class SettingsPage(Page):
         key_box.setLayout(key_row)
         key_row.setContentsMargins(0, 0, 0, 0)
         card.add(
-            _setting(
+            Row(
                 _tr("Key"),
-                _tr(
-                    "Click, then press the key or combination you want to hold:"
-                    " Right Ctrl, F9, Ctrl + Alt + D… A key on its own, or with"
-                    " Ctrl, Alt or Win, is Polyglotic's while dictation is on;"
-                    " Right Ctrl alone still works in other programs."
+                pc_or_mac(
+                    _tr(
+                        "Click, then press the key or combination you want to hold:"
+                        " Right Ctrl, F9, Ctrl + Alt + D… A key on its own, or with"
+                        " Ctrl, Alt or Win, is Polyglotic's while dictation is on;"
+                        " Right Ctrl alone still works in other programs."
+                    ),
+                    # a Mac's keys as its menus write them (key_words); the
+                    # example is one macOS leaves free: ⌃⌥D is refused (⌥
+                    # without ⌘), ⌥⌘D hides the Dock, ⌃⌘D looks a word up (451)
+                    _tr(
+                        "Click, then press the key or combination you want to hold:"
+                        " Right ⌘, F9, ⌃⌘E… A key on its own, or with ⌃, ⌥ or ⌘,"
+                        " is Polyglotic's while dictation is on; Right ⌘ alone"
+                        " still works in other apps."
+                    ),
                 ),
                 key_box,
             )
@@ -424,10 +572,12 @@ class SettingsPage(Page):
         self.dictation_key_note.setObjectName("settings.dictation_key_note")
         card.add(self.dictation_key_note)
         self.dictation_key_note.hide()  # after its parent: never a window of its own
-        self.dictation_language = QComboBox()
+        card.add(self._typing_permission())
+        self.dictation_language = Combo()
         self.dictation_language.setObjectName("settings.dictation_language")
         self.dictation_language.setAccessibleName(_tr("Dictation's language"))
-        self.dictation_language.addItem(_tr("Detect the language"), "")
+        # Detect, said as every spoken-language list says it (317)
+        self.dictation_language.addItem(detect_name(), "")
         for code, name in dictation_choices(DICTATION_LANGUAGES):
             self.dictation_language.addItem(name, code)
         self.dictation_language.activated.connect(
@@ -436,13 +586,22 @@ class SettingsPage(Page):
             )
         )
         card.add(
-            _setting(
+            Row(
                 _tr("Language"),
-                _tr(
-                    "Detect types whatever language you speak, each time you hold"
-                    " the key. Set one - English, Mandarin… - and it's always"
-                    " heard as that: a short phrase is never taken for another."
-                    " The tray's menu switches it too."
+                pc_or_mac(
+                    _tr(
+                        "Detect types whatever language you speak, each time you"
+                        " hold the key. Set one - English, Mandarin… - and it's"
+                        " always heard as that: a short phrase is never taken for"
+                        " another. The tray's menu switches it too."
+                    ),
+                    # a Mac's icon sits in the menu bar, not a tray (451)
+                    _tr(
+                        "Detect types whatever language you speak, each time you"
+                        " hold the key. Set one - English, Mandarin… - and it's"
+                        " always heard as that: a short phrase is never taken for"
+                        " another. The menu bar's menu switches it too."
+                    ),
                 ),
                 self.dictation_language,
             )
@@ -457,6 +616,43 @@ class SettingsPage(Page):
         )
         card.add(self.dictation_australian)
         return card
+
+    def _typing_permission(self) -> QWidget:
+        """Where the OS hasn't let the app type (a Mac without the
+        Accessibility permission, polyglotic-hq 438): why nothing is typed,
+        and the way to System Settings. Hidden until then."""
+        self.typing_not_allowed = QWidget()
+        self.typing_not_allowed.setObjectName("settings.typing_not_allowed")
+        rows = QVBoxLayout(self.typing_not_allowed)
+        rows.setContentsMargins(0, 0, 0, 0)
+        rows.setSpacing(8)
+        why = label(
+            #: macOS System Settings' own names: keep them as the Mac shows them
+            _tr(
+                "Polyglotic isn't allowed to type into other apps, so nothing"
+                " you say is typed. In System Settings, open Privacy & Security,"
+                " then Accessibility, and turn on Polyglotic."
+            ),
+            "Faint",
+            wrap=True,
+        )
+        rows.addWidget(why)
+        self.typing_settings = _button(
+            _tr("Open System Settings"), "settings.typing_settings"
+        )
+        self.typing_settings.clicked.connect(self.typing_settings_wanted)
+        button_row = QHBoxLayout()
+        button_row.addWidget(self.typing_settings)
+        button_row.addStretch(1)
+        rows.addLayout(button_row)
+        self.typing_not_allowed.hide()
+        return self.typing_not_allowed
+
+    def show_typing_permission(self) -> None:
+        """Asks the OS again whether the app may type, and shows why not
+        and the way to its settings if it may not."""
+        allowed = self.typing_allowed() if self.typing_allowed is not None else True
+        self.typing_not_allowed.setHidden(allowed)
 
     def show_dictation(
         self,
@@ -501,7 +697,10 @@ class SettingsPage(Page):
         """A key pressed in the box (or Reset): refused with why, or asked
         for (`dictation_key_wanted`) - unless it's the key already."""
         key = DictationKey.parse(pressed) if pressed else None
-        own = (DictationKey.parse(f"ctrl+alt+{k.lower()}") for k in self._hotkeys)
+        own = (
+            DictationKey.parse(f"{_own_hotkey_modifiers()}+{k.lower()}")
+            for k in self._hotkeys
+        )
         refused = refusal(key, [k for k in own if k]) if key else None
         if key is None or refused is not None:
             self._dictation_note(refusal_words(refused))
@@ -523,39 +722,195 @@ class SettingsPage(Page):
     # -- the sections ------------------------------------------------------------------
 
     def _head(self) -> None:
-        """The title, with the three sections' switch at its right."""
+        """The title, with the sections' switch at its right - each tab its
+        mark beside its name (470) - pinned at the page's top
+        (`_place_head`); the sections a dropdown where the tabs don't fit on
+        one line (`section_picker`)."""
         title = self.content.takeAt(0)
         assert title is not None
         heading = title.widget()
         assert heading is not None
-        head = QHBoxLayout()
-        head.setSpacing(16)
+        self.head = QWidget(self)
+        self.head.setObjectName("settings.head")
+        head = Flow(self.head, spacing=16)  # the sections under it when they don't fit
+        head.setContentsMargins(0, 0, 0, 0)
         head.addWidget(heading)
-        self.sections = Segmented(
-            [
-                ("captions", _tr("Captions")),
-                ("learning", _tr("Learning")),
-                ("app", _tr("App")),
-            ],
-            "captions",
-        )
+        names = {
+            "look": _tr("Look"),
+            "links": _tr("Word links"),
+            #: Settings' section of reading lines over captions - pinyin above Chinese, Jyutping above Cantonese
+            "readings": _tr("Readings"),
+            "timing": _tr("Timing"),
+            "speech": _tr("Speech"),
+            "dictation": _tr("Dictation"),
+            "app": _tr("App"),
+            "lab": _tr("Lab"),
+        }
+        self.sections = Segmented([(key, names[key]) for key in SECTIONS], "look")
         self.sections.setObjectName("settings.sections")
         self.sections.setAccessibleName(_tr("Settings sections"))
         self.sections.changed.connect(lambda key: self.show_section(str(key)))
-        head.addWidget(self.sections, 0, Qt.AlignmentFlag.AlignVCenter)
-        head.addStretch(1)
-        self.content.insertLayout(0, head)
+        head.addWidget(self.sections)
+        self.section_picker = FittingCombo()  # its width its own (500)
+        self.section_picker.setObjectName("settings.section_picker")
+        self.section_picker.setAccessibleName(_tr("Settings sections"))
+        self.section_picker.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
+        for key in SECTIONS:
+            self.section_picker.addItem(names[key], key)
+        self.section_picker.currentIndexChanged.connect(
+            lambda index: self.show_section(SECTIONS[index])
+        )
+        self.section_picker.setHidden(True)
+        head.addWidget(self.section_picker)
+        self._ink_tabs()
+        self.head.installEventFilter(self)
 
-    def _language_line(self, languages: Sequence[tuple[str, str]]) -> None:
+    def _ink_tabs(self) -> None:
+        """Each section's mark on its tab and in the dropdown, in the theme
+        and at the text size now: dim, as the tab's name is, and the text's
+        colour on the chosen one."""
+        theme = style.current()
+        side = style.px(TAB)
+        for key, button in zip(SECTIONS, self.sections.buttons, strict=True):
+            button.setIcon(
+                glyphs.icon(MARKS[key], theme["TEXT_DIM"], side, on=theme["TEXT"])
+            )
+            button.setIconSize(QSize(side, side))
+        for index, key in enumerate(SECTIONS):
+            self.section_picker.setItemIcon(
+                index, glyphs.icon(MARKS[key], theme["TEXT"], side)
+            )
+        self.section_picker.setIconSize(QSize(side, side))
+
+    def _marked(self, card: QWidget, glyph: Glyph) -> QWidget:
+        """`card` with `glyph` beside its title (`settings_marks`)."""
+        assert isinstance(card, Card)
+        mark_card(card, glyph)
+        self._marks[card] = glyph
+        return card
+
+    # -- pinned while the page scrolls (470) ----------------------------------------
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """The column moved or resized, or the head's layout changed (a text
+        size): the head and the pinned card placed again. The wheel over the
+        head - outside the viewport - scrolls the page as over the rest."""
+        head = self.__dict__.get("head")  # Qt's scroll area asks before it's made
+        if head is None or watched not in (head, self.content.parentWidget()):
+            return super().eventFilter(watched, event)
+        if watched is head and event.type() == QEvent.Type.Wheel:
+            QApplication.sendEvent(self.verticalScrollBar(), event)
+            return True
+        if event.type() in (
+            QEvent.Type.Resize,
+            QEvent.Type.Move,
+            QEvent.Type.LayoutRequest,
+        ):
+            self._place_head()
+        return super().eventFilter(watched, event)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self._place_head()
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:  # perhaps another text size
+            QTimer.singleShot(0, self, self._place_head)
+
+    def _place_head(self) -> None:
+        """The title and the sections over the room the viewport leaves at
+        the page's top, as wide as the column and lined up with it; the
+        tabs or, where they don't fit on one line, the dropdown."""
+        if self._placing or "pinned" not in self.__dict__:
+            return
+        self._placing = True
+        try:
+            column = self.content.parentWidget()
+            assert column is not None
+            left = column.mapTo(self, QPoint(0, 0)).x()
+            width = column.width()
+            narrow = self.sections.sizeHint().width() > width
+            if narrow != self.sections.isHidden():
+                self.sections.setHidden(narrow)
+                self.section_picker.setHidden(not narrow)
+            layout = self.head.layout()
+            assert layout is not None
+            height = layout.heightForWidth(width)
+            self.head.setGeometry(left, MARGIN, width, height)
+            top = MARGIN + height + PINNED_GAP
+            if self.viewportMargins().top() != top:
+                self.setViewportMargins(0, top, 0, 0)
+        finally:
+            self._placing = False
+        self._place_pinned()
+
+    def _place_pinned(self) -> None:
+        """The card the learner is in, by name, under the sections - once
+        its own title has scrolled away under them; hidden at a card's top."""
+        card = self._card_scrolled_into()
+        if card is None or card.title is None:
+            self.pinned.hide()
+            return
+        self.pinned.show_card(self._marks[card], card.title.text())
+        column = self.content.parentWidget()
+        assert column is not None
+        left = column.mapTo(self, QPoint(0, 0)).x()
+        self.pinned.setGeometry(
+            left,
+            self.viewport().geometry().top(),
+            column.width(),
+            self.pinned.sizeHint().height(),
+        )
+        self.pinned.show()
+        self.pinned.raise_()
+
+    def _card_scrolled_into(self) -> Card | None:
+        """The section's last card whose top is under the pinned name's
+        line, if its own title is scrolled out of sight and some of it is
+        still in view."""
+        if self.verticalScrollBar().value() == 0:
+            return None
+        viewport = self.viewport()
+        line = self.pinned.sizeHint().height()
+        found: Card | None = None
+        for card in self.cards(str(self.sections.value())):
+            if card.mapTo(viewport, QPoint(0, 0)).y() > line:
+                break
+            found = card
+        if found is None or found.title is None:
+            return None
+        if found.title.mapTo(viewport, QPoint(0, 0)).y() >= 0:
+            return None  # its own title shows
+        if found.mapTo(viewport, QPoint(0, found.height())).y() <= 0:
+            return None
+        return found
+
+    def cards(self, key: str) -> list[Card]:
+        """Section `key`'s cards, top to bottom, those shown."""
+        column = self._section_layout(key)
+        items = (column.itemAt(i) for i in range(column.count()))
+        widgets = (item.widget() for item in items if item is not None)
+        return [
+            w
+            for w in widgets
+            if isinstance(w, Card) and w in self._marks and w.isVisible()
+        ]
+
+    def _language_line(
+        self, rows: QVBoxLayout, languages: Sequence[tuple[str, str]]
+    ) -> None:
         """The app's language under the title, in every section - not only
         at App's foot (the user's live testing, polyglotic-hq 270: "App
         language should also be more obvious rather than hid in 2 layers";
-        284). The same setting as App's Language; each language by its own
-        name, so it's found whatever language the app is in now."""
-        line = QHBoxLayout()
-        line.setSpacing(8)
+        284) - its one place since App's own card went (470); each
+        language by its own name, so it's found whatever language the app is
+        in now."""
+        line = Flow()
         line.addWidget(label(_tr("App language"), "Dim"))
-        self.language_picker = QComboBox()
+        self.language_picker = Combo()
         self.language_picker.setObjectName("settings.language_picker")
         self.language_picker.setAccessibleName(_tr("The app's language"))
         self.language_picker.setToolTip(
@@ -564,7 +919,10 @@ class SettingsPage(Page):
                 "next time Polyglotic starts."
             )
         )
-        for code, name in [("", _tr("Like this PC")), *languages]:
+        for code, name in [
+            ("", pc_or_mac(_tr("Like this PC"), _tr("Like this Mac"))),
+            *languages,
+        ]:
             self.language_picker.addItem(name, code)
         # connected once filled: adding the first item would pick it
         self.language_picker.currentIndexChanged.connect(self._language_picked)
@@ -573,13 +931,11 @@ class SettingsPage(Page):
         self.language_later.setObjectName("settings.language_later")
         self.language_later.setHidden(True)
         line.addWidget(self.language_later)
-        line.addStretch(1)
-        self.content.insertLayout(1, line)
+        rows.addLayout(line)
         # a machine draft says so, and asks (decision 0087; `show_draft`) - on
         # a line of its own, so a long language's words fit at the Largest
         # text size beside the picker's (polyglotic-hq 294)
-        draft = QHBoxLayout()
-        draft.setSpacing(8)
+        draft = Flow()
         self.language_draft = label(_tr("Machine draft"), "Faint")
         self.language_draft.setObjectName("settings.language_draft")
         self.language_draft.setToolTip(
@@ -593,9 +949,8 @@ class SettingsPage(Page):
         self.language_wrong.setCursor(Qt.CursorShape.PointingHandCursor)
         self.language_wrong.clicked.connect(self.translation_feedback_wanted)
         draft.addWidget(self.language_wrong)
-        draft.addStretch(1)
         self.show_draft(False)
-        self.content.insertLayout(2, draft)
+        rows.addLayout(draft)
 
     def show_draft(self, draft: bool) -> None:
         """Whether the app's text is a machine draft in the language it's
@@ -606,7 +961,6 @@ class SettingsPage(Page):
 
     def _language_picked(self, index: int) -> None:
         code = str(self.language_picker.itemData(index) or "")
-        self._show_chosen(self.interface_language, code)
         self.language_later.setHidden(False)
         self.interface_language_chosen.emit(code)
 
@@ -616,69 +970,110 @@ class SettingsPage(Page):
         return column
 
     def _captions(
-        self,
-        column: QVBoxLayout,
-        look: LookView,
-        timing: TimingView,
-        speech: LanguagesView,
+        self, look: LookView, timing: TimingView, speech: LanguagesView
     ) -> None:
-        """Every caption window's settings, in 248's order (section 2.2)."""
-        self.look = LookPanel(look, notes=True, preview=True)
+        """Every caption window's settings, in 248's order (section 2.2),
+        each group in the section a learner comes to it for (304)."""
+        self.look = LookPanel(look, notes=True, preview=True, languages=speech)
         self.word_links = WordLinksPanel(look, notes=True, learning=True)
         self.word_links.learning_wanted.connect(self.learning_wanted)
+        self.reading = ReadingLinesPanel(look, notes=True)
         self.timing = TimingPanel(timing, languages=speech)
-        self.behaviour = BehaviourPanel(look, notes=True)
+        self.behaviour = BehaviourPanel(look, notes=True, hidden_windows=True)
         # Spoken language here sets every window's own, and the second
-        # languages are the ones each window's "Lines already in ..." sets
+        # languages are the ones each window's "When they already speak ..." sets
         # (248's F28; polyglotic-hq 263: each caption window has its own)
         self.speech = LanguagesPanel(speech, speech=True)
-        self.reset = ResetCard(look)
-        for panel in (
-            self.look,
-            self.word_links,
-            self.timing,
-            self.behaviour,
-            self.speech,
-            self.reset,
-        ):
-            column.addWidget(panel)
-        self.lab = LabPanel(look)  # experimental, last (284)
-        column.addWidget(self.lab)
-
-    def _learning(self, column: QVBoxLayout) -> None:
-        """Only a way to the Learning page: what's learned lives there."""
-        learning = Card(
-            _tr("Learning"),
-            _tr(
-                "The languages you're learning, your level and which words are "
-                "pointed out as new have a page of their own."
+        self.sound = SoundCard(self._sound) if self._sound is not None else None
+        self.reset = ResetCard(look)  # the look's: Look's last
+        # experimental: a section of its own, last (284)
+        self.lab = LabPanel(look, languages=speech)
+        placed: dict[str, tuple[QWidget, ...]] = {
+            "look": (self.look, self.reset),
+            # Look was 2,557 px with no landmark: links and readings are
+            # sections of their own (449's design 4A, 470)
+            "links": (self.word_links,),
+            "readings": (self.reading,),
+            "timing": (self.timing, self.behaviour),
+            # the speakers and the mic first, as Home's Sound (372): one view
+            "speech": (
+                (self.sound, self.speech) if self.sound is not None else (self.speech,)
             ),
-        )
-        self.open_learning = _button(_tr("Open Learning"), "settings.open_learning")
-        self.open_learning.clicked.connect(self.learning_wanted)
-        learning.add(_right(self.open_learning))
-        column.addWidget(learning)
+            "lab": (self.lab,),
+        }
+        marks: dict[QWidget, Glyph] = {
+            self.look: Glyph.LOOK,
+            self.word_links: Glyph.LINKS,
+            self.reading: Glyph.READINGS,
+            self.reset: Glyph.RESET,
+            self.timing: Glyph.TIMING,
+            self.behaviour: Glyph.BEHAVIOUR,
+            self.speech: Glyph.SPEECH,
+            self.lab: Glyph.LAB,
+        }
+        if self.sound is not None:
+            marks[self.sound] = Glyph.SPEAKER
+        for key, panels in placed.items():
+            column = self._section_layout(key)
+            for panel in panels:
+                column.addWidget(self._marked(panel, marks[panel]))
 
     def show_section(self, key: str) -> None:
-        """Section `key` ("captions", "learning" or "app"), at the top."""
+        """Section `key` (one of `SECTIONS`, or a former name: `FORMER`),
+        at the top."""
+        key = FORMER.get(key, key)
         if key not in self.section:
             raise ValueError(key)
         self.sections.set_value(key)
+        blocked = self.section_picker.blockSignals(True)
+        self.section_picker.setCurrentIndex(SECTIONS.index(key))
+        self.section_picker.blockSignals(blocked)
+        self._styled(self.section[key])  # before it's shown: polished once
         for each, box in self.section.items():
             box.setVisible(each == key)
         self.verticalScrollBar().setValue(0)
+        self._place_pinned()
+
+    # -- the window's stylesheet (decision 0152) -----------------------------------
+
+    def use_sheet(self, sheet: str) -> None:
+        """The main window's stylesheet (`main_window.InParts`) on the page's
+        parts - its head, its scroll bars and the section on show - not on
+        the page: Qt restyles every widget under a changed stylesheet, shown
+        or not, and the six sections are 481 widgets, one section on show
+        (polyglotic-hq 355, 360; decision 0152). Another section gets it
+        when shown. The page and its column paint nothing of their own: the
+        window paints the background beneath them."""
+        if sheet == self._sheet:
+            return
+        self._sheet = sheet
+        self._ink_tabs()  # the marks in the theme and at the text size now
+        sections = set(self.section.values())
+        column = self.content.parentWidget()
+        assert column is not None
+        parts = [
+            *(w for w in self.children() if w is not self.viewport()),
+            *(w for w in column.children() if w not in sections),
+            *(box for box in sections if not box.isHidden()),
+        ]
+        for part in parts:
+            if isinstance(part, QWidget):
+                self._styled(part)
+        # what a stylesheet on the page told it, and nothing now does: its
+        # parts' sizes changed - its column's width (`Page`) and its scroll
+        # range (Qt's scroll area). Posted, so it comes once the page is
+        # shown, at its width: sent at once, the first frame laid Look out
+        # at the hidden page's size, squashed, and nothing scrolled
+        QApplication.postEvent(self, QEvent(QEvent.Type.StyleChange))
+
+    def _styled(self, part: QWidget) -> None:
+        if self._sheet and part.styleSheet() != self._sheet:
+            part.setStyleSheet(self._sheet)
 
     def show_theme(self, theme: str, window_theme: str) -> None:
         """The theme and light or dark as the settings have them now."""
         self.theme.set_value(theme)
         self.window_theme.set_value(window_theme)
-
-    def _language_chosen(self, index: int) -> None:
-        """App's Language: the picker under the title shows it too."""
-        code = str(self.interface_language.itemData(index) or "")
-        self._show_chosen(self.language_picker, code)
-        self.language_later.setHidden(False)
-        self.interface_language_chosen.emit(code)
 
     @staticmethod
     def _show_chosen(picker: QComboBox, code: str) -> None:
@@ -689,11 +1084,11 @@ class SettingsPage(Page):
 
     def show_interface_language(self, code: str) -> None:
         """The interface language as the settings have it ("": like Windows)."""
-        self._show_chosen(self.interface_language, code)
         self._show_chosen(self.language_picker, code)
 
     def showEvent(self, event: QShowEvent) -> None:
         self.refresh()  # a hotkey another program had is shown as not available
+        self.show_typing_permission()  # given in System Settings meanwhile (438)
         super().showEvent(event)
 
     def refresh(self) -> None:
@@ -710,7 +1105,8 @@ class SettingsPage(Page):
         then there's nothing for Check now to look for."""
         text = (
             _tr(
-                "Version {version}, from the Microsoft Store, which keeps it up to date."
+                "Version {version}, from the Microsoft Store, which keeps it up to "
+                "date."
             )
             if store
             else _tr("Version {version} ({channel}).")
@@ -737,6 +1133,10 @@ class SettingsPage(Page):
             "not_downloaded": _tr(
                 "The update couldn't be downloaded. Polyglotic tries again later."
             ),
+            "metered": _tr(
+                "Version {version} is available. Your connection is metered, so "
+                "it waits: Home offers to download it anyway."
+            ),
             "not_installed": _tr(
                 "This copy wasn't installed by the installer, so it can't update "
                 "itself."
@@ -754,4 +1154,6 @@ class SettingsPage(Page):
 
     def _show_notices(self) -> None:
         if self._notices:
-            NoticesDialog(self._notices, self).exec()
+            dialog = NoticesDialog(self._notices, self)
+            self._styled(dialog)  # the page has no stylesheet of its own
+            dialog.exec()

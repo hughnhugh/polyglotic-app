@@ -14,8 +14,8 @@ gone, and this caption takes in their speech. A caption id can be finished
 more than once, only through a join; the latest finished wins.
 """
 
-from collections.abc import Mapping
-from dataclasses import dataclass, field
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 from typing import NewType
 
@@ -96,3 +96,62 @@ class CaptionUpdate:
     reason: WithdrawalReason | None = None
     processing_ms: int | None = None
     times: SpeechTimes | None = None
+
+
+HAN_NOT_MANDARIN = frozenset({"ja", "yue"})
+"""Captions whose Chinese characters aren't Mandarin's: Japanese's kanji and
+Cantonese's own characters (polyglotic-hq 371 is Cantonese's) - as
+`lexicon.scripts` reads them, every other caption's are Chinese."""
+
+MANDARIN = Language("zh")
+"""Mandarin as the server writes it: Simplified (`zh-hant` comes written in
+Traditional already)."""
+
+
+def written_in(
+    key: Language, said_in: Language | None, second: Language | None
+) -> Language:
+    """The language a clause's translation kept under `key` is written in,
+    for a caption said in `said_in`, `second` being `key`'s second language
+    (None for none). A caption already in a target is translated into the
+    target's second language, and the server keeps that line under the
+    target (protocol.md's `second_languages`; the server's
+    `target_language`: {"en": "明天见"} for English heard, English the
+    target, Chinese its second; polyglotic-hq 427)."""
+    return second if second is not None and said_in == key else key
+
+
+def mandarin_written(
+    update: CaptionUpdate,
+    write: Callable[[str], str],
+    seconds: Mapping[Language, Language] | None = None,
+) -> CaptionUpdate:
+    """`update` with its Mandarin passed through `write`: the learner's
+    choice of script for Mandarin, Simplified or Traditional (polyglotic-hq
+    375 and 432; decision 0164) - each clause's original, unless the
+    caption is Japanese or Cantonese (`HAN_NOT_MANDARIN`), and each
+    translation written in Mandarin: one into Chinese, or a second-language
+    line in Chinese (`written_in`, with `seconds`: each target's second
+    language). `write` keeps each character one character, so word links'
+    spans still mark the same words."""
+    if not update.clauses:
+        return update
+    seconds = seconds or {}
+    said_in = update.language
+
+    def mandarin(key: Language) -> bool:
+        return written_in(key, said_in, seconds.get(key)) == MANDARIN
+
+    originals = said_in not in HAN_NOT_MANDARIN
+    clauses = tuple(
+        replace(
+            c,
+            original=write(c.original) if originals else c.original,
+            translations={
+                key: write(text) if mandarin(key) else text
+                for key, text in c.translations.items()
+            },
+        )
+        for c in update.clauses
+    )
+    return replace(update, clauses=clauses)

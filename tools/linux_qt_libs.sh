@@ -13,13 +13,20 @@
 # the same list as root): OpenGL's and EGL's dispatchers (never a GL
 # context: the platform is offscreen), xkbcommon, fontconfig and a font,
 # D-Bus and GLib. Their dependencies come too; what's installed is skipped.
+#
+# And a font with Chinese and Japanese characters (polyglotic-hq 386): with
+# DejaVu alone the runner drew Chinese as empty boxes, and every Chinese
+# layout was timed through Qt's fruitless search for a font that has it, so
+# the pinyin tests' budgets measured something no learner sees. WenQuanYi
+# Micro Hei (Apache-2.0 or GPLv3 with the font exception): 1.6 MB to
+# download, 5 MB unpacked; Noto CJK's package is 61 MB and 91 MB.
 set -euo pipefail
 
 dir=$(realpath -m "$1")
 apt="$dir/apt"
 mkdir -p "$apt/lists/partial" "$apt/cache/archives/partial" "$dir/root" "$dir/fontconfig"
 opts=(-o "Dir::State::Lists=$apt/lists" -o "Dir::Cache=$apt/cache" -o "Debug::NoLocking=1")
-wanted=(libgl1 libegl1 libxkbcommon0 libfontconfig1 libdbus-1-3 libglib2.0-0 fonts-dejavu-core)
+wanted=(libgl1 libegl1 libxkbcommon0 libfontconfig1 libdbus-1-3 libglib2.0-0 fonts-dejavu-core fonts-wqy-microhei)
 
 apt-get "${opts[@]}" -qq update >&2
 mapfile -t closure < <(

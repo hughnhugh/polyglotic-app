@@ -18,7 +18,7 @@ from polyglotic_desktop.adapters.sqlite_learning import (
     SqliteLearningStore,
     set_aside_in,
 )
-from polyglotic_desktop.core.learning.levels import LevelCurve
+from polyglotic_desktop.core.learning.levels import KnownLine
 from polyglotic_desktop.core.learning.lookups import LookupContext
 from polyglotic_desktop.core.shared import Level, WordStatus
 from polyglotic_desktop.ports.learning import (
@@ -150,7 +150,7 @@ def test_what_the_server_keeps_comes_back_and_the_rest_stays_aside(
     assert saved.source_sentence == "" and saved.category_id != food.id
     assert vocabulary.category(food.id) is None
     assert vocabulary.deck_word(me.entry_id) is None  # its line
-    assert vocabulary.curve == LevelCurve.picked(Level("hsk-2025", 3))  # kept
+    assert vocabulary.line == KnownLine.picked(Level("hsk-2025", 3))  # kept
     assert vocabulary.exposures(computer.entry_id).heard == 0
     assert not vocabulary.is_exported(computer.entry_id)
     store.close()

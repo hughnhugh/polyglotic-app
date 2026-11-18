@@ -23,7 +23,12 @@ from polyglotic_desktop.core.listening.sources import MIC
 from polyglotic_desktop.core.listening.unreachable import Unreachable
 from polyglotic_desktop.main import Hub, Panels, follow_settings
 from polyglotic_desktop.perf import budgets
-from polyglotic_desktop.ports.capture import PlayingApp, SourceCategory
+from polyglotic_desktop.ports.capture import (
+    PlayingApp,
+    SoundDevice,
+    SoundDevices,
+    SourceCategory,
+)
 from polyglotic_desktop.ports.dictionary import DictionaryProblem
 from polyglotic_desktop.ports.learning import LearningDataProblem, SetAsideLearningData
 from polyglotic_desktop.ui import theme as todays_theme
@@ -89,6 +94,22 @@ class _Sources:
         return {f"app-{a.name}": (a.name, a.title) for a in APPS}
 
 
+DEVICES = SoundDevices(
+    (
+        SoundDevice("{out-2}", "Headphones (USB Headset)"),
+        SoundDevice("{out-1}", "Speakers (Realtek Audio)"),
+    ),
+    (
+        SoundDevice("{in-2}", "Headset Microphone (USB Headset)"),
+        SoundDevice("{in-1}", "Microphone Array (Realtek Audio)"),
+    ),
+    "{out-1}",
+    "{in-1}",
+)
+"""Made-up speakers and mics for Home's Sound (polyglotic-hq 372): none of
+the PC's own is listed in a picture."""
+
+
 def hub(
     lab: Lab,
     settings: dict[str, object],
@@ -101,6 +122,7 @@ def hub(
     panels = Panels(desktop.settings, windows)
     assert desktop.apps is not None
     built = Hub(desktop, windows, panels, desktop.apps, per_app=True)
+    built.list_devices = lambda: DEVICES  # Home's Sound (372): made up
     follow_settings(windows, desktop, _Sources())  # type: ignore[arg-type]
     desktop.settings.changed.connect(
         lambda: follow_settings(windows, desktop, _Sources())  # type: ignore[arg-type]
@@ -128,7 +150,9 @@ def no_horizontal_scrollbar(built: Hub) -> None:
 
 
 def picker_none(lab: Lab) -> QWidget:
-    built = hub(lab, {})
+    """Nothing chosen: a learner who stopped everything (a new learner
+    captions everything the PC plays since 484: `everything`)."""
+    built = hub(lab, {"whole_system": False})
     no_horizontal_scrollbar(built)
     return built.window
 
@@ -136,7 +160,7 @@ def picker_none(lab: Lab) -> QWidget:
 def sample(lab: Lab) -> QWidget:
     """Nothing playing on a first run: Home offers the sample (176), and
     says "Stop the sample" while it's on."""
-    built = hub(lab, {"learning": "zh"}, apps=QuietApps())
+    built = hub(lab, {"learning": "zh", "whole_system": False}, apps=QuietApps())
 
     def turn(on: bool) -> None:
         built.sample_on = on
@@ -155,7 +179,7 @@ def sample_ended(lab: Lab) -> QWidget:
     """The sample played to its end (203's item 5, option B; polyglotic-hq
     208): offered again, with the next step - an app of the learner's own.
     Its window stays for lookups (not drawn here)."""
-    built = hub(lab, {"learning": "zh"}, apps=QuietApps())
+    built = hub(lab, {"learning": "zh", "whole_system": False}, apps=QuietApps())
     built.sample = lambda on: None
     built.sample_ended = True
     built.follow()
@@ -193,6 +217,55 @@ def update_ready(lab: Lab) -> QWidget:
     )
     lab.pump()
     assert built.home.update_card.isVisible(), "the update card isn't shown"
+    no_horizontal_scrollbar(built)
+    return built.window
+
+
+def update_metered(lab: Lab) -> QWidget:
+    """An update found on a metered connection (polyglotic-hq 345): not
+    downloaded by itself - its size, why it waits, Download anyway and
+    Later."""
+    built = hub(lab, {"apps": ["Discord"], "level_line_dismissed": True})
+    built.desktop.set_connection(ConnectionState.LISTENING)
+    built.home.show_update(
+        "0.1.7",
+        (
+            (
+                "What's new after an update: the first time Polyglotic starts "
+                "after it updates, Home says what changed in the new version in…"
+            ),
+        ),
+        metered_size=91_960_000,
+    )
+    lab.pump()
+    assert built.home.download_anyway.isVisible(), "Download anyway isn't shown"
+    no_horizontal_scrollbar(built)
+    return built.window
+
+
+def whats_new(lab: Lab) -> QWidget:
+    """After an update (polyglotic-hq 345): what's new in this version on
+    Home, in three lines, the version skipped named, All the changes and
+    Close - once, until it's closed."""
+    built = hub(lab, {"apps": ["Discord"], "level_line_dismissed": True})
+    built.desktop.set_connection(ConnectionState.LISTENING)
+    built.home.show_whats_new(
+        "0.1.7",
+        (
+            (
+                "What's new after an update: the first time Polyglotic starts after "
+                "it updates, Home says what changed in the new version in a few lines,…"
+            ),
+            (
+                "Russian's dictionary: learn Russian on the Learning page and its card "
+                "offers the dictionary to download (about 13 MB; 62 MB once unpacked)."
+            ),
+            "A metered connection doesn't download an update by itself.",
+        ),
+        ("0.1.6",),
+    )
+    lab.pump()
+    assert built.home.whats_new_card.isVisible(), "What's new isn't shown"
     no_horizontal_scrollbar(built)
     return built.window
 
@@ -263,7 +336,10 @@ def everything_else(lab: Lab) -> QWidget:
 
 
 def everything(lab: Lab) -> QWidget:
-    built = hub(lab, {"whole_system": True})
+    """Everything the PC plays - a new learner's first launch (484): what
+    it takes in, a call's voices too, and the apps playing to caption one
+    instead with one click."""
+    built = hub(lab, {})
     return built.window
 
 
@@ -323,15 +399,33 @@ def theme_change(lab: Lab) -> QWidget:
         ("light", "signal"),
         ("dark", "margin"),
     ]
+    window = built.window
     for mode, name in looks * 2:
         lab.time(
             "theme",
-            partial(built.window.set_theme, _theme(mode, name)),
+            partial(window.set_theme, _theme(mode, name)),
             budget=budgets.THEME,
         )
-    built.window.set_theme(_theme("light", "margin"))
+    # chosen where it's chosen: Settings on show, the window's biggest page;
+    # then a page not shown since, restyled as it's shown - a first show
+    # in that theme (polyglotic-hq 355)
+    for mode, name in looks * 2:
+        window.go_to("settings")
+        lab.pump()
+        lab.time(
+            "theme_on_settings",
+            partial(window.set_theme, _theme(mode, name)),
+            budget=budgets.THEME,
+        )
+        lab.time(
+            "page_after_theme",
+            partial(window.go_to, "home"),
+            budget=budgets.PAGE_SWITCH_COLD,
+        )
+    window.set_theme(_theme("light", "margin"))
+    window.go_to("home")
     lab.pump()
-    return built.window
+    return window
 
 
 def signed_out(lab: Lab) -> QWidget:
@@ -497,6 +591,8 @@ STATES = [
         ("sample_ended", sample_ended),
         ("start_with_windows", start_with_windows),
         ("update_ready", update_ready),
+        ("update_metered", update_metered),
+        ("whats_new", whats_new),
         ("picker_one", picker_one),
         ("picker_full", picker_full),
         ("everything_else", everything_else),

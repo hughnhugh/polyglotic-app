@@ -79,6 +79,8 @@ def answers_nothing(file: GuardedDictionary) -> bool:
         and file.record("cedict:x") is None
         and list(file.merged_ids()) == []
         and list(file.words_ranked(1000)) == []
+        and list(file.headwords_ranked(0, 10)) == []
+        and list(file.headwords_at_levels("hsk-2025")) == []
         and dict(file.words_at_levels("hsk-2025")) == {}
     )
 
@@ -140,6 +142,10 @@ def test_a_whole_file_answers_as_the_file_does(tmp_path: Path) -> None:
     # Words' bands (polyglotic-hq 163, 209)
     assert list(file.words_ranked(1000)) == list(whole.words_ranked(1000))
     assert list(file.words_ranked(1000))  # the sample has ranked words
+    assert list(file.headwords_ranked(0, 5)) == list(whole.headwords_ranked(0, 5))
+    assert list(file.headwords_at_levels("hsk-2025")) == list(
+        whole.headwords_at_levels("hsk-2025")
+    )
     assert dict(file.words_at_levels("hsk-2025")) == dict(
         whole.words_at_levels("hsk-2025")
     )

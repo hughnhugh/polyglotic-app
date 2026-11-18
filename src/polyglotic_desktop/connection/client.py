@@ -44,6 +44,7 @@ from polyglotic_desktop.connection.session import (
     Timings,
 )
 from polyglotic_desktop.core.listening.captions import CaptionKind, CaptionUpdate
+from polyglotic_desktop.core.listening.maintenance import Maintenance
 from polyglotic_desktop.core.listening.recheck import RecheckRequest, RecheckResult
 from polyglotic_desktop.core.listening.settings import ListeningSettings
 from polyglotic_desktop.core.listening.sources import Capture
@@ -100,6 +101,10 @@ class Connection:
         self._joined = False  # the joined window is on
         self.sync_stopped: StopReason | None = None
         """Set when sync sessions stopped for good (the user must act)."""
+        self.maintenance: Maintenance | None = None
+        """The planned maintenance window the app holds - kept between
+        starts by `main` - handed to each session as it opens, and updated
+        by what any session is told (polyglotic-hq 319)."""
         exchange.wake = self._something_waiting
 
     # --- From the app ---------------------------------------------------------------
@@ -141,6 +146,7 @@ class Connection:
                 live_interval=live_interval,
                 caption_mode=caption_mode,
                 capture=self._capture,
+                maintenance=self.maintenance,
             )
             listener.session = session
             self._listening = session
@@ -355,6 +361,7 @@ class Connection:
                 timings=self._timings,
                 exchange=self._exchange,
                 purpose="sync",
+                maintenance=self.maintenance,
             )
             self._sync = session
         session.start()
@@ -375,6 +382,12 @@ class Connection:
             wait = self._retry_waits[min(self._failures, len(self._retry_waits) - 1)]
             self._failures += 1
         self._sync_soon(wait)
+
+    def _maintenance_told(self, window: Maintenance | None) -> None:
+        """A session was told the planned maintenance window (or none):
+        kept for the next session, and `main` told."""
+        self.maintenance = window
+        self._listener.maintenance_changed(window)
 
     def _cancel_timer(self) -> None:
         if self._timer is not None:
@@ -438,6 +451,9 @@ class _ListeningListener:
     def plan_changed(self, plan: protocol.PlanState) -> None:
         self._listener.plan_changed(plan)
 
+    def maintenance_changed(self, window: Maintenance | None) -> None:
+        self._connection._maintenance_told(window)
+
 
 class _SyncListener:
     """A sync session's listener: its end - and the account's plan, which
@@ -473,3 +489,6 @@ class _SyncListener:
 
     def plan_changed(self, plan: protocol.PlanState) -> None:
         self._connection._listener.plan_changed(plan)
+
+    def maintenance_changed(self, window: Maintenance | None) -> None:
+        self._connection._maintenance_told(window)

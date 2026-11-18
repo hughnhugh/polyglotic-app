@@ -32,7 +32,7 @@ from polyglotic_desktop.core.shared import (
     WordStatus,
     WordStatusChanged,
 )
-from polyglotic_desktop.ports.consent import Agreement
+from polyglotic_desktop.ports.consent import Agreement, ConsentChoice
 
 INSTALL = "3c5e7a9b-1d2f-4e6a-8b0c-2d4f6a8c0e1f"
 AT = datetime(2026, 11, 4, 9, 15, 2, 120000, tzinfo=UTC)
@@ -781,8 +781,7 @@ def test_consent_missing_names_the_batch_which_goes_again_once_consent_is_in() -
     (again,) = rig.more()
     assert again["type"] == "usage" and again["events"] == usage["events"]
     rig.exchange.heard(protocol.Error(code="consent_missing", batch=again["batch"]))
-    (consent,) = rig.more()  # refused again: not sent again this session
-    rig.answer([consent])
+    # refused again: not sent again this session, and the consent went today
     assert rig.more() == []
     rig.exchange.heard(protocol.LearningState(cursor="1"))
     assert rig.exchange.settled()  # a sync session can close; it waits for the next
@@ -807,6 +806,166 @@ def test_a_refused_batch_frees_its_place_for_learning_data() -> None:
     rig.answer(usage[1:2])
     (again,) = rig.more()
     assert again["events"] == usage[0]["events"]  # the refused event, again
+
+
+# --- polyglotic-hq 311: two choices at one instant ------------------------------------
+
+
+class ServerBefore311:
+    """What the server did with consent and usage before polyglotic-hq 311
+    (v0.1.2, live on 2026-11-14): the latest choice is the one with the
+    latest `at` - of two at the same millisecond, the first stored - and
+    usage is kept only if it says yes."""
+
+    def __init__(self) -> None:
+        self.choices: list[dict[str, Any]] = []
+        self.kept: list[str] = []  # usage event ids
+
+    def answer(self, message: dict[str, Any]) -> protocol.Message | None:
+        if message["type"] == "consent":
+            self.choices.append(message)
+            return protocol.Received(id=message["id"])
+        if message["type"] == "usage":
+            latest = max(self.choices, key=lambda c: c["at"], default=None)
+            if latest is None or not latest["usage"]:
+                return protocol.Error(code="consent_missing", batch=message["batch"])
+            self.kept += [e["id"] for e in message["events"]]
+            return protocol.Received(batch=message["batch"])
+        if message["type"] == "learning_sync":
+            return protocol.LearningState(cursor="1")
+        return None
+
+
+def a_session(rig: Rig, server: ServerBefore311) -> list[dict[str, Any]]:
+    """One session: what the app sends, each answered as `server` answers
+    it, until nothing more goes; everything sent."""
+    sent: list[dict[str, Any]] = []
+    out = rig.open()
+    while out:
+        sent += out
+        for message in out:
+            answer = server.answer(message)
+            if answer is not None:
+                rig.exchange.heard(answer)
+        out = rig.more()
+    rig.exchange.closed()
+    return sent
+
+
+def test_a_new_choice_is_dated_after_the_one_it_replaces_whatever_the_clock_says() -> (
+    None
+):
+    rig = Rig()
+    rig.now = AT + timedelta(microseconds=900)  # 09:15:02.120900
+    first = rig.exchange.choose_consent(usage=False, crashes=False, exposures=False)
+    assert first.at == rig.now
+    # the next tick of a coarse clock: the same millisecond
+    second = rig.exchange.choose_consent(usage=True, crashes=True, exposures=False)
+    assert protocol.at(second.at) == "2026-11-04T09:15:02.121Z"
+    rig.now = AT - timedelta(hours=1)  # the clock set back
+    third = rig.exchange.choose_consent(usage=False, crashes=True, exposures=False)
+    assert protocol.at(third.at) == "2026-11-04T09:15:02.122Z"
+    rig.now = AT + timedelta(minutes=5)  # a clock ahead of them all: as it says
+    fourth = rig.exchange.choose_consent(usage=True, crashes=True, exposures=False)
+    assert fourth.at == rig.now
+    sent = [m for m in rig.open() if m["type"] == "consent"]
+    assert [m["at"] for m in sent] == [
+        "2026-11-04T09:15:02.120Z",
+        "2026-11-04T09:15:02.121Z",
+        "2026-11-04T09:15:02.122Z",
+        "2026-11-04T09:20:02.120Z",
+    ]
+
+
+def test_an_alpha_testers_first_run_counts_on_a_server_before_311() -> None:
+    """The first run's choice (usage off), then "diagnostics on" for an alpha
+    tester, on one clock tick: the second goes a millisecond later, so even
+    the server before 311 takes it as the latest."""
+    rig = Rig()
+    rig.exchange.choose_consent(usage=False, crashes=False, exposures=False)
+    rig.exchange.choose_consent(usage=True, crashes=True, exposures=False)
+    rig.exchange.usage("caption_rated", {"thumbs": "up"}, AT)
+    server = ServerBefore311()
+    a_session(rig, server)
+    assert [c["usage"] for c in server.choices] == [False, True]
+    assert len(server.kept) == 1
+
+
+def test_the_affected_pcs_tie_on_a_server_before_311_the_choice_goes_once_a_day(
+    tmp_path: Any,
+) -> None:
+    """The PC as it was on 2026-11-14: both choices kept at one instant, on
+    the PC and on the server, which takes the "off". This app can't change
+    that (the choices are the user's, at the time they were made); it
+    sends the latest once a day instead of every session - the server's
+    fix (311) is what lets the usage in."""
+    outbox = SqliteOutbox(tmp_path / "outbox.sqlite")
+    server = ServerBefore311()
+    for choice_id, usage in (("first-run", False), ("diagnostics-on", True)):
+        # as the app before 311 kept and sent them
+        outbox.save_consent(ConsentChoice(choice_id, AT, usage, usage, False))
+        message = {"id": choice_id, "at": protocol.at(AT), "usage": usage}
+        server.choices.append(message)
+    rig = Rig(outbox)
+    rig.exchange.usage("caption_rated", {"thumbs": "up"}, AT)
+    first = a_session(rig, server)  # this app's first: a new install here
+    # its choice as a new install's, then once for consent_missing - both as
+    # the user made it, at the instant it was made
+    assert [m["at"] for m in first if m["type"] == "consent"] == [protocol.at(AT)] * 2
+    for session in range(1, 13):  # a sync session every ten minutes, two hours
+        rig.now = AT + timedelta(minutes=10 * session)
+        sent = a_session(rig, server)
+        assert "usage" in types(sent)  # tried, refused
+        assert "consent" not in types(sent)  # not again today
+    assert server.kept == []
+    rig.now = AT + timedelta(days=1)  # a day after: once more, the same choice
+    sent = a_session(rig, server)
+    assert [m["at"] for m in sent if m["type"] == "consent"] == [protocol.at(AT)]
+    assert server.kept == []  # the tie stays: the server's fix lets it in
+    assert len(server.choices) == 2 + 2 + 1  # one a day, not two a session
+
+
+def test_consent_missing_sends_nothing_for_what_the_choice_no_longer_allows() -> None:
+    rig = Rig()
+    rig.exchange.choose_consent(usage=False, crashes=False, exposures=True)
+    rig.answer(rig.open())
+    rig.exchange.exposures({date(2026, 11, 3): {WORD: 4}})
+    (exposures,) = rig.more()
+    rig.exchange.choose_consent(usage=False, crashes=False, exposures=False)
+    (consent,) = rig.more()  # the "no"
+    rig.answer([consent])
+    # the batch sent before it, refused: the "no" doesn't allow it, so the
+    # choice doesn't go again (before 311 it did, whatever was refused)
+    refused = protocol.Error(code="consent_missing", batch=exposures["batch"])
+    rig.exchange.heard(refused)
+    assert rig.more() == []
+
+
+def test_the_consent_goes_again_once_a_day_for_each_install() -> None:
+    rig = Rig()
+    rig.exchange.choose_consent(usage=True, crashes=False, exposures=False)
+    rig.answer(rig.open())
+    rig.exchange.heard(protocol.Error(code="consent_missing"))  # no batch named
+    (again,) = rig.more()
+    rig.answer([again])
+    rig.exchange.closed()
+    rig.open()
+    rig.exchange.heard(protocol.Error(code="consent_missing"))
+    assert rig.more() == []  # this install's, today
+    rig.exchange.closed()
+    other = "6f1d2c3b-4a59-4e8f-9a0b-1c2d3e4f5a6b"  # a new invite code
+    opened = rig.open(install=other)
+    assert types(opened) == ["consent", "learning_sync"]  # as a new install's
+    rig.answer(opened)
+    rig.exchange.heard(protocol.Error(code="consent_missing"))
+    resent = rig.more()
+    assert types(resent) == ["consent"]  # another install's first time
+    rig.answer(resent)
+    rig.exchange.closed()
+    rig.now = AT - timedelta(hours=2)  # the clock set back: not held back by it
+    assert types(rig.open(install=other)) == ["learning_sync"]
+    rig.exchange.heard(protocol.Error(code="consent_missing"))
+    assert types(rig.more()) == ["consent"]
 
 
 @pytest.mark.parametrize("kind", ["consent", "learning", "usage"])

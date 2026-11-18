@@ -5,8 +5,8 @@ structure, sections 5 and 7).
   first line shows - its tone, title, the details after it and its button
   - from the session's state (`HomeState`), with today's rules: Paused
   first (and how to resume); "Pick what to caption" while nothing is
-  chosen and no session needs to be (the first run starts paused, and
-  ends here - DECISIONS.md #25); otherwise the connection's state - signed
+  chosen and no session needs to be (DECISIONS.md #25; since 484 a new
+  learner's first run captions everything the PC plays); otherwise the connection's state - signed
   out with Sign in in place of Pause (109's section 7); an update needed
   with what to do (polyglotic-hq 137); stopped with how to start again
   (polyglotic-hq 228); waiting to try again with why the server can't be
@@ -26,10 +26,12 @@ structure, sections 5 and 7).
 Holds apps' names, which stay on this PC; no caption text.
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Protocol
 
+from polyglotic_desktop.core.listening.hidden import Sight
 from polyglotic_desktop.core.listening.unreachable import Side, Unreachable, side
 from polyglotic_desktop.core.releases.updates import UpdateNow
 from polyglotic_desktop.ui_next.views.caption_window import LIMIT, ORIGINAL_ONLY
@@ -78,7 +80,6 @@ class Title(StrEnum):
     STOPPED = "stopped"
     # waiting to try again: why the server can't be reached (251)
     CANT_REACH = "cant_reach"
-    SERVER_DOWN = "server_down"
     SERVER_RESTARTING = "server_restarting"
     SERVER_PROBLEM = "server_problem"
     BLOCKED = "blocked"
@@ -86,10 +87,12 @@ class Title(StrEnum):
     CLOCK = "clock"
     TOO_MANY_SESSIONS = "too_many_sessions"
     TOO_MANY_TRIES = "too_many_tries"
+    MAINTENANCE = "maintenance"  # planned, and until when (319)
 
 
 class Detail(StrEnum):
     RESUME = "resume"  # how: Ctrl+Alt+P, or the tray
+    WINDOWS_PAUSED = "windows_paused"  # every window hidden too long: show them
     SIGN_IN = "sign_in"  # you need an invite code from us
     NOTHING_CHOSEN = "nothing_chosen"
     RETRY_IN = "retry_in"  # seconds
@@ -114,9 +117,13 @@ class Detail(StrEnum):
     BACK_IN_A_MOMENT = "back_in_a_moment"  # restarting
     NETWORK_BLOCKS = "network_blocks"  # a firewall or proxy: another network
     NETWORK_IN_THE_WAY = "network_in_the_way"  # TLS: Wi-Fi sign-in, antivirus
-    SET_THE_CLOCK = "set_the_clock"  # Windows' Settings; if right, it's us
+    SET_THE_CLOCK = "set_the_clock"  # the date it says is wrong: set it automatically
+    CERT_IN_THE_WAY = (
+        "cert_in_the_way"  # an out-of-date certificate: antivirus, VPN (313)
+    )
     QUIT_ON_ANOTHER_PC = "quit_on_another_pc"  # too many sessions: starts here then
     TRIES_SOON = "tries_soon"  # too many failed sign-ins from this network
+    MAINTENANCE = "maintenance"  # down for planned maintenance; back by themselves
 
 
 class Tone(StrEnum):
@@ -145,14 +152,17 @@ _BY_CONNECTION = {
 _UNREACHABLE: dict[Unreachable, tuple[Title, Detail]] = {
     Unreachable.OFFLINE: (Title.CANT_REACH, Detail.CHECK_INTERNET),
     Unreachable.NO_ANSWER: (Title.CANT_REACH, Detail.INTERNET_OR_US),
-    Unreachable.DOWN: (Title.SERVER_DOWN, Detail.OURS),
+    # what it knows: not the learner's internet, and no restart said (368)
+    Unreachable.DOWN: (Title.CANT_REACH, Detail.OURS),
     Unreachable.RESTARTING: (Title.SERVER_RESTARTING, Detail.BACK_IN_A_MOMENT),
     Unreachable.SERVER_ERROR: (Title.SERVER_PROBLEM, Detail.OURS),
     Unreachable.BLOCKED: (Title.BLOCKED, Detail.NETWORK_BLOCKS),
     Unreachable.NOT_SECURE: (Title.NOT_SECURE, Detail.NETWORK_IN_THE_WAY),
     Unreachable.CLOCK: (Title.CLOCK, Detail.SET_THE_CLOCK),
+    Unreachable.OUT_OF_DATE: (Title.NOT_SECURE, Detail.CERT_IN_THE_WAY),
     Unreachable.TOO_MANY_SESSIONS: (Title.TOO_MANY_SESSIONS, Detail.QUIT_ON_ANOTHER_PC),
     Unreachable.TOO_MANY_TRIES: (Title.TOO_MANY_TRIES, Detail.TRIES_SOON),
+    Unreachable.MAINTENANCE: (Title.MAINTENANCE, Detail.MAINTENANCE),
 }
 """Waiting to try again: what Home says, by why the server can't be reached."""
 
@@ -193,6 +203,10 @@ class HomeState:
     unreachable: Unreachable | None = None
     """Waiting to try again: why the server can't be reached, if it's
     known (core.listening.unreachable; polyglotic-hq 251)."""
+    windows_paused_after: int | None = None
+    """Every captioned app's window paused after being hidden: the longest
+    it was hidden before it paused (minutes; `every_window_paused`); None
+    while any listens (polyglotic-hq 335, 368)."""
 
 
 class Action(StrEnum):
@@ -256,6 +270,10 @@ def state_line(state: HomeState, now: float = 0.0) -> StateLine:
         tone, title = Tone.WAIT, Title.PICK
     else:
         tone, title = _BY_CONNECTION[state.connection]
+    if title is Title.LISTENING and state.windows_paused_after is not None:
+        # nothing is sent: not "Listening" (336's Q2, 368) - and how to go on
+        paused = ((Detail.WINDOWS_PAUSED, state.windows_paused_after),)
+        return StateLine(Tone.WAIT, Title.PAUSED, paused)
     if title is Title.NOT_SIGNED_IN:
         return StateLine(tone, title, ((Detail.SIGN_IN, None),), Action.SIGN_IN)
     if title is Title.UPDATE_NEEDED:  # what to do, and nothing else
@@ -285,6 +303,15 @@ def state_line(state: HomeState, now: float = 0.0) -> StateLine:
     return StateLine(tone, title, tuple(details))
 
 
+def every_window_paused(rows: Sequence["AppRow"]) -> int | None:
+    """The longest any captioned app's window was hidden before it paused
+    (minutes), when every one of them is paused - nothing is sent then;
+    None while any listens, or nothing is captioned (polyglotic-hq 368)."""
+    if not rows or any(row.sight is not Sight.PAUSED for row in rows):
+        return None
+    return max((row.paused_after or 0 for row in rows), default=0)
+
+
 def unreachable_line(why: Unreachable) -> tuple[Title, Detail]:
     """What Home says of `why`: its title, and whose side and what to do -
     Help's check says the same (251)."""
@@ -299,7 +326,9 @@ def _unreachable(why: Unreachable, seconds: int | None) -> StateLine:
     title, detail = _UNREACHABLE[why]
     tone = Tone.BAD if side(why) is Side.YOURS else Tone.WAIT
     details: list[tuple[Detail, object]] = [(detail, None)]
-    if seconds is not None:
+    # a planned window says until when, in the title: a countdown to the
+    # next try would be noise for half an hour (319)
+    if seconds is not None and why is not Unreachable.MAINTENANCE:
         details.append((Detail.RETRY_IN, seconds))
     return StateLine(tone, title, tuple(details))
 
@@ -320,7 +349,9 @@ class AppRow:
     """A captioned app's row: its key (the app's name, SYSTEM or
     EVERYTHING_ELSE), its label and colour as the learner set them,
     whether it's playing, and
-    its window's language (or ORIGINAL_ONLY) and my-speech mark."""
+    its window's language (or ORIGINAL_ONLY) and my-speech mark; and, its
+    window hidden, whether it's captioning still or paused, and after how
+    many minutes (polyglotic-hq 335)."""
 
     key: str
     label: str
@@ -328,6 +359,8 @@ class AppRow:
     status: AppStatus
     translate_into: str = "en"
     show_mic: bool = False
+    sight: Sight = Sight.SHOWN
+    paused_after: int | None = None
 
     @property
     def original_only(self) -> bool:
@@ -506,8 +539,9 @@ class PickerView(Shared[Picker]):
         self.commands.recolour(key, colour)
 
     def show_window(self, key: str) -> None:
-        if not self.value.hidden:
-            self.commands.show_window(key)
+        """Its window shown - hidden, every window shown again (and any
+        paused listens again: 335)."""
+        self.commands.show_window(key)
 
     def open_transcript(self, key: str) -> None:
         self.commands.open_transcript(key)

@@ -9,6 +9,7 @@ process's tree catches all of its sound, even if the child is replaced.
 
 import ctypes
 import functools
+import os
 from ctypes import POINTER, byref, c_int, c_void_p, wintypes
 
 from polyglotic_desktop.platform.windows.categories import category_of, known_name
@@ -282,11 +283,29 @@ def app_peak(process_id: int) -> float:
         return 0.0
 
 
+APP_EXE = "polyglotic.exe"
+"""Every packed copy's executable (`tools/package`): the installed app, a
+preview or a rehearsal alike."""
+
+
+def is_polyglotic(
+    process_id: int, processes: dict[int, tuple[int, str]], this: int
+) -> bool:
+    """Whether the app at `process_id` (a top process) is Polyglotic: this
+    copy (`this`, its own process - from source, Python), or any other copy
+    of it, by its executable. Its own sounds - the sample, a word's - are
+    never an app to caption (polyglotic-hq 368)."""
+    if process_id == top_process(this, processes):
+        return True
+    return processes[process_id][1].lower() == APP_EXE
+
+
 class WindowsAppList:
     """The `AppList` port on Windows."""
 
     def playing_apps(self) -> list[PlayingApp]:
         processes = _processes()
+        this = os.getpid()
         playing: dict[int, bool] = {}
         for device in active_devices(Flow.OUTPUT):
             for pid, active in _sessions(device.id):
@@ -296,6 +315,8 @@ class WindowsAppList:
         for pid, active in playing.items():
             if pid not in processes:
                 continue  # exited since
+            if is_polyglotic(pid, processes, this):
+                continue  # its own sounds: never an app to caption (368)
             exe = processes[pid][1]
             path = _path(pid)
             category = category_of(exe, path)

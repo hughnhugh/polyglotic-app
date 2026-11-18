@@ -109,17 +109,23 @@ def _bands(rows: list[int]) -> list[tuple[int, int]]:
     return bands
 
 
+@pytest.mark.parametrize("translation_size", [1.0, 0.5, 2.0])
 @pytest.mark.parametrize("text_size", [1.0, 2.0])
 @pytest.mark.parametrize("words", TEXT)
 def test_the_underline_is_below_the_descenders_never_through_them(
     qapp: QApplication,
     text_size: float,
     words: tuple[str, str, tuple[tuple[str, str], ...]],
+    translation_size: float,
 ) -> None:
+    """At every text size, and with the translation at half and twice what
+    was said (polyglotic-hq 305)."""
     line = _line(*words)
     image = _painted(
         line,
-        caption_style(replace(CaptionLook(), word_links=WordLinks.COLOURS)),
+        caption_style(
+            replace(CaptionLook(), word_links=WordLinks.COLOURS), translation_size
+        ),
         text_size,
     )
     red = _bands(_rows_with(image, "red"))

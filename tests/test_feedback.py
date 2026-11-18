@@ -114,6 +114,25 @@ def test_the_users_folder_is_hidden_in_the_log(tmp_path: Path) -> None:
     assert hide_home("C:\\x", Path("C:\\")) == "C:\\x"  # a drive alone: nothing to hide
 
 
+@pytest.mark.windows_only  # Windows' paths
+def test_the_users_folder_is_hidden_where_velopack_escapes_it(tmp_path: Path) -> None:
+    """Velopack's own log line at every update check writes the verified
+    feed's path with each backslash doubled - the user's name went into a
+    report's log there (polyglotic-hq 336)."""
+    home = Path("C:/Users/Tester")
+    line = (
+        "INFO velopack.sources.file: Reading releases from file: "
+        '"C:\\\\Users\\\\Tester\\\\AppData\\\\Local\\\\Polyglotic\\\\verified-feed'
+        '\\\\win-x64-alpha\\\\releases.win-x64-alpha.json"\n'
+    )
+    (tmp_path / "polyglotic.log").write_text(line, "utf-8")
+    shown = read_log(tmp_path, home=home)
+    assert shown is not None
+    assert "tester" not in shown.lower()
+    assert shown.count("%USERPROFILE%") == 1
+    assert "%USERPROFILE%\\\\AppData\\\\Local" in shown
+
+
 # --- Sending -----------------------------------------------------------------------
 
 

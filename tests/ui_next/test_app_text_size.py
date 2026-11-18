@@ -148,7 +148,7 @@ def test_the_main_window_follows_it_at_once(at_normal: QApplication) -> None:
     window.text_size_changed.connect(lambda: changed.append(style.text_scale()))
     window.set_app_text_size("largest")
     assert changed == [1.45]
-    assert "font-size: 19px" in window.styleSheet()
+    assert "font-size: 19px" in window.sidebar.styleSheet()
     assert window.minimumWidth() >= 760  # its minimum, kept to the screen
     window.set_app_text_size("largest")  # the same again: nothing
     assert changed == [1.45]

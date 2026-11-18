@@ -130,3 +130,21 @@ def test_cleared_nothing_waits() -> None:
     pending.put(live("g1"), "g1")
     pending.clear()
     assert len(pending) == 0 and drain(pending) == []
+
+
+def test_nothing_is_held_through_a_planned_maintenance_window() -> None:
+    """polyglotic-hq 319: what waits is dropped as the window's wait begins,
+    and so is what comes during it - counted - then holding resumes, in
+    order, with what's said after."""
+    pending: PendingSpeech[str] = PendingSpeech()
+    pending.put(finished("f1"), "f1")
+    pending.put(live("g1"), "g1")
+    pending.hold(False)
+    assert len(pending) == 0 and pending.dropped == 1
+    pending.put(finished("f2"), "f2")
+    pending.put(live("g2"), "g2")
+    assert len(pending) == 0 and pending.dropped == 2  # live updates aren't counted
+    pending.hold(True)
+    pending.put(finished("f3"), "f3")
+    pending.put(finished("f4"), "f4")
+    assert drain(pending) == ["f3", "f4"]
