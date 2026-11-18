@@ -113,6 +113,7 @@ from polyglotic_desktop.ports.settings import SettingsStore
 from polyglotic_desktop.ports.system import OnTop
 from polyglotic_desktop.ui_next.caption_window import (
     ACCENT,
+    HINTED_LINES,
     READING_HINT_SEC,
     CaptionWindow,
     notice_text,
@@ -124,7 +125,9 @@ from polyglotic_desktop.ui_next.caption_window import (
 from polyglotic_desktop.ui_next.joined_window import JoinedWindow
 from polyglotic_desktop.ui_next.languages import taken_off, target_languages
 from polyglotic_desktop.ui_next.lookup_card import Action, LookupCard
+from polyglotic_desktop.ui_next.pointer_watch import PointerWatch
 from polyglotic_desktop.ui_next.reading_lines import language_of
+from polyglotic_desktop.ui_next.selection_reading import SelectionReading
 from polyglotic_desktop.ui_next.settings_popover import KeyState
 from polyglotic_desktop.ui_next.views import placement
 from polyglotic_desktop.ui_next.views.app_choices import AppChoice
@@ -179,6 +182,12 @@ class CaptionWindows(QObject):
     links_wanted = Signal(bool, tuple)
     """A window's word links button: on or off, for every window (249, F9),
     with that window's reading lines (446)."""
+    quiet_wanted = Signal(bool, tuple)
+    """A window's quiet view button: on or off, for every window, with that
+    window's reading lines (477)."""
+    quiet_word_wanted = Signal(str, bool)
+    """A window's popover: one of the quiet view's chosen words ticked or
+    not, for every window (477)."""
     fill_wanted = Signal(bool)
     """A window's filled lines button: on or off, for every window (372)."""
     aligned_wanted = Signal(bool)
@@ -224,13 +233,16 @@ class CaptionWindows(QObject):
         learner: Learner | None = None,
         on_top: OnTop | None = None,
         offer_set_up: bool = False,
+        watch_pointer: bool = False,
     ) -> None:
         """`keys`: whether Esc or a mouse button is held anywhere (from
         `platform`, by way of `main`), for closing a settings popover;
         `learner`: the learning tools, for the windows' highlights and the
         lookup; `on_top`: Windows' always-on-top band (`keep_on_top`);
         `offer_set_up`: a window that opens asks its languages, until Use as
-        my default (465, 478)."""
+        my default (465, 478); `watch_pointer`: the windows told of the
+        mouse while the app is in the background, which a Mac doesn't do
+        (`pointer_watch`, 515)."""
         super().__init__(parent)
         self.offer_set_up = offer_set_up
         self.keys = keys
@@ -246,6 +258,11 @@ class CaptionWindows(QObject):
         )
         if self.card is not None:
             self.card.opened.connect(self._looked_up)
+        self.pointer_watch = (
+            PointerWatch(self.under_the_mouse, self) if watch_pointer else None
+        )
+        if self.pointer_watch is not None:
+            self.pointer_watch.start()
         self._acting = False
         self._read: dict[str, object] = store.load() if store else {}
         """The settings file as last read, for `save_now`."""
@@ -259,6 +276,8 @@ class CaptionWindows(QObject):
         self.stored = read.only_offered({str(c) for c in target_languages()})
         self.mic = mic
         self.windows: dict[str, CaptionWindow] = {}
+        self.say_it: SelectionReading | None = None
+        """Reads a selection aloud from its card (polyglotic-hq 495)."""
         self._reporting = False  # "Report a problem" on the strips (275)
         self.joined_window: JoinedWindow | None = None
         """The windows joined as one, while they are (two or more)."""
@@ -342,6 +361,13 @@ class CaptionWindows(QObject):
         self.mic_wanted.emit(self.show_mic_anywhere)
         self._say_sights()
 
+    def use_say_it(self, reading: SelectionReading) -> None:
+        """Say it on each window's selection card reads through `reading`
+        (`main`'s: the PC's voices, polyglotic-hq 495)."""
+        self.say_it = reading
+        for window in self.windows.values():
+            window.use_say_it(reading)
+
     def _open(self, key: str, source: SourceId, index: int) -> CaptionWindow:
         choices = self.stored.by_key.get(key)
         if choices is None:
@@ -375,6 +401,7 @@ class CaptionWindows(QObject):
         window.set_connection(*self.connection)
         window.set_unlock_keys(self.unlock_keys)
         window.set_locked(self.locked)
+        window.use_say_it(self.say_it)
         window.set_start_like_this(self.stored.start_like_this)
         window.start_like_this_wanted.connect(
             lambda on: self._start_like_this(window, on)
@@ -400,6 +427,8 @@ class CaptionWindows(QObject):
         window.hide_wanted.connect(self.hide_wanted)
         window.all_settings_wanted.connect(self.all_settings_wanted)
         window.links_wanted.connect(self.links_wanted)
+        window.quiet_wanted.connect(self.quiet_wanted)
+        window.quiet_word_wanted.connect(self.quiet_word_wanted)
         window.fill_wanted.connect(self.fill_wanted)
         window.aligned_wanted.connect(self.aligned_wanted)
         window.said_colours_wanted.connect(self.said_colours_wanted)
@@ -781,25 +810,24 @@ class CaptionWindows(QObject):
 
     def _reading_hint(self, window: CaptionWindow, update: CaptionUpdate) -> None:
         """Once on this PC, after the first lookup: a finished caption with
-        Chinese in it - said or its translation - where Chinese's
-        dictionary is on this PC and pinyin is off says that it can go
-        above it (369)."""
+        Chinese or Japanese in it - said or its translation - where its
+        dictionary is on this PC and its reading line is off says that
+        pinyin or furigana can go above it (369, 511)."""
         if self.stored.reading_hinted or (
             self.card is not None and not self.stored.looked_up
         ):
             return
-        if "zh" in self.look.reading_lines:
-            return
-        chinese = [
-            language
-            for language in (update.language, window.choices.target)
-            if language_of(language) == "zh"
-        ]
-        if not chinese or not window.reads(chinese[0]):
-            return
-        self.stored.reading_hinted = True
-        window.show_notice(reading_hint(), READING_HINT_SEC)
-        self._save.start()
+        for language in (update.language, window.choices.target):
+            code = language_of(language)
+            if (
+                code in HINTED_LINES
+                and code not in self.look.reading_lines
+                and window.reads(language)
+            ):
+                self.stored.reading_hinted = True
+                window.show_notice(reading_hint(code), READING_HINT_SEC)
+                self._save.start()
+                return
 
     def _looked_up(self) -> None:
         """The first lookup on this PC: the hint goes, for good."""
@@ -840,6 +868,25 @@ class CaptionWindows(QObject):
 
     def _listening(self, mark: ListeningMark, now: float) -> bool:
         return mark.showing(now)
+
+    # -- the mouse while the app is in the background (a Mac) ---------------------------
+
+    def under_the_mouse(self) -> list[QWidget]:
+        """What `pointer_watch` tells of the mouse, top-most first: the
+        windows' open popovers, the lookup card, the joined window, then the
+        windows of their own."""
+        found: list[QWidget] = []
+        for window in self.windows.values():
+            found += [p for p in (window.popover, window.languages) if p is not None]
+        joined = self.joined_window
+        if joined is not None and joined.popover is not None:
+            found.append(joined.popover)
+        if self.card is not None:
+            found.append(self.card)
+        if joined is not None:
+            found.append(joined)
+        found += [w for w in reversed(self.windows.values()) if w.isWindow()]
+        return found
 
     # -- above a game that is itself always on top ---------------------------------------
 

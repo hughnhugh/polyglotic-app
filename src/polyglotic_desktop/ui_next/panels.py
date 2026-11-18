@@ -44,10 +44,10 @@ theme.
 """
 
 from collections.abc import Callable
+from functools import partial
 from typing import Any
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFontDatabase
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -58,7 +58,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from polyglotic_desktop.core.learning.curriculum import SIZES as CURRICULUM_SIZES
+from polyglotic_desktop.core.learning.curriculum import ChosenWords
 from polyglotic_desktop.core.listening.display import (
+    READING_LANGUAGES,
     LinkDetail,
     LinkGap,
     LinkLine,
@@ -73,7 +76,11 @@ from polyglotic_desktop.perf import spans
 from polyglotic_desktop.ui_next import style
 from polyglotic_desktop.ui_next.caption_preview import CaptionPreview
 from polyglotic_desktop.ui_next.caption_window import timing_tip
-from polyglotic_desktop.ui_next.colour_controls import ExactColour, PresetTiles
+from polyglotic_desktop.ui_next.colour_controls import (
+    CaptionTextSliders,
+    ExactColour,
+    PresetTiles,
+)
 from polyglotic_desktop.ui_next.controls import (
     INSET,
     Card,
@@ -646,40 +653,6 @@ class TimingPanel(Panel):
 # -- Look ------------------------------------------------------------------------------
 
 
-class FontBox(Combo):
-    """The fonts on this PC - listed only when first opened (there can be
-    hundreds), so the panel opens at once."""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.addItem(_tr("Polyglotic (Default)"), None)
-        self._listed = False
-
-    def show_family(self, family: str | None) -> None:
-        index = 0 if family is None else self.findData(family)
-        if index < 0 and family is not None:  # not listed yet, or not on this PC
-            self.addItem(family, family)
-            index = self.count() - 1
-        if index != self.currentIndex():
-            blocked = self.blockSignals(True)
-            self.setCurrentIndex(index)
-            self.blockSignals(blocked)
-
-    def showPopup(self) -> None:
-        if not self._listed:
-            self._listed = True
-            chosen = self.currentData()
-            blocked = self.blockSignals(True)
-            self.clear()
-            self.addItem(_tr("Polyglotic (Default)"), None)
-            for family in QFontDatabase.families():
-                if not family.startswith("@"):  # Windows' sideways copies
-                    self.addItem(family, family)
-            self.blockSignals(blocked)
-            self.show_family(chosen)
-        super().showPopup()
-
-
 class _LookGroup(Panel):
     """A group of the look's settings, bound to the one `LookView`.
     `notes`: each setting's line under its name (Settings > Captions, F18);
@@ -716,9 +689,9 @@ class _LookGroup(Panel):
 
 
 class LookPanel(_LookGroup):
-    """How every caption window looks: the colours, the panel, the font and
-    what's shown above and in each caption (248's Settings > Captions >
-    Look)."""
+    """How every caption window looks: the colours, the panel and what's
+    shown above and in each caption (248's Settings > Captions > Look);
+    each language's font is the Fonts card's (`face_rows`, 482)."""
 
     def __init__(
         self,
@@ -747,6 +720,25 @@ class LookPanel(_LookGroup):
                 "then change any colour."
             ),
             self.presets,
+        )
+        self.text = CaptionTextSliders()  # the caption text (polyglotic-hq 481)
+        self.text.setObjectName("look.caption_text")
+        self.text.show_text(
+            value.contrast, value.vibrance, value.thickness, value.edge.value
+        )
+        self.text.contrast_moved.connect(view.set_contrast)
+        self.text.edge_chosen.connect(view.set_edge)
+        self.text.vibrance_moved.connect(view.set_vibrance)
+        self.text.thickness_moved.connect(view.set_thickness)
+        self._row(
+            _tr("Caption text"),
+            _tr(
+                "How strongly captions stand out, how vivid their colours are "
+                "and how thick their letters are, in every caption window - "
+                "contrast and colour in transcripts too. In the middle: as "
+                "they were."
+            ),
+            self.text,
         )
         self.colours: dict[str, ExactColour] = {}
         for which, title, note in (
@@ -802,28 +794,6 @@ class LookPanel(_LookGroup):
             background,
         )
 
-        self.font_box = FontBox()
-        self.font_box.setObjectName("look.font")
-        self.font_box.setAccessibleName(_tr("Font"))
-        self.font_box.setMinimumWidth(style.px(160))
-        self.font_box.currentIndexChanged.connect(
-            lambda _: view.set_font(self.font_box.currentData())
-        )
-        self._row(
-            _tr("Font"),
-            pc_or_mac(
-                _tr(
-                    "Any font on this PC. Chinese and Japanese fall back to a font "
-                    "that has them if yours doesn't."
-                ),
-                _tr(
-                    "Any font on this Mac. Chinese and Japanese fall back to a font "
-                    "that has them if yours doesn't."
-                ),
-            ),
-            _left(self.font_box),
-        )
-
         self.original = self._switch(
             "show_original",
             _tr("Show the original above the translation"),
@@ -863,7 +833,9 @@ class LookPanel(_LookGroup):
             self.background.setValue(percent)
             self.background.blockSignals(blocked)
         self.background_shown.setText(f"{percent}%")
-        self.font_box.show_family(value.font)
+        self.text.show_text(
+            value.contrast, value.vibrance, value.thickness, value.edge.value
+        )
         self.presets.show_preset(
             preset_of(value),
             (value.original, value.translation, value.background),
@@ -1015,17 +987,104 @@ class WordLinksPanel(_LookGroup):
         self.translation_in_link_colours.setEnabled(linked)
 
 
-class ReadingLinesPanel(_LookGroup):
-    """Pinyin above Chinese (polyglotic-hq 369, decision 0155) and Jyutping
-    above Cantonese (polyglotic-hq 450, decision 0160): a small syllable
-    over each character, on whichever row is in that language - what was
-    said or its translation - each with its own switch; over which words,
-    how big and in what colour, for both."""
+def _set_quiet_word(view: LookView, which: ChosenWords, on: bool) -> None:
+    view.set_quiet_word(which, on)
+
+
+class QuietViewPanel(_LookGroup):
+    """The quiet view (polyglotic-hq 477): on or off - the quiet button on a
+    caption window does the same - and which words it shows in blue, the
+    union of what's ticked, with our curriculum's size."""
 
     def __init__(
         self, view: LookView, notes: bool = False, parent: QWidget | None = None
     ) -> None:
-        #: Settings > Readings: the card of reading lines over captions - pinyin above Chinese, Jyutping above Cantonese
+        super().__init__(_tr("Quiet view"), view, notes, parent=parent)
+        value = view.value
+        self.quiet = self._switch(
+            "quiet",
+            _tr("Quiet view"),
+            _tr(
+                "Captions in quiet grey and gold, a little bigger, with pinyin over "
+                "every word and only your chosen words in blue - no underlines or "
+                "arrows. Point at a word to see its partner. Turns word links off."
+            ),
+            lambda on: view.set_quiet(on, READING_LANGUAGES),
+        )
+        self.words: dict[ChosenWords, SwitchButton] = {}
+        for which, title, line in (
+            (
+                ChosenWords.CURRICULUM,
+                _tr("Our curriculum"),
+                _tr(
+                    "A few words just past what you know: the ones the talk is "
+                    "about, then the ones you hear most. A word the talk brought "
+                    "moves on once you know it; the others after three days met."
+                ),
+            ),
+            (
+                ChosenWords.EDGE,
+                _tr("Words at your edge"),
+                _tr(
+                    "Any word in your learning window, each time it's said - "
+                    "never names, numbers or everyday talk."
+                ),
+            ),
+            (
+                ChosenWords.LOAD,
+                _tr("Learning load"),
+                _tr("Every word of your learning load, as in the Lab."),
+            ),
+            (
+                ChosenWords.SAVED,
+                _tr("Saved words"),
+                _tr("Words you saved, whatever their category."),
+            ),
+        ):
+            self.words[which] = self._switch(
+                f"quiet_{which.value}",
+                title,
+                line,
+                partial(_set_quiet_word, view, which),
+            )
+        self.curriculum_size = Segmented(
+            [(size, str(size)) for size in CURRICULUM_SIZES], value.curriculum_size
+        )
+        self.curriculum_size.setObjectName("look.curriculum_size")
+        self.curriculum_size.changed.connect(lambda v: view.set_curriculum_size(int(v)))
+        self._row(
+            _tr("Curriculum words"),
+            _tr("How many words our curriculum holds at a time."),
+            self.curriculum_size,
+        )
+        self.bind(view)
+        self.refresh()
+
+    def refresh(self) -> None:
+        value = self.view.value
+        self.quiet.set_quietly(value.quiet)
+        for which, switch in self.words.items():
+            switch.set_quietly(which in value.quiet_words)
+        self.curriculum_size.set_value(value.curriculum_size)
+        self.curriculum_size.setEnabled(ChosenWords.CURRICULUM in value.quiet_words)
+
+
+class ReadingLinesPanel(_LookGroup):
+    """Pinyin above Chinese (polyglotic-hq 369, decision 0155), Jyutping
+    above Cantonese (polyglotic-hq 450, decision 0160) and furigana above
+    Japanese (polyglotic-hq 511): a small reading over the characters, on
+    whichever row is in that language - what was said or its translation -
+    each with its own switch; over which words, how big and in what
+    colour, for all - and Russian's stress marks (молоко́), Korean in
+    Revised Romanization and Hindi in Latin letters (511). And
+    English respelled as it sounds (KAY-oss, 511):
+    its own switch and its own choice of words, past what you know at
+    first."""
+
+    def __init__(
+        self, view: LookView, notes: bool = False, parent: QWidget | None = None
+    ) -> None:
+        #: Settings > Readings: the card of reading lines over captions - pinyin above Chinese, Jyutping above Cantonese, furigana above Japanese, stress marks over Russian, romanization above Korean and Hindi, a respelling above English
         super().__init__(_tr("Readings"), view, notes, parent=parent)
         value = view.value
         self.chinese = self._switch(
@@ -1067,6 +1126,47 @@ class ReadingLinesPanel(_LookGroup):
             ),
             lambda on: view.set_reading_line("yue", on),
         )
+        self.japanese = self._switch(
+            "reading_ja",
+            _tr("Furigana above Japanese"),
+            _tr(
+                "Small kana over each word's kanji, in what was said and in "
+                "translations into Japanese, from the Japanese dictionary - once "
+                "you learn Japanese and its dictionary is here."
+            ),
+            lambda on: view.set_reading_line("ja", on),
+        )
+        self.russian = self._switch(
+            "reading_ru",
+            _tr("Stress marks over Russian"),
+            _tr(
+                "An accent over the stressed vowel of each Russian word (молоко́), "
+                "from the Russian dictionary - none where the dictionary has a word "
+                "stressed two ways (ру́ки, руки́): its card shows both. Once you "
+                "learn Russian and its dictionary is here."
+            ),
+            lambda on: view.set_reading_line("ru", on),
+        )
+        self.korean = self._switch(
+            "reading_ko",
+            _tr("Romanization above Korean"),
+            _tr(
+                "Each Korean word in Revised Romanization, the official system, "
+                "written as it's said (한국어: hangugeo, 국물: gungmul) - by rule, "
+                "no dictionary needed."
+            ),
+            lambda on: view.set_reading_line("ko", on),
+        )
+        self.hindi = self._switch(
+            "reading_hi",
+            _tr("Latin letters above Hindi"),
+            _tr(
+                "Each Hindi word in Latin letters, as dictionaries write it "
+                "(किताब: kitāb), the a's that aren't said left out - by rule, no "
+                "dictionary needed."
+            ),
+            lambda on: view.set_reading_line("hi", on),
+        )
         self.reading_over = Segmented(
             [(False, _tr("Every word")), (True, _tr("Past what you know"))],
             value.reading_past,
@@ -1080,6 +1180,33 @@ class ReadingLinesPanel(_LookGroup):
                 "on Learning, the ones word links point out. Less to read as you learn."
             ),
             self.reading_over,
+        )
+        self.english = self._switch(
+            "reading_en",
+            _tr("Respelling above English"),
+            _tr(
+                "How each English word sounds, in plain letters, its stressed part "
+                "in capitals (KAY-oss, ri-SEET) - for the 10,000 commonest words, "
+                "in what was said and in translations into English, once you "
+                "learn English."
+            ),
+            lambda on: view.set_reading_line("en", on),
+        )
+        self.respelling_over = Segmented(
+            [(False, _tr("Every word")), (True, _tr("Past what you know"))],
+            value.respelling_past,
+        )
+        self.respelling_over.setObjectName("look.respelling_past")
+        self.respelling_over.changed.connect(
+            lambda v: view.set_respelling_past(bool(v))
+        )
+        self._row(
+            _tr("Respelling over"),
+            _tr(
+                "Past what you know: only over the English words past your known "
+                "line on Learning, so the words you know read plainly."
+            ),
+            self.respelling_over,
         )
         self.reading_size = Segmented(
             [
@@ -1141,11 +1268,20 @@ class ReadingLinesPanel(_LookGroup):
         chinese = "zh" in value.reading_lines
         self.chinese.set_quietly(chinese)
         self.cantonese.set_quietly("yue" in value.reading_lines)
+        self.japanese.set_quietly("ja" in value.reading_lines)
+        self.russian.set_quietly("ru" in value.reading_lines)
+        self.korean.set_quietly("ko" in value.reading_lines)
+        self.hindi.set_quietly("hi" in value.reading_lines)
+        english = "en" in value.reading_lines
+        self.english.set_quietly(english)
+        self.respelling_over.set_value(value.respelling_past)
+        self.respelling_over.setEnabled(english)
         on = bool(value.reading_lines)  # the rest are both's
         self.reading_size.set_value(value.reading_size)
         self.reading_size.setEnabled(on)
         self.reading_over.set_value(value.reading_past)
-        self.reading_over.setEnabled(on)
+        # the scripts' readings: English's respelling has its own choice
+        self.reading_over.setEnabled(any(code != "en" for code in value.reading_lines))
         self.reading_system.set_value(value.reading_system)
         self.reading_system.setEnabled(chinese)
         self.reading_colour.set_value(value.reading_colour)

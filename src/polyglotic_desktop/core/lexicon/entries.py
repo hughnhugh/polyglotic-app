@@ -11,9 +11,10 @@ import bisect
 import re
 import unicodedata
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from polyglotic_desktop.core.shared import EntryFacts, EntryId, Level
+from polyglotic_desktop.ports.dictionary import MeaningsFile
 
 _VARIANT = re.compile(r"^(old |archaic |unofficial |Japanese |erroneous )?variant of ")
 
@@ -97,6 +98,14 @@ class DictionaryEntry:
     frequency_rank: int | None = None
     levels: tuple[tuple[str, int], ...] = ()
     is_name: bool = False
+    spoken_rank: int | None = None
+    """Its rank in speech, where the pack ranks it rarer (`spoken`)."""
+    is_filler: bool = False
+    """A hesitation sound or interjection (`spoken`)."""
+    spells_a_number: bool = False
+    """A number spelled out in letters (`spoken`)."""
+    names_capitalised: bool = False
+    """Its language capitalises a word inside a sentence only for a name."""
 
     @property
     def idiom(self) -> bool:
@@ -127,7 +136,7 @@ class DictionaryEntry:
         """What Learning needs to know about this entry, for a learner whose
         level is in the scheme `scheme_id`: its level there (None if the
         scheme doesn't include it, or is unknown), rank, and whether it's a
-        name or a number."""
+        name or a number; how common it is in speech."""
         return entry_facts(
             self.entry_id,
             self.frequency_rank,
@@ -135,6 +144,10 @@ class DictionaryEntry:
             self.is_name,
             scheme_id,
             self.is_number,
+            self.spoken_rank,
+            self.is_filler,
+            self.spells_a_number,
+            self.names_capitalised,
         )
 
 
@@ -183,6 +196,10 @@ def entry_facts(
     is_name: bool,
     scheme_id: str,
     is_number: bool = False,
+    spoken_rank: int | None = None,
+    is_filler: bool = False,
+    spells_a_number: bool = False,
+    names_capitalised: bool = False,
 ) -> EntryFacts:
     """`DictionaryEntry.facts` from the parts it needs - for a dictionary
     that reads them without making the whole entry (its reading marked):
@@ -195,6 +212,10 @@ def entry_facts(
         frequency_rank=frequency_rank,
         is_name=is_name,
         is_number=is_number,
+        spoken_rank=spoken_rank,
+        is_filler=is_filler,
+        spells_a_number=spells_a_number,
+        names_capitalised=names_capitalised,
         # a syllabus's levels only: a frequency band's words are its rank's
         level_words=scheme.sizes[level - 1]
         if scheme and level and len(scheme.sizes) >= level
@@ -209,3 +230,12 @@ def words_in_runs(ranks: Sequence[int], runs: Sequence[tuple[int, int]]) -> list
         bisect.bisect_right(ranks, last) - bisect.bisect_left(ranks, first)
         for first, last in runs
     ]
+
+
+def explained(entry: DictionaryEntry, meanings: MeaningsFile | None) -> DictionaryEntry:
+    """`entry` with its meanings in the learner's language where `meanings`
+    (the dictionary's meanings file in it, decision 0234) has them; else as
+    the dictionary has it. Only what's shown changes: its ID, rank, levels
+    and whether it's a name stay the dictionary's own."""
+    found = meanings.meanings(entry.entry_id) if meanings is not None else None
+    return replace(entry, meanings=found) if found else entry

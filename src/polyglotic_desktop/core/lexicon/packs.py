@@ -10,15 +10,22 @@ a new format comes, so an app never needs a pack it can't read: it takes
 the newest one *it* reads (`best_offer`) and leaves the rest
 (`needs_newer_app` says when there are only those).
 
-A pack may have **riders** (decision 0133): files that go with it - for
-now its commonest words recorded (`audio`). The list names them inside
-their pack's own entry (`riders`), which an app from before them doesn't
-read: it takes the pack as it always did. A rider has its own `min_app`
-(decision 0192), so one can be added to a pack already published without
-hiding the pack from an app that can't play it. An app takes the riders it
-reads (`riders_wanted`).
+A pack may have **riders** (decision 0133): files that go with it - its
+commonest words recorded (`audio`), and its meanings in one more language
+each (`meanings`, decision 0234). The list names them inside their pack's
+own entry (`riders`), which an app from before them doesn't read: it takes
+the pack as it always did; an app from before a kind of rider leaves that
+kind out. A rider has its own `min_app` (decision 0192), so one can be
+added to a pack already published without hiding the pack from an app
+that can't read it. An app takes the riders it reads and wants
+(`riders_wanted`): the recordings, and the meanings in the learner's
+language only.
 
-A dictionary **built into the app** (CC-CEDICT) has no pack, so its riders
+A **caption face** (polyglotic-hq 482, decision 0223) has no pack either:
+the list's `fonts` names each face its riders bring (`read_fonts`), which
+an app from before them doesn't read.
+
+A dictionary **built into the app** (CC-CEDICT, ECDICT) has no pack, so its riders
 have an entry of their own (`built_in`, decision 0197): the dictionary's
 name, its language, and its riders. An app from before them doesn't read
 it, and the packs are read as before (`read_built_in`).
@@ -56,9 +63,14 @@ FROM_SOURCE = "0.0.0"
 every pack its formats and word splits allow, whatever `min_app` says."""
 
 
-RIDER_SUFFIXES = {"audio": ".audio"}
-"""Each kind of rider this code knows, and how its file's name ends; a
-kind it doesn't know is left out of a pack's riders (a newer list's)."""
+RIDER_SUFFIXES: dict[str, tuple[str, ...]] = {
+    "audio": (".audio",),
+    "meanings": (".meanings",),
+    "font": (".ttf", ".otf", ".txt"),
+}
+"""Each kind of rider this code knows, and how its files' names end; a
+kind it doesn't know is left out of a pack's riders (a newer list's). A
+`font`'s are its faces and their licence text (polyglotic-hq 482)."""
 
 
 class PackListError(ValueError):
@@ -69,18 +81,22 @@ class PackListError(ValueError):
 @dataclass(frozen=True)
 class Rider:
     """A file that goes with one published pack (decision 0133): `kind` is
-    `audio` (its commonest words recorded). Its version is its pack's; its
-    `min_app` its own (decision 0192): the first app that plays it."""
+    `audio` (its commonest words recorded) or `meanings` (its meanings in
+    the language `meanings`, decision 0234). Its version is its pack's; its
+    `min_app` its own (decision 0192): the first app that reads it."""
 
     kind: str
     format: str
-    """The rider file's own format (`adapters.audio_file.FORMAT`)."""
+    """The rider file's own format (`adapters.audio_file.FORMAT`,
+    `adapters.meanings_file.FORMAT`)."""
     min_app: str
     file: str
     size: int
     sha256: str
     gz_size: int
     gz_sha256: str
+    meanings: str = ""
+    """A meanings rider's language (`es`); "" for any other kind."""
 
     @property
     def download(self) -> str:
@@ -289,6 +305,60 @@ def read_built_in(data: bytes) -> tuple[BuiltIn, ...]:
     return tuple(found)
 
 
+@dataclass(frozen=True)
+class FontOffer:
+    """A caption face published for download (polyglotic-hq 482, decision
+    0223): `font` is its name in the list - the start of its files' names,
+    and the app's name for it (`ui_next.fonts.PACKED`) - `family` the
+    family its files hold, `credits` one line: whose face, under what
+    licence; its files are its riders (kind `font`: its faces and their
+    licence text)."""
+
+    font: str
+    family: str
+    credits: str
+    riders: tuple[Rider, ...]
+
+    def size(self, reader: "Reader") -> int:
+        """What comes down for this app: its riders' downloads."""
+        return sum(rider.gz_size for rider in riders_wanted(self, reader))
+
+
+def read_fonts(data: bytes) -> tuple[FontOffer, ...]:
+    """The caption faces a list offers (`fonts`): an entry that is
+    malformed, or has no face this code reads, is left out. Fields a newer
+    list adds are ignored. Only for a list `read_pack_list` has read:
+    anything else has none."""
+    try:
+        whole = json.loads(data)
+    except (ValueError, UnicodeDecodeError):
+        return ()
+    raw = whole.get("fonts") if isinstance(whole, dict) else None
+    found = []
+    for item in raw if isinstance(raw, list) else ():
+        if not isinstance(item, dict):
+            continue
+        font, family, credits = (
+            item.get("font"),
+            item.get("family"),
+            item.get("credits"),
+        )
+        if not (
+            isinstance(font, str)
+            and isinstance(family, str)
+            and isinstance(credits, str)
+            and DICTIONARY_NAME.fullmatch(font)
+            and 0 < len(family) <= 100
+        ):
+            continue
+        riders = tuple(
+            rider for rider in _riders(item.get("riders"), font) if rider.kind == "font"
+        )
+        if any(rider.file.endswith((".ttf", ".otf")) for rider in riders):
+            found.append(FontOffer(font, family, credits, riders))
+    return tuple(found)
+
+
 def _riders(raw: object, dictionary: str) -> tuple[Rider, ...]:
     """A pack's riders as its entry lists them: one that is malformed, or of
     a kind this code doesn't know, is left out - the pack and its other
@@ -303,10 +373,12 @@ def _riders(raw: object, dictionary: str) -> tuple[Rider, ...]:
             isinstance(n, int) and not isinstance(n, bool) and n > 0 for n in sizes
         ):
             continue
+        language = item.get("meanings") if item["kind"] == "meanings" else ""
         rider = Rider(
             **{name: item[name] for name in texts},
             size=int(item["size"]),
             gz_size=int(item["gz_size"]),
+            meanings=language if isinstance(language, str) else "",
         )
         suffix = RIDER_SUFFIXES.get(rider.kind)
         if (
@@ -317,6 +389,11 @@ def _riders(raw: object, dictionary: str) -> tuple[Rider, ...]:
             and version_key(rider.min_app) is not None
             and SHA256_HEX.fullmatch(rider.sha256)
             and SHA256_HEX.fullmatch(rider.gz_sha256)
+            and (
+                rider.kind != "meanings"
+                or bool(CODE.fullmatch(rider.meanings))
+                and rider.file.startswith(f"{dictionary}-{rider.meanings}-")
+            )
         ):
             found.append(rider)
     return tuple(found)
@@ -375,14 +452,26 @@ def needs_newer_app(
     return bool(found) and not any(reader.reads(o) for o in found)
 
 
-def riders_wanted(offer: PackOffer | BuiltIn, reader: Reader) -> list[Rider]:
-    """The riders of `offer` (a pack's, or a built-in dictionary's) this app
-    takes: those of a kind and format it reads, and whose `min_app` it is."""
+def riders_wanted(
+    offer: PackOffer | BuiltIn | FontOffer,
+    reader: Reader,
+    explained_in: str | None = None,
+) -> list[Rider]:
+    """The riders of `offer` (a pack's, a built-in dictionary's or a caption
+    face's) this app takes: those of a kind and format it reads, and whose
+    `min_app` it is - of the meanings, only those in `explained_in` (the
+    learner's language; None: none), unless the pack's own meanings are in
+    it already."""
+    own = offer.meanings if isinstance(offer, PackOffer) else None
     return [
         rider
         for rider in offer.riders
         if (rider.kind, rider.format) in reader.riders
         and reader.new_enough(rider.min_app)
+        and (
+            rider.kind != "meanings"
+            or (rider.meanings == explained_in and rider.meanings != own)
+        )
     ]
 
 

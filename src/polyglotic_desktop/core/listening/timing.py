@@ -28,8 +28,8 @@ stretch at the next short pause), and turn cuts (finishing a caption
 sooner when another source starts speaking).
 
 The app doesn't use those defaults: it follows the learner's
-`CaptionMode` - Steady (the default: `default_caption_mode`,
-polyglotic-hq DECISIONS.md #107), Quick preview or Live updates - each a
+`CaptionMode` - Steady, Quick preview (the default: `default_caption_mode`,
+desktop decision 0242) or Live updates - each a
 set of these rules that projects 021, 037 and 046 measured, and each
 joining only onto fragments - and the learner's longest wait for text
 (`max_wait`, 3s unless they choose 2-6s; polyglotic-hq 277): in every
@@ -84,8 +84,13 @@ MIN_SPEECH_SEC = 0.4
 # little for the speech model to place the language.
 LIVE_MIN_AUDIO_SEC = 1.0
 # Seconds between live updates, by default (the user can choose 0.5 to 20,
-# or off).
-LIVE_UPDATE_INTERVAL_SEC = 1.5
+# or off). 1.0 since polyglotic-hq 494 (DECISIONS.md #211, the user,
+# 2026-11-18: "two agree" every 1.0 s): the server says what two live updates
+# in a row agree on is established (its decision 0095), and 1.0 s apart
+# establishes about half the words 2.6 s before the finished caption - 37 %
+# at the old 1.5 s (polyglotic-hq 487, live's speech model). About 3.2 times
+# Steady's audio on the speech model, against 2.4 times at 1.5 s.
+LIVE_UPDATE_INTERVAL_SEC = 1.0
 # A live caption grows in sections: once the current one passes this long,
 # its text is kept as it stands and live updates carry on in a new section
 # from there, so each live update is at most ~1s of the model's work. (The
@@ -277,13 +282,14 @@ class CaptionMode(StrEnum):
 
 
 def default_caption_mode() -> CaptionMode:
-    """The caption mode of a learner who hasn't chosen one: Steady, for
-    everyone (polyglotic-hq DECISIONS.md #107, the user, 2026-11-09, after
-    using the app on the real models; Quick preview from 2026-11-07, #4,
-    and Steady before that). The one place it's decided: a smarter preview
-    (project 183's) would be decided here too - every learner who hasn't
-    chosen follows it, and a choice made stays (decision 0055)."""
-    return CaptionMode.STEADY
+    """The caption mode of a learner who hasn't chosen one: Quick preview,
+    for everyone (decision 0242, polyglotic-hq 522: the user, 2026-11-18,
+    "quick preview is our desired mode to optimise"; Steady from
+    2026-11-09, #107, and Quick preview from 2026-11-07, #4, before that).
+    The one place it's decided: a smarter preview (project 183's) would be
+    decided here too - every learner who hasn't chosen follows it, and a
+    choice made stays (decision 0055)."""
+    return CaptionMode.PREVIEW
 
 
 BREATH_CUTS: Mapping[CaptionMode, BreathCut] = {

@@ -15,9 +15,12 @@ window, 2026-11-07), and shown without activating. Its parts:
   whole rows: a label or row it would cut isn't drawn (113). On it, the
   same at every width (the user, 2026-11-07, in place of 109's chips): the
   source's dot and label (and "Original only" when the window shows no
-  translation, and the mic mark while it shows my speech) - the part that
-  shortens when the window is narrow - then word links on / off (every
-  window's; the user's rehearsal feedback F9, 249), filled lines on / off
+  translation; in the quiet view, the few words its source is talking
+  about now, polyglotic-hq 491; and the mic mark while it shows my
+  speech) - the part that shortens when the window is narrow - then word links on / off (every
+  window's; the user's rehearsal feedback F9, 249), the quiet view on /
+  off (every window's: polyglotic-hq 477 - which words it shows in blue
+  is in the settings popover), filled lines on / off
   (every window's: New layout, Line by line and captions run on together,
   polyglotic-hq 372), parts lined up on / off (every window's, in any
   way of filling: 372), lock (all windows),
@@ -52,8 +55,10 @@ window, 2026-11-07), and shown without activating. Its parts:
   under the mouse - by the word split - is drawn softly behind, with its
   word links (links "On hover"); resting on it shows its lookup; a press
   on it looks it up (pinned), and a drag from it within its clause and
-  side selects a phrase (pinned, and held as a selection) - a press on a
-  word never moves the window (109's 10.3).
+  side selects a phrase (pinned, and held as a selection; one worth saving
+  as a sentence gets the sentence card at the mouse instead of a lookup:
+  `sentence_card`, 522) - a press on a word never moves the window (109's
+  10.3).
 
 Every edge and corner resizes, anchored to the opposite one (centred
 presets symmetric); a drag anywhere else moves it, snapping to the
@@ -144,6 +149,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from polyglotic_desktop.core.learning.curriculum import ChosenWords
 from polyglotic_desktop.core.learning.lookups import LookupContext, lookup_context
 from polyglotic_desktop.core.learning.saved_words import CategoryId
 from polyglotic_desktop.core.listening.caption_model import Words
@@ -154,10 +160,12 @@ from polyglotic_desktop.core.listening.captions import (
 )
 from polyglotic_desktop.core.listening.display import (
     DisplayOptions,
+    ReadingColour,
     RowKind,
     WordLinks,
     clause_versions,
 )
+from polyglotic_desktop.core.listening.established import CORRECTION_SEC
 from polyglotic_desktop.core.listening.selection import Place, Selection
 from polyglotic_desktop.core.listening.sources import (
     WHOLE_SYSTEM,
@@ -173,6 +181,8 @@ from polyglotic_desktop.ui_next.caption_delay import delay_text
 from polyglotic_desktop.ui_next.caption_layout import (
     LINK_GAP_PX,
     LINK_PX,
+    QUIET_SCALE,
+    QUIET_TRANSLATION,
     CaptionLayout,
     CaptionStyle,
     Ink,
@@ -203,6 +213,7 @@ from polyglotic_desktop.ui_next.languages import (
 )
 from polyglotic_desktop.ui_next.lookup_card import LookupCard
 from polyglotic_desktop.ui_next.os_words import hotkeys_here, pc_or_mac
+from polyglotic_desktop.ui_next.selection_reading import SAID_NOW, SelectionReading
 from polyglotic_desktop.ui_next.sentence_card import SentenceCard
 from polyglotic_desktop.ui_next.settings_popover import (
     COLUMN_ROWS,
@@ -229,6 +240,7 @@ from polyglotic_desktop.ui_next.views.caption_window import (
     CaptionLook,
     Notice,
     Notices,
+    TextEdge,
     WindowChoices,
     intro_seconds,
     shows,
@@ -246,7 +258,6 @@ from polyglotic_desktop.ui_next.views.flow import FlowOptions, Open, flow_option
 from polyglotic_desktop.ui_next.views.lab import (
     Fill,
     Loading,
-    LoadRare,
     Unfinished,
     by_place,
     changes_at,
@@ -260,9 +271,14 @@ from polyglotic_desktop.ui_next.views.lab import (
 from polyglotic_desktop.ui_next.views.lookup import Learner, WordAt, with_counterpart
 from polyglotic_desktop.ui_next.views.pacing import Pacing
 from polyglotic_desktop.ui_next.views.placement import Edge, Preset, Rect, Size
-from polyglotic_desktop.ui_next.views.presets import contrast, readable_on
+from polyglotic_desktop.ui_next.views.presets import AA_TEXT, contrast, readable_on
 from polyglotic_desktop.ui_next.views.reveal import Reveal
-from polyglotic_desktop.ui_next.views.sentences import selected_sentence, worth_saving
+from polyglotic_desktop.ui_next.views.sentences import (
+    selected_sentence,
+    sides_aloud,
+    worth_saving,
+)
+from polyglotic_desktop.ui_next.views.tone import reading_weight, vibrant
 
 if TYPE_CHECKING:
     from polyglotic_desktop.ui_next.joined_window import JoinedWindow
@@ -303,13 +319,14 @@ def least_size(least: Size) -> Size:
     return Size(style.px(least.width), least.height)
 
 
-STRIP = ("links", "fill", "aligned", "lock", "report", "settings", "stop")
+STRIP = ("links", "quiet", "fill", "aligned", "lock", "report", "settings", "stop")
 """The hover strip's buttons after the source's label, left to right - the
 same at every width (the user, 2026-11-07); the rest is in the settings
 popover. Word links in place of A- / A+, which moved to the popover (the
 user's rehearsal feedback F9, 2026-11-08); filled lines and parts lined
 up beside them, the other clicks on how every window's captions look
-(polyglotic-hq 372).
+(polyglotic-hq 372); the quiet view beside word links, the other way of
+showing them (477).
 "Report a problem" only for alpha testers (`set_reporting`, polyglotic-hq
 275)."""
 BAND_IN_MS = 80
@@ -368,12 +385,20 @@ TEXT = "#e9ecf2"
 TEXT_DIM = "#a0a8b6"
 ACCENT = "#7c9cff"
 ACCENT_TEXT = "#0d1220"
+CORRECTION = "#f0a070"
+"""A quiet correction's words (polyglotic-hq 494, decision 0228): warm, as
+487's mock-up had them, and readable on the look's panel - held a moment,
+then eased back into the row's own colour over `CORRECTION_SEC`."""
 AROUND = (-PAD, -6.0, PAD, 8.0)
 """How far around a line's rows what's drawn with it reaches: a hovered
 word's highlight, a dotted mark under its last row."""
 HOVERED = QColor(255, 255, 255, 46)
 """Behind the word under the mouse (today's), on a dark panel - on a light
 one (Paper's) the same in black (`shade`): white there was invisible."""
+QUIET_HOVERED = 14
+"""The quiet view's word under the mouse and its partner (477): under a
+third of `HOVERED`'s tint - lit quietly, and a blue word still reads on it
+(at 24, 4.2:1 in the UI lab)."""
 SELECTED = QColor(124, 156, 255, 90)
 """Behind a phrase being dragged across."""
 HIT_TESTED = QColor(0, 0, 0, 1)
@@ -395,6 +420,14 @@ def _tr(text: str) -> str:
 def _trn(text: str, n: int) -> str:
     """A count's text in the language's form for `n` (decision 0034)."""
     return QApplication.translate("CaptionWindow", text, None, n)
+
+
+def quiet_tip() -> str:
+    """The quiet view's button's words on hover (477)."""
+    return _tr(
+        "Quiet view on or off: captions in quiet grey and gold, only your chosen "
+        "words in blue, no underlines - point at a word to see its partner"
+    )
 
 
 def timing_name(mode: CaptionMode) -> str:
@@ -633,8 +666,11 @@ def caption_style(
     lab = look.lab
     unfinished = lab.unfinished
     flow = one_layout(look)
-    return CaptionStyle(
+    style = CaptionStyle(
         family=look.font,
+        faces=look.faces,
+        weight=QFont.Weight(look.thickness),
+        reading_weight=QFont.Weight(reading_weight(look.thickness)),
         link_px=LINK_PX[look.link_line] if lab.link_px is None else lab.link_px,
         row_gap=lab.row_gap,
         clause_gap=clause_gap(lab.row_gap),
@@ -659,8 +695,27 @@ def caption_style(
         reading_lines=frozenset(look.reading_lines),
         reading_share=reading_lines.SHARES[look.reading_size],
         reading_past=look.reading_past,
+        respelling_past=look.respelling_past,
         reading_system=look.reading_system,
     )
+    if look.quiet:  # every line italic, a size step bigger, a reading over each
+        # word - and never a link's underline or curve, whatever word links say
+        return replace(
+            style,
+            text_px=style.text_px * QUIET_SCALE,
+            translation_size=style.translation_size * QUIET_TRANSLATION,
+            italic_all=True,
+            reading_past=False,
+            link_room=False,
+            arrows=False,
+        )
+    return style
+
+
+def shown_links(look: CaptionLook) -> WordLinks:
+    """How `look`'s captions carry their word links: the quiet view's are
+    there for the hover alone (477), drawn quietly; else as chosen."""
+    return WordLinks.HOVER if look.quiet else look.word_links
 
 
 def marks_panel(look: CaptionLook) -> Panel:
@@ -670,8 +725,12 @@ def marks_panel(look: CaptionLook) -> Panel:
         look.background,
         look.original,
         look.translation,
-        load=look.lab.load,
-        dim_rare=look.lab.load_rare is LoadRare.DIMMED,
+        load=look.lab.load and not look.quiet,
+        palette=look.lab.load_colours,
+        quiet=look.quiet,
+        quiet_words=look.quiet_words,
+        opacity=look.opacity,
+        vibrance=look.vibrance,
     )
 
 
@@ -702,15 +761,74 @@ def unfinished_ink(ink: Ink, look: CaptionLook) -> Ink:
 def look_ink(ink: Ink, look: CaptionLook) -> Ink:
     """`ink` as the look draws it: text still being spoken as the Lab says
     (`unfinished_ink`), pinyin in the colour chosen and linked words in
-    their link's colour, readable on the panel (polyglotic-hq 395)."""
+    their link's colour, readable on the panel (polyglotic-hq 395) - not
+    while Learning load colours the words by how well they're known (489:
+    its colours and the link's would fight over the same word). The
+    quiet view (477): every line in Quick preview's grey and gold, with
+    nothing in a link's colour. Its contrast and vibrance (481): `toned`."""
+    if look.quiet:
+        return toned(
+            replace(
+                ink,
+                reading_colour=ReadingColour.SAME,
+                said_in_link_colours=False,
+                translation_in_link_colours=False,
+                panel=look.background,
+                panel_opacity=look.opacity,
+                quiet=True,
+            ),
+            look,
+        )
+    return toned(
+        replace(
+            unfinished_ink(ink, look),
+            reading_colour=look.reading_colour,
+            reading=QColor(look.reading_custom),
+            # Learning load colours the words themselves (489): a link is
+            # its bar under the word then, not the word's colour
+            said_in_link_colours=look.said_in_link_colours and not look.lab.load,
+            translation_in_link_colours=(
+                look.translation_in_link_colours and not look.lab.load
+            ),
+            panel=look.background,
+            panel_opacity=look.opacity,
+        ),
+        look,
+    )
+
+
+def toned(ink: Ink, look: CaptionLook) -> Ink:
+    """`ink` at the look's contrast and vibrance (`views.tone`; 481): its
+    colours - what was said, the translation (the quiet view's gold), a
+    reading's picked colour, text still being spoken's - at the vibrance;
+    the contrast for the layout to draw every line's ink at
+    (`caption_layout.drawn_ink`). Word links' colours keep theirs: no
+    vibrance keeps every two told apart (`caption_marks.LINK_COLORS`)."""
+    if (look.contrast, look.vibrance, look.edge) == (0, 0, TextEdge.NONE):
+        return ink
+
+    def vivid(colour: QColor | None) -> QColor | None:
+        if colour is None:
+            return None
+        return QColor(vibrant(colour.name(), look.vibrance))
+
+    def row(colour: QColor) -> QColor:
+        """A row's colour at the vibrance, no less readable on the panel
+        than it was (up to 4.5:1): vivid moves a colour's lightness a
+        little (`views.tone.SHIFT`)."""
+        was = contrast(colour.name(), look.background)
+        found = vibrant(colour.name(), look.vibrance)
+        return QColor(readable_on(found, look.background, min(AA_TEXT, was)))
+
     return replace(
-        unfinished_ink(ink, look),
-        reading_colour=look.reading_colour,
-        reading=QColor(look.reading_custom),
-        said_in_link_colours=look.said_in_link_colours,
-        translation_in_link_colours=look.translation_in_link_colours,
-        panel=look.background,
-        panel_opacity=look.opacity,
+        ink,
+        original=row(ink.original),
+        translation=row(ink.translation),
+        reading=vivid(ink.reading),
+        unfinished=vivid(ink.unfinished),
+        contrast=look.contrast,
+        vibrance=look.vibrance,
+        edge=look.edge,
     )
 
 
@@ -723,11 +841,17 @@ def spoken_in(heard: Sequence[str]) -> str:
     return spoken_names(str(language) for language in heard)
 
 
-def reading_hint() -> str:
-    """Said once, on a finished caption with Chinese in it, to a learner
-    with Chinese's dictionary and pinyin off (369, decision 0155) - under
-    Readings, its own section since 470."""
+def reading_hint(language: str = "zh") -> str:
+    """Said once, on a finished caption with Chinese or Japanese in it, to
+    a learner with its dictionary and its reading line off (369, decision
+    0155; 511) - under Readings, its own section since 470."""
+    if language == "ja":
+        return _tr("Furigana above Japanese: turn it on in Settings, under Readings")
     return _tr("Pinyin above Chinese: turn it on in Settings, under Readings")
+
+
+HINTED_LINES = ("zh", "ja")
+"""The reading lines the one-time hint tells of (`reading_hint`)."""
 
 
 READING_HINT_SEC = 10.0
@@ -989,6 +1113,8 @@ class Canvas(CaptionSurface):
         self._held: dict[int, list[Words]] = {}
         """The words the window's selection holds in the lines being drawn
         (`CaptionWindow.held`), by line key - drawn behind them."""
+        self.said_now: dict[int, list[Words]] = {}
+        """The word being read aloud (Say it, polyglotic-hq 495), by line key."""
         self.clear_top = float(PAD)
         """Where the last paint's captions started (below the band, if shown)."""
         self.mark_rect: QRect | None = None
@@ -1237,6 +1363,7 @@ class Canvas(CaptionSurface):
         # the preview line, newer still, full too; scrolled back, all full.
         # The Lab: how far back, and captions new for a while full too (284)
         lab = self.owner.look.lab
+        lab_quiet = self.owner.look.quiet
         older, older_translation = older_alphas(
             high_contrast(),
             view.scroll.following,
@@ -1268,7 +1395,9 @@ class Canvas(CaptionSurface):
                 continue  # every row above the top: none drawn (W3)
             at = QPointF(PAD, y)
             alpha = translation = 1.0
-            if newest is not None and line.key < newest:
+            # the quiet view is a step back throughout: none further (477) - on
+            # a light panel the two together fell under what can be read
+            if newest is not None and line.key < newest and not lab_quiet:
                 new = newness(self.owner.age_of(line.key, now), lab)
                 if places is not None:
                     back = places.get(line.key, lab.older_steps)
@@ -1278,6 +1407,9 @@ class Canvas(CaptionSurface):
             ink = self.ink
             if alpha < 1.0 or translation != 1.0:
                 ink = replace(self.ink, alpha=alpha, translation_alpha=translation)
+            correction = self.owner.correction_colour(line.key, now, ink.original)
+            if correction is not None:  # a quiet correction (494)
+                ink = replace(ink, correction=correction)
             height = self._tall(line)
             rect = QRectF(at.x(), at.y(), width, height)
             asked = whole or self._dirty.intersects(rect.adjusted(*AROUND))
@@ -1374,20 +1506,31 @@ class Canvas(CaptionSurface):
         painter.setBrush(SELECTED)
         for box in word_rects(laid, self._held.get(line.key, ())):
             painter.drawRoundedRect(box.translated(at), 6, 6)
+        painter.setBrush(SAID_NOW)
+        for box in word_rects(laid, self.said_now.get(line.key, ())):
+            painter.drawRoundedRect(box.translated(at), 6, 6)
+        painter.setBrush(SELECTED)
         hovered_tint = shade(self.owner.bar, HOVERED.alpha())
+        quiet_tint = shade(self.owner.bar, QUIET_HOVERED)
+        if self.owner.look.quiet:  # softer: the blue reads on it (477)
+            hovered_tint = quiet_tint
         for marked, color in ((self.hovered, hovered_tint), (self.selection, SELECTED)):
             if marked is not None and marked.key == line.key:
                 self._fill(painter, laid, at, marked, color)
         hovered = self.hovered
+        look = self.owner.look
         if (
             hovered is None
             or hovered.key != line.key
-            or self.owner.look.word_links is WordLinks.OFF
+            or shown_links(look) is WordLinks.OFF
         ):
             return
         for partner, link in linked_with(line, hovered):
-            tint = QColor(LINK_COLORS[link % len(LINK_COLORS)])
-            tint.setAlphaF(0.4)
+            if look.quiet:  # quietly: as softly as the word pointed at (477)
+                tint = quiet_tint
+            else:
+                tint = QColor(LINK_COLORS[link % len(LINK_COLORS)])
+                tint.setAlphaF(0.4)
             self._fill(painter, laid, at, partner, tint)
 
     @staticmethod
@@ -2008,6 +2151,12 @@ class CaptionWindow(QWidget):
     """The strip's word links button: on or off, for every window (F9) -
     the whole learning view, with the reading lines of this window's
     languages (`readings`; 446)."""
+    quiet_wanted = Signal(bool, tuple)
+    """The strip's quiet view button: on or off, for every window, with the
+    reading lines of this window's languages (`readings`; 477)."""
+    quiet_word_wanted = Signal(str, bool)
+    """The settings popover's chosen words for the quiet view: one of them
+    (`ChosenWords`' value) ticked or not, for every window (477)."""
     fill_wanted = Signal(bool)
     """The strip's filled lines button: on or off, for every window (372)."""
     aligned_wanted = Signal(bool)
@@ -2104,6 +2253,11 @@ class CaptionWindow(QWidget):
         """Arrivals sliding into place (step and slide)."""
         self._slid = False
         """Something slid at the last frame: the next paints it at rest."""
+        self._corrections: dict[int, tuple[object, float]] = {}
+        """Lines showing a quiet correction (decision 0228): what it
+        recolours and since when (`clock`)."""
+        self._corrected = False
+        """A correction showed at the last frame: the next paints it gone."""
         self._known: set[int] | None = None
         """The captions' keys it has shown (None: none yet - the first
         captions a window opens with don't arrive, they're there)."""
@@ -2188,6 +2342,9 @@ class CaptionWindow(QWidget):
         self.sentence_card: SentenceCard | None = None
         """Offers a selection to save as a sentence (polyglotic-hq 459):
         made the first time one is."""
+        self.say_it: SelectionReading | None = None
+        """Reads a selection aloud from its card (polyglotic-hq 495):
+        `main`'s, by way of `CaptionWindows.use_say_it`."""
         self.held = HeldSelection(
             self,
             lambda: shown(self.view.lines),
@@ -2197,10 +2354,9 @@ class CaptionWindow(QWidget):
         )
         """What's selected across its captions, and kept (358)."""
         self.canvas = Canvas(self, view)
-        self._readings = reading_lines.source_of(learner) if learner else None
-        """Where its rows' reading lines come from (369): every word's."""
-        self._past = reading_lines.source_of(learner, past=True) if learner else None
-        """Only those past what the learner knows."""
+        self._readings = reading_lines.sources(learner) if learner else None
+        """Where its rows' reading lines come from (369): every word's, or
+        only those past what the learner knows."""
         self.canvas.engine = self._engine(
             caption_style(self.look, choices.translation_size, self._mine_only())
         )
@@ -2289,15 +2445,16 @@ class CaptionWindow(QWidget):
         return (self.source,)
 
     def readings(self) -> tuple[str, ...]:
-        """The reading lines its languages can have - "zh" for a Chinese
-        window: its spoken language chosen, heard in what it shows, its
-        translation's or its second language's (446: the one click puts
-        pinyin over a Chinese window's words)."""
+        """The reading lines the one click turns on for its languages - "zh"
+        for a Chinese window: its spoken language chosen, heard in what it
+        shows, its translation's or its second language's (446: the one
+        click puts pinyin over a Chinese window's words) - only those it
+        turns on (`reading_lines.ONE_CLICK`; 511)."""
         choices = self.choices
         named = (choices.spoken_language, choices.target, self._second())
         heard = (each for line in self.canvas.lines_in_view() for each in line.heard)
         found = {reading_lines.language_of(each) for each in (*named, *heard)}
-        return tuple(sorted(each for each in found if each is not None))
+        return tuple(sorted(each for each in found if each in reading_lines.ONE_CLICK))
 
     def _second(self) -> Language | None:
         target = self.choices.target
@@ -2306,7 +2463,10 @@ class CaptionWindow(QWidget):
     def _options(self) -> DisplayOptions:
         look = self.look
         return DisplayOptions(
-            look.show_original, look.word_links, look.link_detail, preview=look.preview
+            look.show_original,
+            shown_links(look),
+            look.link_detail,
+            preview=look.preview,
         )
 
     def _ink(self) -> Ink:
@@ -2421,7 +2581,53 @@ class CaptionWindow(QWidget):
         self._pace_lines()
         self._refresh()
         self._note_arrivals()
+        self._note_corrections()
         self._wake()
+
+    # -- a quiet correction (polyglotic-hq 494, decision 0228) --------------------
+
+    def _note_corrections(self) -> None:
+        """The lines whose words a quiet correction recolours, and since
+        when: from when their caption's update came, once each."""
+        now = self.clock()
+        noted: dict[int, tuple[object, float]] = {}
+        for line in self.view.lines:
+            what = tuple(
+                (row.text, row.corrected) for row in line.rows if row.corrected
+            )
+            if not what:
+                continue
+            before = self._corrections.get(line.key)
+            noted[line.key] = (
+                before if before is not None and before[0] == what else (what, now)
+            )
+        self._corrections = noted
+
+    def correction_colour(self, key: int, now: float, row: QColor) -> QColor | None:
+        """The colour line `key`'s corrected words are drawn in `now` - None
+        once its moment is over (or it has none): `CORRECTION` held for the
+        first half of `CORRECTION_SEC`, then eased into the `row`'s own."""
+        found = self._corrections.get(key)
+        if found is None:
+            return None
+        age = now - found[1]
+        if not 0.0 <= age < CORRECTION_SEC:
+            return None
+        warm = QColor(readable_on(CORRECTION, self.look.background))
+        share = min(1.0, max(0.0, 2.0 * (1.0 - age / CORRECTION_SEC)))
+        return QColor.fromRgbF(
+            row.redF() + (warm.redF() - row.redF()) * share,
+            row.greenF() + (warm.greenF() - row.greenF()) * share,
+            row.blueF() + (warm.blueF() - row.blueF()) * share,
+            row.alphaF(),
+        )
+
+    def _correcting(self, now: float) -> bool:
+        """Whether a quiet correction shows now."""
+        return any(
+            0.0 <= now - since < CORRECTION_SEC
+            for _, since in self._corrections.values()
+        )
 
     # -- a new caption's lines, one at a time (views.reveal; 309) ---------------------
 
@@ -2595,7 +2801,11 @@ class CaptionWindow(QWidget):
     def _engine(self, style: CaptionStyle) -> CaptionLayout:
         """A caption layout for `style`, its reading lines from the
         learner's dictionary (369)."""
-        readings = self._past if style.reading_past else self._readings
+        readings = (
+            self._readings(style.reading_past, style.respelling_past)
+            if self._readings
+            else None
+        )
         return CaptionLayout(style, lines_kept=self.view.keep, readings=readings)
 
     def reads(self, language: str | None) -> bool:
@@ -2681,7 +2891,7 @@ class CaptionWindow(QWidget):
         marks showing are drawn again - nothing is laid out."""
         if self.marks.learning_changed(what):
             style = self.canvas.engine.style
-            if style.reading_lines and style.reading_past:
+            if style.follows_known:
                 # a word known now or new again: its pinyin goes or comes
                 self.canvas.engine = self._engine(style)
                 self._refresh()
@@ -3086,6 +3296,28 @@ class CaptionWindow(QWidget):
             lambda on: self.links_wanted.emit(bool(on), self.readings())
         )
         self._action(
+            "quiet",
+            _tr("Quiet view"),
+            quiet_tip(),
+            glyph=Glyph.QUIET,
+            checkable=True,
+        ).triggered.connect(
+            lambda on: self.quiet_wanted.emit(bool(on), self.readings())
+        )
+        for which, text in (
+            (ChosenWords.CURRICULUM, _tr("Our curriculum")),
+            (ChosenWords.EDGE, _tr("Words at your edge")),
+            (ChosenWords.LOAD, _tr("Learning load")),
+            (ChosenWords.SAVED, _tr("Saved words")),
+        ):
+            self._action(
+                f"quiet_{which.value}", text, checkable=True
+            ).triggered.connect(
+                lambda on, which=which: self.quiet_word_wanted.emit(
+                    which.value, bool(on)
+                )
+            )
+        self._action(
             "fill",
             _tr("Fill the width"),
             _tr(
@@ -3323,6 +3555,7 @@ class CaptionWindow(QWidget):
         words (249's F9; polyglotic-hq 258)."""
         links = self.controls["links"]
         links.setChecked(self.look.word_links is not WordLinks.OFF)
+        self.controls["quiet"].setChecked(self.look.quiet)
         links.setEnabled(self.look.show_original)
         links.setToolTip(
             _tr("Word links on or off: words that mean the same share a colour")
@@ -3347,6 +3580,10 @@ class CaptionWindow(QWidget):
         ):
             self.controls[name].setChecked(on)
             self.controls[name].setEnabled(linked)
+        for which in ChosenWords:
+            self.controls[f"quiet_{which.value}"].setChecked(
+                which in self.look.quiet_words
+            )
 
     def _name_buttons(self) -> None:
         """What a screen reader says for each of the strip's buttons: its
@@ -3382,7 +3619,10 @@ class CaptionWindow(QWidget):
         self.chip.setVisible(fits)
         # the chip says Original only; with no chip, the label does
         note = _tr("Original only") if self.choices.target is None and not fits else ""
-        self.tag.show_label(self.label, self.choices.show_mic, note)
+        theme = self.theme_words()
+        self.tag.show_label(
+            self.label, self.choices.show_mic, "   ".join(n for n in (note, theme) if n)
+        )
         # inside the corner zones, so every edge still resizes
         self.band.setGeometry(
             placement.CORNER_ZONE,
@@ -3416,6 +3656,27 @@ class CaptionWindow(QWidget):
             button = self.buttons["settings"]
             anchor = QRect(button.mapToGlobal(QPoint(0, 0)), button.size())
             self.popover.open_beside(anchor)
+
+    def theme_words(self) -> str:
+        """In the quiet view, what this window's source is talking about
+        now: its few keyest words, said in its newest caption's language
+        ("业主 · 小区 · 物业"; polyglotic-hq 491) - none until it has said
+        enough, or with the quiet view off."""
+        if not self.look.quiet or self.learner is None:
+            return ""
+        language = next(
+            (
+                row.language
+                for line in reversed(self.view.lines)
+                if not line.by_you
+                for row in line.rows
+                if row.kind is RowKind.ORIGINAL and row.language
+            ),
+            None,
+        )
+        learner = self.learner.of(language)
+        said = learner.vocabulary.curriculum.theme_name(self.source)
+        return " · ".join(s.form for s in said)
 
     def _on_label(self, event: QMouseEvent) -> bool:
         """A click on the strip's label (the app's name)."""
@@ -3517,6 +3778,8 @@ class CaptionWindow(QWidget):
         if shown == self.band_shown:
             return
         self.band_shown = shown
+        if shown:
+            self._fit_band()  # the theme as it is now
         self.band.setVisible(shown)
         if shown:
             self.band.raise_()
@@ -3764,6 +4027,11 @@ class CaptionWindow(QWidget):
             moving = moving or arriving
             self.canvas.update()
         self._slid = arriving
+        correcting = self._correcting(self.clock())  # a quiet correction (494)
+        if correcting or self._corrected:  # and one frame more, drawn as usual
+            self.canvas.update()
+        self._corrected = correcting
+        moving = moving or correcting
         fading, new_due = self._newness(self.clock())  # the Lab's New for
         moving = moving or fading
         self._show_notice(now)
@@ -3948,6 +4216,13 @@ class CaptionWindow(QWidget):
         self._drag = _Drag(edges, event.globalPosition(), self._place())
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        if not event.buttons() & Qt.MouseButton.LeftButton and self._pressed():
+            # a press whose release never came (macOS can lose it - GitHub's
+            # Mac, polyglotic-hq 515): ended as its release would end it,
+            # never resized or moved by a move with no button held (the
+            # pointer watch's, while the app is in the background)
+            self.mouseReleaseEvent(event)
+            return
         if not self.hovered and self._drag is None:  # its arrival lost (272)
             if self.host is None:
                 self.came_over()
@@ -3975,6 +4250,15 @@ class CaptionWindow(QWidget):
                 self.resize_by(drag, dx, dy)
             else:
                 self.move_by(drag, dx, dy)
+
+    def _pressed(self) -> bool:
+        """A press of its own under way: a drag (resizing or moving), a
+        selection, or its joined window's drag."""
+        return (
+            self._drag is not None
+            or self._selecting is not None
+            or (self.host is not None and self.host.dragging)
+        )
 
     def resize_by(self, drag: _Drag, dx: int, dy: int) -> None:
         """A resize step: the dragged edges moved, re-laid out in this frame."""
@@ -4027,7 +4311,7 @@ class CaptionWindow(QWidget):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if self._selecting is not None:
-            self._pin_selected()
+            self._pin_selected(event.globalPosition().toPoint())
             return
         if self.host is not None:
             self.host.release()
@@ -4237,25 +4521,41 @@ class CaptionWindow(QWidget):
 
     # -- selecting (polyglotic-hq 358; 340's design) ---------------------------------
 
+    def use_say_it(self, reading: SelectionReading | None) -> None:
+        """Say it on the selection's card reads through `reading`; the word
+        it says lights here (polyglotic-hq 495)."""
+        if self.say_it is not None:
+            self.say_it.lit.disconnect(self._said_now)
+        self.say_it = reading
+        if reading is not None:
+            reading.lit.connect(self._said_now)
+        if self.sentence_card is not None:
+            self.sentence_card.use_reading(reading)
+
+    def _said_now(self, owner: object, words: dict[int, list[Words]]) -> None:
+        if owner is self and words != self.canvas.said_now:
+            self.canvas.said_now = words
+            self.canvas.update()
+
     def _held_changed(self) -> None:
         self.canvas.update()
+        if self.say_it is not None:  # a new selection, or none: no more reading
+            self.say_it.stop_for(self)
         if self.held.selection is None and self.sentence_card is not None:
             self.sentence_card.withdraw()
 
-    def _offer_sentence(self) -> None:
+    def _offer_sentence(self, at: QPoint) -> bool:
         """The selection just let go of, if more than a word: offered to
-        save as a sentence (polyglotic-hq 459), by a card under the caption
-        it ends in - into the learning data of the language it was spoken
-        in."""
+        save as a sentence (polyglotic-hq 459), by a card at `at` (the
+        mouse, on the screen, where the drag let go: 522) - into the
+        learning data of the language it was spoken in. Whether it was."""
         chosen, learner = self.held.selection, self.learner
         if chosen is None or learner is None:
-            return
-        found = selected_sentence(
-            held_pieces(self.view.lines, chosen), self._speaker, self.view.caption
-        )
-        rects = held_rects(self.canvas.placed, chosen)
-        if found is None or not worth_saving(found) or not rects:
-            return
+            return False
+        pieces = held_pieces(self.view.lines, chosen)
+        found = selected_sentence(pieces, self._speaker, self.view.caption)
+        if found is None or not worth_saving(found):
+            return False
         vocabulary = learner.of(found.language).vocabulary
         sentence = found
 
@@ -4273,27 +4573,19 @@ class CaptionWindow(QWidget):
             category = vocabulary.category(category_id)
             return category.name if category is not None else ""
 
-        last = max(rects, key=lambda r: (r.bottom(), r.right()))
-        # under the whole caption the selection ends in - never over its
-        # translation, which the learner is saving too
-        caption = next(
-            (where for _, _, where in self.canvas.placed if where.intersects(last)),
-            last,
-        ).toRect()
-        anchor = QRect(
-            self.mapToGlobal(QPoint(last.toRect().left(), caption.top())),
-            QSize(last.toRect().width(), caption.height()),
-        )
         area = self._area()
         if self.sentence_card is None:
             self.sentence_card = SentenceCard(self)
             self.held.keeps.append(self.sentence_card)
+        self.sentence_card.use_reading(self.say_it)
         self.sentence_card.offer(
             vocabulary.categories,
             save,
-            anchor,
+            at,
             QRect(area.x, area.y, area.width, area.height),
+            sides_aloud(pieces),
         )
+        return True
 
     def _speaker(self, line: Line) -> str:
         """Who said `line`, as its label names them: "You", or its app."""
@@ -4368,17 +4660,19 @@ class CaptionWindow(QWidget):
             self.setCursor(Qt.CursorShape.IBeamCursor)
             self.canvas.update()
 
-    def _pin_selected(self) -> None:
+    def _pin_selected(self, at: QPoint) -> None:
         """The phrase dragged across - trimmed of spaces and punctuation at
         its ends - or, after a plain click, the word: pinned. A phrase is
         held as a selection too, exactly as dragged (395): copied, it's
-        what was highlighted."""
+        what was highlighted. One worth saving as a sentence gets the
+        sentence card at `at` (the mouse, on the screen) and no lookup -
+        never both, overlapping (522)."""
         selecting, self._selecting = self._selecting, None
         assert selecting is not None
         if selecting.across:  # a selection: held, no lookup
             self.held.hold()
             self.setCursor(Qt.CursorShape.PointingHandCursor)
-            self._offer_sentence()
+            self._offer_sentence(at)
             return
         selection, self.canvas.selection = self.canvas.selection, None
         marked = selecting.word
@@ -4393,7 +4687,9 @@ class CaptionWindow(QWidget):
                         Place(selection.key, clause, selection.end, kind),
                     )
                 )
-                self._offer_sentence()  # more than a word: a sentence too
+                if self._offer_sentence(at):  # more than a word: a sentence
+                    self.canvas.update()
+                    return
             start, end = selection.start, selection.end
             while start < end and not _wordlike(text[start]):
                 start += 1

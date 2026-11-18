@@ -197,6 +197,11 @@
     <name>CaptionWindow</name>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Quiet view on or off: captions in quiet grey and gold, only your chosen words in blue, no underlines - point at a word to see its partner</source>
+        <translation type="unfinished">Rustige weergave aan of uit: ondertitels in rustig grijs en goud, alleen je gekozen woorden in blauw, geen onderstrepingen – wijs een woord aan om zijn tegenhanger te zien</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Steady</source>
         <translation type="unfinished">Rustig</translation>
     </message>
@@ -224,6 +229,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Words appear as they&apos;re said and rewrite themselves until the sentence ends - the quickest, but the words move.</source>
         <translation type="unfinished">Woorden verschijnen terwijl ze worden gezegd en herschrijven zichzelf tot de zin eindigt – het snelst, maar de woorden bewegen.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Furigana above Japanese: turn it on in Settings, under Readings</source>
+        <translation type="unfinished">Furigana boven Japans: zet het aan in Instellingen, onder Uitspraak</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -505,6 +515,31 @@
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
         <source>Word links on or off: words that mean the same share a colour</source>
         <translation type="unfinished">Woordkoppelingen aan of uit: woorden met dezelfde betekenis delen een kleur</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Quiet view</source>
+        <translation type="unfinished">Rustige weergave</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Our curriculum</source>
+        <translation type="unfinished">Ons leerplan</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Words at your edge</source>
+        <translation type="unfinished">Woorden aan je grens</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Learning load</source>
+        <translation type="unfinished">Leerlast</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
+        <source>Saved words</source>
+        <translation type="unfinished">Opgeslagen woorden</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/caption_window.py"/>
@@ -841,6 +876,106 @@
         <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
         <source>Pick a colour: {what}</source>
         <translation type="unfinished">Kies een kleur: {what}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>Light</source>
+        <translation type="unfinished">Dun</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>Regular</source>
+        <translation type="unfinished">Normaal</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>Medium</source>
+        <translation type="unfinished">Medium</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>Semibold</source>
+        <translation type="unfinished">Halfvet</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>Bold</source>
+        <translation type="unfinished">Vet</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>Contrast</source>
+        <translation type="unfinished">Contrast</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>Soft</source>
+        <translation type="unfinished">Zacht</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>Crisp</source>
+        <translation type="unfinished">Scherp</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>How strongly captions stand out from their panel. Soft is as faint as Quick preview&apos;s line, and never too faint to read; crisp draws every line at full strength.</source>
+        <translation type="unfinished">Hoe sterk ondertitels afsteken tegen hun paneel. Zacht is zo vaag als de regel van Voorbeeld, en nooit te vaag om te lezen; scherp tekent elke regel op volle sterkte.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>Vibrance</source>
+        <translation type="unfinished">Levendigheid</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>Muted</source>
+        <translation type="unfinished">Gedempt</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>Vivid</source>
+        <translation type="unfinished">Levendig</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>How vivid captions&apos; colours are. Dull colours change most; white and grey stay as they are, and word links keep their colours so you can tell them apart.</source>
+        <translation type="unfinished">Hoe levendig de kleuren van ondertitels zijn. Doffe kleuren veranderen het meest; wit en grijs blijven zoals ze zijn, en woordkoppelingen houden hun kleuren zodat je ze uit elkaar kunt houden.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>Thickness</source>
+        <translation type="unfinished">Dikte</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>How thick captions&apos; letters are, and their pinyin a step thicker. A font without a weight draws the nearest it has.</source>
+        <translation type="unfinished">Hoe dik de letters van ondertitels zijn, het pinyin een stap dikker. Een lettertype zonder die dikte gebruikt de dichtstbijzijnde die het heeft.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>None</source>
+        <translation type="unfinished">Geen</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>Soft shadow</source>
+        <translation type="unfinished">Zachte schaduw</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>Outline</source>
+        <translation type="unfinished">Omlijning</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>What&apos;s drawn around captions&apos; letters, to read over a busy video. The panel behind them has its own slider, below.</source>
+        <translation type="unfinished">Wat er rond de letters van ondertitels wordt getekend, om ze te lezen boven een drukke video. Het paneel erachter heeft een eigen schuifregelaar, hieronder.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/colour_controls.py"/>
+        <source>Visibility</source>
+        <translation type="unfinished">Zichtbaarheid</translation>
     </message>
 </context>
 <context>
@@ -1615,6 +1750,109 @@
     </message>
 </context>
 <context>
+    <name>FaceRows</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>Sans</source>
+        <translation type="unfinished">Schreefloos</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>Serif</source>
+        <translation type="unfinished">Met schreef</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>Handwritten</source>
+        <translation type="unfinished">Handschrift</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>{face} isn&apos;t ready to download yet.</source>
+        <translation type="unfinished">{face} is nog niet te downloaden.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>{face} needs a newer Polyglotic.</source>
+        <translation type="unfinished">{face} heeft een nieuwere Polyglotic nodig.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>Refused: the list of downloads failed our signature check, so nothing was downloaded.</source>
+        <translation type="unfinished">Geweigerd: de lijst met downloads kwam niet door onze handtekeningcontrole, dus er is niets gedownload.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>Waiting for another download to finish.</source>
+        <translation type="unfinished">Wachten tot een andere download klaar is.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>Downloading {face}: {done} of {total} MB</source>
+        <translation type="unfinished">{face} downloaden: {done} van {total} MB</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>Checking {face}.</source>
+        <translation type="unfinished">{face} controleren.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>Getting {face}.</source>
+        <translation type="unfinished">{face} ophalen.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>This PC&apos;s own</source>
+        <translation type="unfinished">Eigen lettertypen van deze pc</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>This Mac&apos;s own</source>
+        <translation type="unfinished">Eigen lettertypen van deze Mac</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>Any font on this PC</source>
+        <translation type="unfinished">Elk lettertype op deze pc</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>Any font on this Mac</source>
+        <translation type="unfinished">Elk lettertype op deze Mac</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>{face} (Default)</source>
+        <translation type="unfinished">{face} (standaard)</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>Download anyway</source>
+        <translation type="unfinished">Toch downloaden</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>Retry</source>
+        <translation type="unfinished">Opnieuw proberen</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>Fonts</source>
+        <translation type="unfinished">Lettertypen</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>Each language&apos;s captions in a face of its own.</source>
+        <translation type="unfinished">De ondertitels van elke taal in een eigen lettertype.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/face_rows.py"/>
+        <source>{language} captions in</source>
+        <translation type="unfinished">{language}: lettertype van de ondertitels</translation>
+    </message>
+</context>
+<context>
     <name>FeedbackDialog</name>
     <message>
         <location filename="../src/polyglotic_desktop/ui/feedback.py"/>
@@ -2311,8 +2549,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
-        <source>Steady, the default: each sentence appears once, finished and translated, about half a second after it ends; a small bar moves under the captions while it&apos;s on its way, and if the speaker talks on, a dim line shows the words so far. Quick preview: a dim first line after about 2 seconds, then the finished caption and its translation when the sentence ends. Live updates: words appear as they&apos;re said and rewrite themselves until the sentence ends. Choose one in Settings &gt; Timing, or in a caption window&apos;s settings. In every one, nobody talks longer than the Longest wait for text (3 seconds, unless you change it) before you see text.</source>
-        <translation type="unfinished">Rustig, de standaard: elke zin verschijnt één keer, af en vertaald, ongeveer een halve seconde nadat hij eindigt; een balkje beweegt onder de ondertitels terwijl hij onderweg is, en praat de spreker door, dan toont een vage regel de woorden tot dan toe. Voorbeeld: na ongeveer 2 seconden een vage eerste regel, daarna de definitieve ondertitel en de vertaling als de zin eindigt. Live: woorden verschijnen terwijl ze worden gezegd en herschrijven zichzelf tot de zin eindigt. Kies er een bij Instellingen &gt; Timing, of in de instellingen van een ondertitelvenster. In elke modus praat niemand langer dan de Langste wachttijd voor tekst (3 seconden, tenzij je die wijzigt) voordat je tekst ziet.</translation>
+        <source>Quick preview, the default: a dim first line after about 2 seconds, then the finished caption and its translation when the sentence ends. Steady: each sentence appears once, finished and translated, about half a second after it ends; a small bar moves under the captions while it&apos;s on its way, and if the speaker talks on, a dim line shows the words so far. Live updates: words appear as they&apos;re said and rewrite themselves until the sentence ends. Choose one in Settings &gt; Timing, or in a caption window&apos;s settings. In every one, nobody talks longer than the Longest wait for text (3 seconds, unless you change it) before you see text.</source>
+        <translation type="unfinished">Voorbeeld, de standaard: na ongeveer 2 seconden een vage eerste regel, daarna de definitieve ondertitel en de vertaling als de zin eindigt. Rustig: elke zin verschijnt één keer, af en vertaald, ongeveer een halve seconde nadat hij eindigt; een balkje beweegt onder de ondertitels terwijl hij onderweg is, en praat de spreker door, dan toont een vage regel de woorden tot dan toe. Live: woorden verschijnen terwijl ze worden gezegd en herschrijven zichzelf tot de zin eindigt. Kies er een bij Instellingen &gt; Timing, of in de instellingen van een ondertitelvenster. In elke modus praat niemand langer dan de Langste wachttijd voor tekst (3 seconden, tenzij je die wijzigt) voordat je tekst ziet.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/help_page.py"/>
@@ -3301,6 +3539,181 @@
     </message>
 </context>
 <context>
+    <name>KnownMap</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>No change in the last 7 days.</source>
+        <translation type="unfinished">Geen verandering in de afgelopen 7 dagen.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>In the last 7 days: {green} green, {red} red.</source>
+        <translation type="unfinished">In de afgelopen 7 dagen: {green} groen, {red} rood.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>Within the about {words} words you know.</source>
+        <translation type="unfinished">Binnen de ongeveer {words} woorden die je kent.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>Past the about {words} words you know.</source>
+        <translation type="unfinished">Voorbij de ongeveer {words} woorden die je kent.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>Your level isn&apos;t set yet, so that&apos;s a guess.</source>
+        <translation type="unfinished">Je niveau is nog niet ingesteld, dus dit is een schatting.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>You said you know it.</source>
+        <translation type="unfinished">Je zei dat je het kent.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>Known from what you imported.</source>
+        <translation type="unfinished">Bekend uit wat je hebt geïmporteerd.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>A number written in numerals you know.</source>
+        <translation type="unfinished">Een getal in cijfers die je kent.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>You know the words it&apos;s made of.</source>
+        <translation type="unfinished">Je kent de woorden waaruit het bestaat.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>Not all the words it&apos;s made of are known.</source>
+        <translation type="unfinished">Niet alle woorden waaruit het bestaat zijn bekend.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>In your deck.</source>
+        <translation type="unfinished">In je stapel.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>Looked up twice, so new to you for now.</source>
+        <translation type="unfinished">Twee keer opgezocht, dus voorlopig nieuw voor je.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>You said it&apos;s new to you.</source>
+        <translation type="unfinished">Je zei dat het nieuw voor je is.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>Nothing says how common it is.</source>
+        <translation type="unfinished">Niets zegt hoe gewoon het is.</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>Heard on %n day(s).</source>
+        <translation type="unfinished">
+            <numerusform>Gehoord op %n dag.</numerusform>
+            <numerusform>Gehoord op %n dagen.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>Saved.</source>
+        <translation type="unfinished">Opgeslagen.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>Looked up, then heard again without a lookup.</source>
+        <translation type="unfinished">Opgezocht, daarna opnieuw gehoord zonder het op te zoeken.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>Looked up in the last 3 days.</source>
+        <translation type="unfinished">Opgezocht in de afgelopen 3 dagen.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>Looked up twice since you said you know it.</source>
+        <translation type="unfinished">Twee keer opgezocht sinds je zei dat je het kent.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>{word} · No. {place}</source>
+        <translation type="unfinished">{word} · Nr. {place}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>A name, or a word you ignore: not coloured.</source>
+        <translation type="unfinished">Een naam, of een woord dat je negeert: geen kleur.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>About {percent} likely you know it.</source>
+        <translation type="unfinished">Ongeveer {percent} kans dat je het kent.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>How well you know the language</source>
+        <translation type="unfinished">Hoe goed je de taal kent</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>Reading the language&apos;s words…</source>
+        <translation type="unfinished">De woorden van de taal worden gelezen…</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>This language&apos;s dictionary doesn&apos;t say how common its words are.</source>
+        <translation type="unfinished">Het woordenboek van deze taal zegt niet hoe gewoon de woorden zijn.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>Its {count} most common words, one square each, commonest first. Point at a square to see its word and why it&apos;s that colour.</source>
+        <translation type="unfinished">De {count} meest gebruikte woorden, elk één vakje, de meest gebruikte eerst. Wijs een vakje aan om het woord te zien en waarom het die kleur heeft.</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>%Ln word(s) green</source>
+        <translation type="unfinished">
+            <numerusform>%Ln woord groen</numerusform>
+            <numerusform>%Ln woorden groen</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>%Ln word(s) between</source>
+        <translation type="unfinished">
+            <numerusform>%Ln woord ertussen</numerusform>
+            <numerusform>%Ln woorden ertussen</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>%Ln word(s) red</source>
+        <translation type="unfinished">
+            <numerusform>%Ln woord rood</numerusform>
+            <numerusform>%Ln woorden rood</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>{share} of what you hear is green, by how often each word is said.</source>
+        <translation type="unfinished">{share} van wat je hoort is groen, naar hoe vaak elk woord wordt gezegd.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>Red: never met, or far past what you know. The colours between: words you&apos;ve heard or partly know. Green: mastered. A native speaker&apos;s map is all green.</source>
+        <translation type="unfinished">Rood: nooit tegengekomen, of ver voorbij wat je kent. De kleuren ertussen: woorden die je hebt gehoord of deels kent. Groen: beheerst. De kaart van een moedertaalspreker is helemaal groen.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/known_map_card.py"/>
+        <source>How well you know {language}</source>
+        <translation type="unfinished">Hoe goed je {language} kent</translation>
+    </message>
+</context>
+<context>
     <name>Lab</name>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
@@ -3659,8 +4072,8 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
-        <source>A set number of the next words past what you know, each coloured by how often you have heard it since: red, orange, yellow, green, then ready to check. In place of the marks under new words. Its words and settings are on Learning.</source>
-        <translation type="unfinished">Een vast aantal van de volgende woorden na wat je al kent, elk gekleurd naar hoe vaak je het sindsdien hebt gehoord: rood, oranje, geel, groen en dan klaar om te controleren. Vervangt de markeringen onder nieuwe woorden. De woorden en instellingen staan bij Leren.</translation>
+        <source>Every word in a colour by how well you know it: red, never met or far past what you know; the colours between, words you have heard or partly know; green, mastered. In place of the marks under new words.</source>
+        <translation type="unfinished">Elk woord in een kleur naar hoe goed je het kent: rood, nooit tegengekomen of ver voorbij wat je kent; de kleuren ertussen, woorden die je hebt gehoord of deels kent; groen, beheerst. In plaats van de markeringen onder nieuwe woorden.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
@@ -3674,18 +4087,23 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
-        <source>Dimmed</source>
-        <translation type="unfinished">Gedimd</translation>
+        <source>Red to green</source>
+        <translation type="unfinished">Rood naar groen</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
-        <source>Words outside the load</source>
-        <translation type="unfinished">Woorden buiten de leerlast</translation>
+        <source>Orange to blue</source>
+        <translation type="unfinished">Oranje naar blauw</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
-        <source>Rarer words you don&apos;t know yet, in Learning load: as now, or dimmed so the load&apos;s words stand out. Dimmed turns Learning load on.</source>
-        <translation type="unfinished">Zeldzamere woorden die je nog niet kent, in de leerlast: zoals nu, of gedimd zodat de woorden van de leerlast opvallen. Gedimd zet de leerlast aan.</translation>
+        <source>Its colours</source>
+        <translation type="unfinished">De kleuren</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
+        <source>Red to green, or orange to blue if red and green look alike to you. Both go from darker to lighter as you know a word better. Choosing one turns Learning load on.</source>
+        <translation type="unfinished">Rood naar groen, of oranje naar blauw als rood en groen er voor jou hetzelfde uitzien. Beide gaan van donkerder naar lichter naarmate je een woord beter kent. Een keuze zet Leerlast aan.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lab_panel.py"/>
@@ -4847,6 +5265,31 @@
 </context>
 <context>
     <name>LookupCard</name>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>No {language} voice on this PC yet. Windows adds one for free: Settings &gt; Time &amp; language &gt; Speech &gt; Add voices, then {language}.</source>
+        <translation type="unfinished">Nog geen stem voor {language} op deze pc. Windows voegt er gratis een toe: Instellingen &gt; Tijd en taal &gt; Spraak &gt; Stemmen toevoegen, dan {language}.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>No {language} voice on this Mac yet. macOS adds one for free: System Settings &gt; Accessibility &gt; Spoken Content &gt; System voice &gt; Manage Voices, then {language}.</source>
+        <translation type="unfinished">Nog geen {language} stem op deze Mac. macOS voegt er gratis een toe: Systeeminstellingen &gt; Toegankelijkheid &gt; Gesproken materiaal &gt; Systeemstem &gt; Beheer stemmen, dan {language}.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>That was macOS&apos;s basic {language} voice. A more natural one is free: System Settings &gt; Accessibility &gt; Spoken Content &gt; System voice &gt; Manage Voices, then a {language} voice marked Enhanced or Premium.</source>
+        <translation type="unfinished">Dat was de eenvoudige {language} stem van macOS. Een natuurlijkere is gratis: Systeeminstellingen &gt; Toegankelijkheid &gt; Gesproken materiaal &gt; Systeemstem &gt; Beheer stemmen, dan een {language} stem met Verbeterd of Premium.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>Don&apos;t show again for {language}</source>
+        <translation type="unfinished">Niet meer tonen voor {language}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
+        <source>Dismiss</source>
+        <translation type="unfinished">Sluiten</translation>
+    </message>
     <message numerus="yes">
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
         <source>Heard in %Ln caption(s)</source>
@@ -4977,16 +5420,6 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
-        <source>No {language} voice on this PC yet. Windows adds one for free: Settings &gt; Time &amp; language &gt; Speech &gt; Add voices, then {language}.</source>
-        <translation type="unfinished">Nog geen stem voor {language} op deze pc. Windows voegt er gratis een toe: Instellingen &gt; Tijd en taal &gt; Spraak &gt; Stemmen toevoegen, dan {language}.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
-        <source>No {language} voice on this Mac yet. macOS adds one for free: System Settings &gt; Accessibility &gt; Spoken Content &gt; System voice &gt; Manage Voices, then {language}.</source>
-        <translation type="unfinished">Nog geen {language} stem op deze Mac. macOS voegt er gratis een toe: Systeeminstellingen &gt; Toegankelijkheid &gt; Gesproken materiaal &gt; Systeemstem &gt; Beheer stemmen, dan {language}.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
         <source>Open speech settings</source>
         <translation type="unfinished">Spraakinstellingen openen</translation>
     </message>
@@ -5089,11 +5522,6 @@
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
         <source>Stop (R)</source>
         <translation type="unfinished">Stoppen (R)</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
-        <source>Say it again, slower (R)</source>
-        <translation type="unfinished">Nog eens, langzamer (R)</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/lookup_card.py"/>
@@ -5569,11 +5997,6 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Polyglotic (Default)</source>
-        <translation type="unfinished">Polyglotic (standaard)</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>Look</source>
         <translation type="unfinished">Uiterlijk</translation>
     </message>
@@ -5591,6 +6014,16 @@
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>A matched set of colours for the text and the panel. Pick one, then change any colour.</source>
         <translation type="unfinished">Een passende set kleuren voor de tekst en het paneel. Kies er een en wijzig dan elke kleur.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Caption text</source>
+        <translation type="unfinished">Ondertiteltekst</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>How strongly captions stand out, how vivid their colours are and how thick their letters are, in every caption window - contrast and colour in transcripts too. In the middle: as they were.</source>
+        <translation type="unfinished">Hoe sterk ondertitels afsteken, hoe levendig hun kleuren zijn en hoe dik hun letters zijn, in elk ondertitelvenster - contrast en kleur ook in transcripts. In het midden: zoals het was.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -5631,21 +6064,6 @@
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>0 % is no box at all; 100 % hides the video behind the text. Over a bright film, 70 % or more keeps the text readable.</source>
         <translation type="unfinished">0% is geen vlak; 100% verbergt de video achter de tekst. Bij een lichte film houdt 70% of meer de tekst leesbaar.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Font</source>
-        <translation type="unfinished">Lettertype</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Any font on this PC. Chinese and Japanese fall back to a font that has them if yours doesn&apos;t.</source>
-        <translation type="unfinished">Elk lettertype op deze pc. Chinees en Japans vallen terug op een lettertype dat ze heeft als dat van jou ze mist.</translation>
-    </message>
-    <message>
-        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
-        <source>Any font on this Mac. Chinese and Japanese fall back to a font that has them if yours doesn&apos;t.</source>
-        <translation type="unfinished">Elk lettertype op deze Mac. Chinees en Japans vallen terug op een lettertype dat ze heeft als dat van jou ze mist.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -5804,8 +6222,68 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Quiet view</source>
+        <translation type="unfinished">Rustige weergave</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Captions in quiet grey and gold, a little bigger, with pinyin over every word and only your chosen words in blue - no underlines or arrows. Point at a word to see its partner. Turns word links off.</source>
+        <translation type="unfinished">Ondertitels in rustig grijs en goud, iets groter, met pinyin boven elk woord en alleen je gekozen woorden in blauw – geen onderstrepingen of pijlen. Wijs een woord aan om zijn tegenhanger te zien. Zet woordkoppelingen uit.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Our curriculum</source>
+        <translation type="unfinished">Ons leerplan</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>A few words just past what you know: the ones the talk is about, then the ones you hear most. A word the talk brought moves on once you know it; the others after three days met.</source>
+        <translation type="unfinished">Een paar woorden net boven wat je kent: waar het gesprek over gaat, dan die je het vaakst hoort. Een woord uit het gesprek gaat door zodra je het kent; de andere nadat je ze op drie dagen tegenkwam.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Words at your edge</source>
+        <translation type="unfinished">Woorden aan je grens</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Any word in your learning window, each time it&apos;s said - never names, numbers or everyday talk.</source>
+        <translation type="unfinished">Elk woord in je leervenster, telkens als het gezegd wordt - nooit namen, getallen of alledaagse praat.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Learning load</source>
+        <translation type="unfinished">Leerlast</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Every word of your learning load, as in the Lab.</source>
+        <translation type="unfinished">Elk woord van je leerlast, zoals in het Lab.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Saved words</source>
+        <translation type="unfinished">Opgeslagen woorden</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Words you saved, whatever their category.</source>
+        <translation type="unfinished">Woorden die je hebt opgeslagen, in welke categorie ook.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Curriculum words</source>
+        <translation type="unfinished">Woorden in het leerplan</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>How many words our curriculum holds at a time.</source>
+        <translation type="unfinished">Hoeveel woorden ons leerplan tegelijk bevat.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>Readings</source>
-        <extracomment>Settings &gt; Readings: the card of reading lines over captions - pinyin above Chinese, Jyutping above Cantonese</extracomment>
+        <extracomment>Settings &gt; Readings: the card of reading lines over captions - pinyin above Chinese, Jyutping above Cantonese, furigana above Japanese, stress marks over Russian, romanization above Korean and Hindi, a respelling above English</extracomment>
         <translation type="unfinished">Uitspraak</translation>
     </message>
     <message>
@@ -5850,6 +6328,46 @@
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Furigana above Japanese</source>
+        <translation type="unfinished">Furigana boven Japans</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Small kana over each word&apos;s kanji, in what was said and in translations into Japanese, from the Japanese dictionary - once you learn Japanese and its dictionary is here.</source>
+        <translation type="unfinished">Kleine kana boven de kanji van elk woord, in wat er gezegd is en in vertalingen naar het Japans, uit het Japanse woordenboek - zodra je Japans leert en het woordenboek er is.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Stress marks over Russian</source>
+        <translation type="unfinished">Klemtoontekens boven Russisch</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>An accent over the stressed vowel of each Russian word (молоко́), from the Russian dictionary - none where the dictionary has a word stressed two ways (ру́ки, руки́): its card shows both. Once you learn Russian and its dictionary is here.</source>
+        <translation type="unfinished">Een accent boven de beklemtoonde klinker van elk Russisch woord (молоко́), uit het Russische woordenboek - geen waar het woordenboek een woord op twee manieren beklemtoont (ру́ки, руки́): de kaart toont beide. Zodra je Russisch leert en het woordenboek er is.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Romanization above Korean</source>
+        <translation type="unfinished">Romanisering boven Koreaans</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Each Korean word in Revised Romanization, the official system, written as it&apos;s said (한국어: hangugeo, 국물: gungmul) - by rule, no dictionary needed.</source>
+        <translation type="unfinished">Elk Koreaans woord in de herziene romanisering, het officiële systeem, geschreven zoals het klinkt (한국어: hangugeo, 국물: gungmul) - volgens regels, zonder woordenboek.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Latin letters above Hindi</source>
+        <translation type="unfinished">Latijnse letters boven Hindi</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Each Hindi word in Latin letters, as dictionaries write it (किताब: kitāb), the a&apos;s that aren&apos;t said left out - by rule, no dictionary needed.</source>
+        <translation type="unfinished">Elk Hindi-woord in Latijnse letters, zoals woordenboeken het schrijven (किताब: kitāb), zonder de a&apos;s die niet uitgesproken worden - volgens regels, zonder woordenboek.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>Every word</source>
         <translation type="unfinished">Elk woord</translation>
     </message>
@@ -5867,6 +6385,26 @@
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
         <source>Past what you know: only over the words past your known line on Learning, the ones word links point out. Less to read as you learn.</source>
         <translation type="unfinished">Voorbij wat je kent: alleen boven woorden voorbij je grens bij Leren, de woorden die woordkoppelingen aanwijzen. Hoe meer je leert, hoe minder te lezen.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Respelling above English</source>
+        <translation type="unfinished">Uitspraakspelling boven Engels</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>How each English word sounds, in plain letters, its stressed part in capitals (KAY-oss, ri-SEET) - for the 10,000 commonest words, in what was said and in translations into English, once you learn English.</source>
+        <translation type="unfinished">Hoe elk Engels woord klinkt, in gewone letters, het beklemtoonde deel in hoofdletters (KAY-oss, ri-SEET) - voor de 10.000 meest gebruikte woorden, in wat er gezegd is en in vertalingen naar het Engels, zodra je Engels leert.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Respelling over</source>
+        <translation type="unfinished">Uitspraakspelling boven</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
+        <source>Past what you know: only over the English words past your known line on Learning, so the words you know read plainly.</source>
+        <translation type="unfinished">Voorbij wat je kent: alleen boven de Engelse woorden voorbij je grens van bekende woorden onder Leren, zodat de woorden die je kent gewoon leesbaar blijven.</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/panels.py"/>
@@ -6273,6 +6811,26 @@
         <location filename="../src/polyglotic_desktop/ui_next/sentence_card.py"/>
         <source>Saved to {category}</source>
         <translation type="unfinished">Opgeslagen in {category}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sentence_card.py"/>
+        <source>Say it</source>
+        <translation type="unfinished">Uitspreken</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sentence_card.py"/>
+        <source>Stop</source>
+        <translation type="unfinished">Stoppen</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sentence_card.py"/>
+        <source>Say it in {language}</source>
+        <translation type="unfinished">Uitspreken in het {language}</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/sentence_card.py"/>
+        <source>Add a {language} voice</source>
+        <translation type="unfinished">Stem voor het {language} toevoegen</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/sentence_card.py"/>
@@ -6788,6 +7346,11 @@
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
         <source>Don&apos;t see your app here? Make sure it&apos;s playing audio.</source>
         <translation type="unfinished">Zie je je app niet? Zorg dat hij audio afspeelt.</translation>
+    </message>
+    <message>
+        <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
+        <source>Blue words in the quiet view</source>
+        <translation type="unfinished">Blauwe woorden in de rustige weergave</translation>
     </message>
     <message>
         <location filename="../src/polyglotic_desktop/ui_next/settings_popover.py"/>
